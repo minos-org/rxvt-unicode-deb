@@ -1,0 +1,140 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+include /usr/share/dpatch/dpatch.make
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	INSTALL_PROGRAM += -s
+endif
+
+cfgcommon = --with-term=rxvt --enable-mousewheel --enable-xgetdefault 
+
+config.status: configure
+	dh_testdir
+	cp -f /usr/share/misc/config.sub config.sub
+	cp -f /usr/share/misc/config.guess config.guess
+
+conf-code:
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info $(cfgcommon) --enable-rxvt-scroll --enable-half-shadow --enable-xim --enable-keepscrolling --enable-slipwheeling --enable-smart-resize --enable-pointer-blank --enable-transparency --enable-linespace --enable-xft \
+				 --with-res-name=urxvt --with-res-class=URxvt
+
+conf-code-light:
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info $(cfgcommon) \
+				 --with-res-name=urxvt-lite --with-res-class=URxvt-lite --enable-fallback=URxvt
+
+conf-code-ml:
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info $(cfgcommon) --enable-everything --enable-rxvt-scroll  --enable-half-shadow --enable-xim --enable-keepscrolling --enable-slipwheeling --enable-smart-resize --enable-pointer-blank --enable-unicode3 --enable-transparency --enable-linespace --enable-combining \
+				 --with-res-name=urxvt-ml --with-res-class=URxvt-ml --enable-fallback=URxvt
+
+build: patch build-stamp
+
+build-stamp:  config.status
+	dh_testdir
+
+	mkdir -p tmp
+	for x in code code-lite code-ml ; do \
+		cp -f debian/rxvt-unicode-base.postinst debian/rxvt-uni$$x.postinst ;\
+		cp -f debian/rxvt-unicode-base.prerm debian/rxvt-uni$$x.prerm ;\
+		$(MAKE) $(MFLAGS) -f debian/rules conf-$$x ;\
+		$(MAKE) ;\
+		mkdir -p tmp/$$x ;\
+		cp src/rxvtc src/rxvtd src/rxvt tmp/$$x/ || exit 1;\
+		$(MAKE) clean ;\
+	done
+
+	touch build-stamp
+
+clean: unpatch
+	dh_testdir
+	dh_testroot
+	rm -rf build-stamp tmp
+
+	# Add here commands to clean up after the build process.
+	-$(MAKE) distclean
+	rm -f config.guess config.sub
+#ifneq "$(wildcard /usr/share/misc/config.sub)" ""
+#	cp -f /usr/share/misc/config.sub config.sub
+#endif
+#ifneq "$(wildcard /usr/share/misc/config.guess)" ""
+#	cp -f /usr/share/misc/config.guess config.guess
+#endif
+
+	dh_clean 
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs -A usr/bin etc/X11/app-defaults
+	cp -f doc/rxvt.1 tmp/urxvt.1
+	dh_installman -A doc/rxvtc.1 tmp/urxvt.1
+
+#	$(MAKE) install prefix=$(CURDIR)/debian/rxvt-unicode/usr
+#	cd debian/rxvt-unicode/usr/share/man/man1 && mv rxvt.1 rxvt-unicode.1 && cp $(CURDIR)/debian/rxvtc.1 . && ln -sf rxvtc.1.gz rxvtd.1.gz
+#	cd $(CURDIR)/debian/rxvt-unicode/usr/bin && rm -f *-1.* && mv rxvt rxvt-unicode && chrpath -d *
+# and the icon
+# now clone to -lite and -ml	
+	for x in code code-lite code-ml ; do \
+		cp -af tmp/$$x/rxvt debian/rxvt-uni$$x/usr/bin/urxvt ;\
+		cp -af tmp/$$x/rxvtc debian/rxvt-uni$$x/usr/bin/urxvtc ;\
+		cp -af tmp/$$x/rxvtd debian/rxvt-uni$$x/usr/bin/urxvtd ;\
+		ln -sf urxvt debian/rxvt-uni$$x/usr/bin/rxvt-unicode ;\
+		chrpath -d debian/rxvt-uni$$x/usr/bin/* ;\
+		ln -sf rxvtc.1.gz debian/rxvt-uni$$x/usr/share/man/man1/urxvtd.1.gz ;\
+		ln -sf rxvtc.1.gz debian/rxvt-uni$$x/usr/share/man/man1/urxvtc.1.gz ;\
+		ln -sf urxvt.1.gz debian/rxvt-uni$$x/usr/share/man/man1/rxvt-unicode.1.gz ;\
+		install -m644 -D debian/urxvt.xpm debian/rxvt-uni$$x/usr/share/pixmaps/urxvt.xpm ;\
+		done
+	# temporary fix
+	cp debian/app-defaults debian/rxvt-unicode/etc/X11/app-defaults/URxvt
+	cp debian/app-defaults debian/rxvt-unicode-ml/etc/X11/app-defaults/URxvt-ml
+	cp debian/app-defaults debian/rxvt-unicode-lite/etc/X11/app-defaults/URxvt-lite
+
+# Build architecture-independent files here.
+binary-indep: build install
+# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs -A Changes
+	dh_installdocs -A `cat debian/docs`
+#	dh_installexamples
+#	dh_install
+	dh_installmenu
+#	dh_installdebconf	
+#	dh_installinfo
+#	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+#	dh_python
+#	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install 

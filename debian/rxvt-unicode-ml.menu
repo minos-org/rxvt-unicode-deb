@@ -1,0 +1,10 @@
+?package(rxvt-unicode-ml):needs="x11" section="XShells" \
+   longtitle="Rxvt-Unicode: advanced terminal emulator for X" title="Rxvt-Unicode"\
+   command="urxvt" \
+   icon="/usr/share/pixmaps/urxvt.xpm"
+
+?package(rxvt-unicode-ml):needs="x11" section="XShells" \
+   longtitle="Rxvt-Unicode: advanced terminal emulator for X" \
+   title="Rxvt-Unicode (Black,Xft)" \
+   command="urxvt -fn \"xft:Bitstream Vera Sans Mono:pixelsize=12,xft:Andale Mono:pixelsize=11.5,9x15bold\" -rv" \
+   icon="/usr/share/pixmaps/urxvt.xpm"

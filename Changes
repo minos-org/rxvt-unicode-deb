@@ -1,0 +1,232 @@
+Lines marked with "xterm:" indicate either xterm features ported to rxvt
+or changed rxvt behaviour to make it more compatible to xterm (usually
+xfree86's xterm).
+
+3.0  Mon May 10 20:47:23 CEST 2004
+	- experimental flickerfree resize mode (I tried to get even
+          less flickering with SouthWestGravity but couldn'T get it to work,
+          sorry).
+        - c++-ify (or at least make it compile with g++-3.4, which should
+          make it a little bit more correct c++).
+
+2.9  Sat May  8 19:13:41 CEST 2004
+        - fix some minor doc issues + some generated doc files are now
+          getting distributed (closes debian bug #246035).
+        - minor i18n issue fixes.
+
+2.8  Thu Apr  8 22:44:36 CEST 2004
+	- replace PF_LOCAL by PF_UNIX (portability).
+        - try to detect -lnsl and -lsocket (portability).
+        - fix some minor bugs.
+
+2.7  Mon Apr  5 02:11:15 CEST 2004
+	- this version should now work fine with TERM=xterm, except
+          for the keymappings.
+        - don't leave the X or rxvtd sockets open in child processes.
+          (inherited fd's stay open - different to rxvt).
+	- xterm: implemented OSC3, set/get window property. get is an
+          extension and is slightly ugly.
+	- removed --disable-swapscreen and SCROLL_ON_NO_SECONDARY and
+          replaced them by runtime-configurable options secondaryScreen and
+          secondaryScroll (-ssr and -ssc) (see debian bug #237673).
+	- close down terminal window when child exits. (debian bug #241267).
+        - xterm: enable seperate mouse bg colour setting.
+        - re-enable mouse cursor colours again, fixing colours when fg/bg are
+          overwritten (as is common).
+        - xterm: correctly implement privmodes 1047, 1048, 1049.
+        - ported to solaris by elmar@math.uni-bremen.de.
+
+2.6  Fri Apr  2 03:24:10 CEST 2004
+	- minor doc corrections.
+        - WARNING: changed menu sequence from ESC ] 10 to ESC ] 703 to
+          avoid clashes with xterm.
+        - changed OSC701/OSC702 sequence to return standard escaped reports.
+        - xterm: make set window colour and other requests report window
+          colour when arg is "?".
+        - enable colour tinting of "transparent" backgrounds.
+        - stop ST sequences earlier, as we now react on 0x90 and thus
+          cause conditions more often that look like locks but are, in
+          fact, just rxvt waiting for a ST/BEL etc.
+        - re-enabled most of the "dangerous" echo escapes, but only
+          when -insecure is specified as option or resource (see reference).
+          (FRILLS).
+        - disables sleep(1) on transparency updates on default.
+        - fixes to make it compile better on solaris 2.9 (at least).
+          asprintf replacement is still missing(!).
+        - set _NET_WM_PID.
+
+2.5  Sun Mar 28 04:05:51 CEST 2004
+	- the usual sprinkled little code cleanups.
+        - support more 8-bit controls.
+        - more informative error messages.
+        - fix some minor memleaks and possible memory corruptions.
+        - the use of exception handling allowed the following improvements:
+        - no longer block when waiting for completion of escape sequences
+          (e.g. printf '\e';sleep 3;printf 'c' will no longer block).
+        - rxvtc usage errors should no longer kill rxvtd (debian bug #237510).
+
+2.4  Tue Mar 16 07:06:51 CET 2004
+	- fix stupid double-free() bug on exit.
+	- implement xterm private mode 1049.
+        - fix manpages (debian bug #236824).
+        - removed old selection style completely.
+        - selection works _better_ for non-8-bit and double-width chars.
+        - remove native->unicode translation tables. they aren't used anymore.
+          reduces binary and distro size a bit.
+        - add string representation for JIS X 0213:2000 so these fonts can
+          be used from within rxvt.
+        - less buggy complete set of line-drawing-characters (0x2500-0x259f).
+
+2.3  Sun Mar 14 19:00:07 CET 2004
+	- code cleanup release.
+	- fix compile problems without --enable-combining.
+        - fix segfault when DISPLAY cannot be opened.
+        - removed HOTKEY_CTRL and HOTKEY_SHIFT, ACS_*, FONT0_IDX,
+          MAX_NFONTS. UNICODE and UTF8 defines and references from
+          all files.
+        - default config now reads an app-defaults file even without
+          --enable-xgetdefaults.
+
+2.2  Thu Mar 11 01:41:56 CET 2004
+        - implement autocompositing of characters by either using an existing
+          precomposed unicode character or by graphical overlay. this is
+          also used to store characters >16bit without --enable-unicode3.
+        - selection now based on wchar_t, so that it can offer UTF-8
+          selections even in locales unable to represent full unicode.
+	- tis620-2529 is, of course, thai, not vietnamese...
+        - a typoe prevented characters >65535 to be stored properly.
+        - wcwidth is unreliable in non-unicode-locales on GNU/Linux.
+          working around this fixes line-drawing characters in non-utf-8 mode.
+        - improved rounding when emulating line-drawing characters.
+        - implement continuation lines in xresource parsing when
+          --disable-xgetdefault.
+        - changed locale-setting esc-sequence from code 9 to code 701.
+          also added 702 that returns the font selected for a specific
+          unicode character.
+        - no longer set XA_CUT_BUFFER0. this is confusing and clients WILL
+          get it wrong.
+        - don't use XTextStyle for XA_TEXT, instead use XStdICCTextStyle.
+
+2.1  Wed Mar  3 21:48:39 CET 2004
+	- NOTE: the name of the binary and ressources were changed in
+          this version, see README.configure if you want the old
+          settings.
+        - added plain "big5" encoding into CN.
+        - make cns11643 and big5* encodings actually visible to rxvt.
+        - fix a bug when a multibyte character fell onto a buffer boundary,
+          causing the incomplete character to be presented twice to
+          mbrtowc.
+        - more robust encoding name matching.
+        - fix cursor placement on multibyte characters.
+        - when overwriting wide with narrow chars, pad with spaces.
+        - fix various refresh and display issues for wide chars.
+        - remove multibyte_cursor hack (it was a hack) and associated
+          resources and docs.
+        - fixed memory corruption bug with XLFD fontname parsing.
+
+2.0  Sun Feb 29 23:59:58 CET 2004
+	- do not blink text when background colour is not set explicitly.
+        - some doc cleanup
+        - configure cleanup
+        - viscii enabled by default
+        - better support for non-g++-3.2+ systems (tested with g++-2.95).
+
+1.91 Fri Feb 27 03:57:44 CET 2004
+	- build fixes for !xft and !im, reported by various people.
+
+1.9  Wed Feb 25 16:46:05 CET 2004
+	- fixed bug in plain scrollbar causing X errors in XCreateGC.
+        - implemented sharing of X connections. will be used to speed
+          up many x operations considerably. Also saves some memory.
+        - implemented caching of input methods. This immensely shortens
+          startup time for new terms in rxvtd. At least XFree86 4.3 is
+          rather broken with respect to input methods, though, so expect
+          crashes when you kill your input method (xterm et al. also crash).
+        - fix bugs in X flushing, causing an empty screen after startup.
+        - fix various memleaks in rxvtd.
+        - fix a bug that kept escape codes to be generated for some
+          keysyms that also have string translations, when not --enable-xim.
+          reported by joel reed.
+        - re-enabled esc-seq. for font-switching (\033 ] 50 ; <fontset> \007).
+        - re-enabled menubar (experimental!).
+        - fix bug in locale-handling that kept the correct locale from
+          being selected.
+        - implemented esc-seq. to switch locales (\033 ] 9 ; <locale> \007).
+        - removed greek support.
+        - allow NUL bytes (ctrl-@) to be entered even with XIM enabled.
+        - correct cursor width if !focus.
+        - fixed --enable-xgetdefault, reported by eduard bloch.
+        - added manpage for rxvtc/rxvtd based on the one eduard block
+          contributed.
+        - use reverse video for normal bold text unless colorBD has been set.
+        - fixed endless loop when selection is valid but empty.
+        - changed default terminal name to "rxvt".
+        - many other minor bugfixes.
+
+1.8  Mon Feb  2 20:09:18 CET 2004
+	- almost total conversion to C++. Except for introducing
+          new bugs, this should not change much.
+        - fix and re-enable background pixmap and inherit pixmap support.
+        - re-enabled multiple scrollbar support.
+        - added plain scrollbar style and restored xterm scrollbar.
+        - blinking and selections work slightly better now.
+        - fix an error condition when rxvt receives more than one screenful
+          of output. should occur with original rxvt, too, but very rarely.
+          (I guess the code contains more surprises of this sort...)
+
+1.7  Fri Jan 30 16:50:11 CET 2004
+	- further cleanups.
+        - never do last-minute-changes: restore ability to have
+          color + bold as high-intensity, and let the selection
+          use reverse video, not _blink_.
+        - remove OPTION_HC, at least temporarily. If you want it back,
+          please drop me a note.
+
+1.6  Fri Jan 30 00:34:01 CET 2004
+	- cleanups, minor bugfixes.
+        - blinking text.
+        - normal text color + bold gets white text instead of
+          normal text when colorBD is not set.
+        (- support double-wide characters (by blocking).)
+          was never implemented
+
+1.5  Thu Jan 29 00:43:48 CET 2004
+	- share io manager between rxvt-unicode and vpe
+        - bugfix for --disable-utmp, reported by fefe himself
+        - colors were sometimes not used correctly because
+          parts of the code expected a monochrome display.
+          reported by fefe
+        - make it compile without pointer_blank, reported by
+          Markus Demleitner
+        - improved selection support, now supports UTF8_STRING
+          and properly encodes CUT_BUFFER0 in iso-8859-1
+        - completely removed non-working graphics mode
+
+1.4  Fri Jan 16 23:03:22 CET 2004
+	- fix stupid segfault on esc-c
+        - small font tunings
+        - much better io manager, less bugs, higher speed
+        - better error reporting for unknown options
+
+1.3  2003-12-26
+        - fix a bug in font height selection
+        - autoscale scalable x11 fonts
+        - slow-mode xft rendering centers characters
+        - much faster x11 font selection
+
+1.2  2003-12-24
+        - fix another segfault-on-resize-bug form the original rxvt
+        - better font matching
+        - better memory management (less memory)
+        - new fallback: gnu freefont
+
+1.1  2003-12-18
+        - Support for XIM in other than the current locale.
+        - Support for non-utf-8-locales
+        - much improved font choosing
+
+1.0
+        - first release
+        - original cloned from rxvt-CVS 2003-11-19 00:26
+        - removed rclock et al.
+        - initial conversion to C++

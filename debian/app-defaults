@@ -1,0 +1,30 @@
+!preloaded default settings, colors and better unicode font
+
+! uncomment some of them to share settings between rxvt-unicode's (via
+! the URxvt-shared file or preload settings from Rxvt
+! #include "URxvt-shared"
+! #include "Rxvt"
+
+! Settings like in Debian's uxterm
+!
+!URxvt.color0: black
+!URxvt.color1: red3
+!URxvt.color2: green3
+!URxvt.color3: yellow3
+!URxvt.color4: DodgerBlue1
+!URxvt.color5: magenta3
+!URxvt.color6: cyan3
+!URxvt.color7: gray90
+!URxvt.color8: gray50
+!URxvt.color9: red
+!URxvt.color10: green
+!URxvt.color11: yellow
+!URxvt.color12: SteelBlue1
+!URxvt.color13: magenta
+!URxvt.color14: cyan
+!URxvt.color15: white
+!URxvt.colorUL: white
+!URxvt.colorBD: yellow
+!URxvt.reverseVideo: true
+!URxvt.font: -Misc-Fixed-Medium-R-SemiCondensed--13-120-75-75-C-60-ISO10646-1
+

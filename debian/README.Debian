@@ -1,0 +1,67 @@
+rxvt-unicode for Debian
+=======================
+
+The package is provided in three different flavors:
+
+ - a mini version (-lite) with basic Unicode and basic input support,
+   targeted to low-memory systems
+ - a "default" version with default features enabled plus some extra.
+   This is targeted to the average system
+ - a big version (-ml), including all extra features
+
+FAQ:
+
+Q) How to change the settings? Why are *rxvt*foobar: resources ignored?
+A) The most defaults are identical with that in Debian's rxvt package.
+TERM is set to "rxvt" and additional X resources are read from the
+~/.Xdefaults file. Also, some app-defaults are used to allow system-wide
+(pre)configuration:
+
+ rxvt-unicode -> /etc/X11/app-defaults/URxvt (Class: URxvt)
+ rxvt-unicode-ml -> .../URxvt-ml (Class: URxvt and URxvt)
+ rxvt-unicode-lite -> .../URxvt-lite (Class: URxvt-lite and URxvt)
+
+To allow shared configuration, you can use included configuration files,
+see comments in /etc/X11/app-defaults/URxvt*. Also note that *rxvt*
+wildcard in resources files is not expanded to URxvt. This is
+intentional, rxvt-unicode should get an own namespace since some
+settings are defined incompatible or will become incompatible in future
+versions. And please avoid wildcards where you can, use URxvt.setting:...
+
+Q) The bright fonts seem to be bold in Xterm and Rxvt, why not in URxvt?
+A) Rxvt and Xterm modify the visible font weight on special settings of
+*colorUL and *colorBD resources. However, the mixture of normal and bold
+characters is not supported by rxvt-unicode now. If you wish to make
+strings in colorUL and colorBD more visible (that are "colors" normaly
+used for bold and underlined strings in groff/man, for example), map
+them to a different color. (The maintainer prefers bright-yellow in
+combination with reverseVideo, see commented examples)
+
+Q) How to choose my arbitrary colors?
+A) Upstream author speaks:
+
+| It's not neccessary to modify rgb.txt, all standard ways of specifying
+| colours work with rxvt-unicode:
+| 
+|    rxvt -fg CIELab:0.9/0.5/0.5 -bg rgb:ffff/0000/0000
+| 
+| gives me some dark gray on red (I tested this with debians rxvt-unicode
+| and it worked the same there). I do that all the time:
+| 
+|    Rxvt*color7:            gray90
+|    Rxvt*foreground:        gray90
+|    Rxvt*colorBD:           white
+|    Rxvt*cursorColor:       #e0e080
+|    Rxvt*throughColor:      #8080f0
+|    Rxvt*highlightColor:    #f0f0f0
+|    Rxvt*background:        #000000
+| 
+| (although in Debian you might want URxvt instead of Rxvt there).
+
+The other way is extending the X color palette:
+
+| > The colors used there are those provided by the X server palette,
+| > which is defined in /etc/X11/rgb.txt . Add your colors with custom
+| > names there, set your colors in ~/.Xressources (see commented examples
+| > in /etc/X11/app-defaults/URxvt-ml), and restart the Xserver.
+
