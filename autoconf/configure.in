@@ -2,16 +2,20 @@ dnl# -*- sh -*-
 dnl#
 dnl# Process this file with autoconf to produce a configure script.
 dnl#
-AC_INIT(src/feature.h)
+orig_CXXFLAGS="$CXXFLAGS"
+
+AC_INIT
+AC_CONFIG_SRCDIR([src/feature.h])
 AC_CONFIG_AUX_DIR(autoconf)
 AC_CONFIG_HEADER(config.h:autoconf/config.h.in)
+
+AC_CANONICAL_HOST
 
 dnl RXVT version
 changequote(, )dnl
 VERSION=`sed -n -e 's/^.*[ \t]VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 DATE=`sed -n -e 's/^.*[ \t]DATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-LSMDATE=`sed -n -e 's/^.*[ \t]LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-LIBVERSION=`sed -n -e 's/^.*[ \t]LIBVERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
+dnl LIBVERSION=`sed -n -e 's/^.*[ \t]LIBVERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 changequote([, ])dnl
 AC_SUBST(VERSION)dnl 
 AC_SUBST(DATE)dnl 
@@ -32,6 +36,17 @@ AC_PROG_AWK
 
 AC_LANG(C)
 
+dnl# --------------------------------------------------------------------------
+dnl# Supply default CFLAGS, if not specified by `CFLAGS=flags ./configure'
+dnl#
+if test -z "$orig_CXXFLAGS"; then
+  CXXFLAGS='-O'
+  if test x$GCC = xyes && test "x$GXX" = xyes; then
+    CXXFLAGS="-g -O3"
+  fi
+  CFLAGS="$CXXFLAGS"
+fi
+
 LINKER="$CXX"
 if test x$GCC = xyes && test x$GXX = xyes; then
    AC_CHECK_LIB(supc++, main, [
@@ -41,7 +56,15 @@ if test x$GCC = xyes && test x$GXX = xyes; then
 fi
 AC_SUBST(LINKER,[$LINKER])
 
-CPPFLAGS="-D_GNU_SOURCE -D_XOPEN_SOURCE"
+AC_DEFINE(_GNU_SOURCE, 1, Use all glibc features.)
+
+case $host in
+   *-*-solaris* )
+      AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, Needed to get declarations for msg_control and msg_controllen on Solaris)
+      AC_DEFINE(_XOPEN_SOURCE,          2, Needed to get declarations for msg_control and msg_controllen on Solaris)
+      AC_DEFINE(__EXTENSIONS__,         1, Needed to get declarations for msg_control and msg_controllen on Solaris)
+      ;;
+esac
 
 dnl if test x$GXX = xyes; then
 dnl    CXXFLAGS="$CXXFLAGS" dnl I once had -fno-exceptions, but I am using them now...
@@ -60,16 +83,16 @@ dnl solaris needs to link libnsl and socket
 AC_CHECK_LIB(nsl, gethostbyname, [LIBS="$LIBS -lnsl"])
 AC_CHECK_LIB(socket, socket, [LIBS="$LIBS -lsocket"])
 
-AC_ENABLE_SHARED(no)dnl#	libtool
-AC_ENABLE_STATIC(yes)dnl#	libtool
-AC_PROG_LIBTOOL()dnl#		libtool
+dnl AC_ENABLE_SHARED(no)dnl#	libtool
+dnl AC_ENABLE_STATIC(yes)dnl#	libtool
+dnl AC_PROG_LIBTOOL()dnl#		libtool
 
 MALLOC_TYPE=S
 support_addstrings=no
 support_frills=no
-support_linespace=no
 support_inheritpixmap=no
 support_tinting=no
+support_fading=no
 support_keepscrolling=no
 support_selectionscrolling=no
 support_menubar=no 
@@ -90,6 +113,9 @@ support_xpm=no
 support_xft=no
 support_unicode3=no
 support_combining=no
+support_8bitctrls=no
+support_iso14755=no
+support_styles=no
 codesets=
 
 dnl# --------------------------------------------------------------------------
@@ -109,9 +135,9 @@ AC_ARG_ENABLE(everything,
   [if test x$enableval = xyes; then
     support_24bit=yes
     support_frills=yes
-    support_linespace=yes
     support_inheritpixmap=yes
     support_tinting=yes
+    support_fading=yes
     support_keepscrolling=yes
     support_selectionscrolling=yes
     support_lastlog=yes
@@ -132,25 +158,34 @@ AC_ARG_ENABLE(everything,
     support_xft=yes
     support_unicode3=yes
     support_combining=yes
+    #support_8bitctrls=yes
+    support_iso14755=yes
+    support_styles=yes
     codesets=all
   fi])
 
 AC_ARG_ENABLE(unicode3,
   [  --enable-unicode3       use 21 instead of 16 bits to represent unicode characters],
   [if test x$enableval = xyes -o x$enableval = xno; then
-    support_unicode3=yes
+    support_unicode3=$enableval
   fi])
 
 AC_ARG_ENABLE(combining,
   [  --enable-combining      enable composition of base and combining characters],
   [if test x$enableval = xyes -o x$enableval = xno; then
-    support_combining=yes
+    support_combining=$enableval
   fi])
 
 AC_ARG_ENABLE(xft,
   [  --enable-xft            enable xft support on systems that have it],
   [if test x$enableval = xyes -o x$enableval = xno; then
-    support_xft=yes
+    support_xft=$enableval
+  fi])
+
+AC_ARG_ENABLE(font-styles,
+  [  --enable-font-styles    enable bold and italic support],
+  [if test x$enableval = xyes -o x$enableval = xno; then
+    support_styles=$enableval
   fi])
 
 AC_ARG_ENABLE(utmp,
@@ -187,6 +222,12 @@ AC_ARG_ENABLE(tinting,
   [  --enable-tinting        enable tinting of transparent bg],
   [if test x$enableval = xyes -o x$enableval = xno; then
     support_tinting=$enableval
+  fi])
+
+AC_ARG_ENABLE(fading,
+  [  --enable-fading         enable colors fading when off focus],
+  [if test x$enableval = xyes -o x$enableval = xno; then
+    support_fading=$enableval
   fi])
 
 AC_ARG_ENABLE(menubar,
@@ -226,7 +267,7 @@ AC_ARG_ENABLE(half-shadow,
   fi])
 
 AC_ARG_WITH(codesets,
-  [  --with-codesets=NAME,.. compile in additional codesets (jp,jp_ext,kr,cn,cn_ext,all)],
+  [  --with-codesets=NAME,.. compile in additional codesets (jp,jp_ext,kr,zh,zh_ext,all)],
   [codesets="$withval"])
 
 AC_ARG_ENABLE(xim,
@@ -265,6 +306,12 @@ AC_ARG_ENABLE(xgetdefault,
     AC_DEFINE(USE_XGETDEFAULT, 1, Define if you want to use XGetDefault instead of our internal version)
   fi])
 
+AC_ARG_ENABLE(8bitctrls,
+  [  --enable-8bitctrls      enable 8 bit control sequences (not recommended)],
+  [if test x$enableval = xyes -o x$enableval = xno; then
+    support_8bitctrls=$enableval
+  fi])
+
 RESFALLBACK=Rxvt
 AC_ARG_ENABLE(fallback,
   [  --enable-fallback(=CLASS) fall back on CLASS resources in addition to URxvt ones (default: Rxvt)],
@@ -294,6 +341,7 @@ RXVTNAME=urxvt
 AC_ARG_WITH(name,
   [  --with-name=NAME        set the basename for the installed binaries (default: urxvt)],
   [RXVTNAME="$withval"])
+AC_DEFINE_UNQUOTED(RXVTNAME,"$RXVTNAME", [Binary base name])
 
 RXVTNAME=`echo "$RXVTNAME"|sed "$program_transform_name"`
 AC_SUBST(RXVTNAME)
@@ -310,16 +358,16 @@ AC_ARG_ENABLE(swapscreen,
     AC_DEFINE(NO_SECONDARY_SCREEN, 1, Disable the secondary screen. Many programs use the secondary screen as their workplace)
   fi])
 
+AC_ARG_ENABLE(iso14755,
+  [  --enable-iso14755       enable support for extended ISO 14755 modes],
+  [if test x$enableval = xyes -o x$enableval = xno; then
+    support_iso14755=$enableval
+  fi])
+
 AC_ARG_ENABLE(frills,
   [  --enable-frills         enable support for rarely used features],
   [if test x$enableval = xyes -o x$enableval = xno; then
     support_frills=$enableval
-  fi])
-
-AC_ARG_ENABLE(linespace,
-  [  --enable-linespace      enable support for linespace],
-  [if test x$enableval = xyes -o x$enableval = xno; then
-    support_linespace=$enableval
   fi])
 
 AC_ARG_ENABLE(24bit,
@@ -377,12 +425,6 @@ AC_ARG_ENABLE(smart-resize,
     AC_DEFINE(SMART_RESIZE, 1, Define to use "smart" resize behavior)
   fi])
 
-AC_ARG_ENABLE(256-color,
-  [  --enable-256-color      enable 256-color support],
-  [if test x$enableval = xyes; then
-    AC_DEFINE(TTY_256COLOR, 1, Define if you want 256 colour support)
-  fi])
-
 AC_ARG_ENABLE(cursor-blink,
   [  --enable-cursor-blink   enable blinking cursor],
   [if test x$enableval = xyes -o x$enableval = xno; then
@@ -417,21 +459,6 @@ dnl# --------------------------------------------------------------------------
 
 AC_DEFINE(PROTOTYPES, 1, Define if you need function prototypes)
 
-dnl# --------------------------------------------------------------------------
-dnl# Supply default CFLAGS, if not specified by `CFLAGS=flags ./configure'
-dnl#
-if test -z "$CFLAGS"; then
-    if test -z "$CCOPTS"; then
-	CCOPTS='-O'
-dnl>	if test "x$GCC" = xyes; then
-dnl>	    if test x$system = xLinux; then
-dnl>		CCOPTS="$CCOPTS "'-O2 -fno-strength-reduce'
-dnl>	    fi
-dnl>	fi
-    fi
-    CFLAGS="$CCOPTS"
-fi
-
 AC_PATH_PROG(MV, mv, mv)
 AC_PATH_PROG(RM, rm, rm)
 AC_PATH_PROG(CP, cp, cp)
@@ -440,6 +467,7 @@ AC_PATH_PROG(SED, sed, sed)
 AC_PATH_PROG(ECHO, echo, echo)
 AC_PATH_PROG(CMP, cmp, cmp)
 AC_PATH_PROG(TBL, tbl)
+AC_PATH_PROG(TIC, tic)
 
 dnl# need a neat way to detect SVR4 or its features
 dnl# in src/command.c we use these functions:
@@ -486,21 +514,26 @@ AC_CHECK_HEADERS( \
 	sys/select.h \
 	sys/sockio.h \
 	sys/strredir.h \
+        sys/stropts.h \
 	sys/time.h \
 	utmp.h \
 	utmpx.h \
         stdint.h \
+        pty.h \
+        wchar.h \
+        cwchar \
+        clocale \
 )
 
 AC_HEADER_TIME
 
 dnl# check to allow both <termios.h> and <sys/ioctl.h>
 AC_CACHE_CHECK(whether termios.h and sys/ioctl.h may both be included, rxvt_cv_header_sysioctl,
-[AC_TRY_COMPILE([#include <stdio.h>
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>
 #include <sys/ioctl.h>
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
-#endif], [int a = ECHO;], rxvt_cv_header_sysioctl=yes, rxvt_cv_header_sysioctl=no)])
+#endif]], [[int a = ECHO;]])],[rxvt_cv_header_sysioctl=yes],[rxvt_cv_header_sysioctl=no])])
 
 dnl# ELF systems may want to store paths for dynamic libraries.
 dnl# Lets see if the compiler can accept "-Rpath" or "-Wl,-Rpath"
@@ -519,33 +552,32 @@ ac_save_LIBS=$LIBS
 CFLAGS="$CFLAGS $X_CFLAGS"
 LIBS=`echo "$LIBS $X_LIBS $X_EXTRA_LIBS -lX11" | sed "$R_TRANSLATE"`
 AC_CACHE_CHECK([for -rpath dynamic library path recording], rxvt_cv_rpath,
-[AC_TRY_RUN([
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 main()
 {
     exit(0);
     (void) XOpenDisplay("foobar");
-}], rxvt_cv_rpath=yes, rxvt_cv_rpath=no, dnl                  
-  AC_MSG_WARN([You may need to check the LIBS line]))])             
+}]])],[rxvt_cv_rpath=yes],[rxvt_cv_rpath=no],[dnl                  
+  AC_MSG_WARN(You may need to check the LIBS line)])])             
 if test x$rxvt_cv_rpath != xyes; then
   changequote(, )dnl
   R_TRANSLATE='s/-L\([^ ]*\)/-L\1 '$LDARG'-R\1/g'
   changequote([, ])dnl
   LIBS=`echo "$ac_save_LIBS $X_LIBS $X_EXTRA_LIBS -lX11" | sed "$R_TRANSLATE"`
   AC_CACHE_CHECK([for -R dynamic library path recording], rxvt_cv_R,
-[AC_TRY_RUN([
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 main()
 {
     exit(0);
     (void) XOpenDisplay("foobar");
-}], rxvt_cv_R=yes, rxvt_cv_R=no, rxvt_cv_R=no)])             
+}]])],[rxvt_cv_R=yes],[rxvt_cv_R=no],[rxvt_cv_R=no])])             
   if test x$rxvt_cv_R != xyes; then
     LIBS="$ac_save_LIBS $X_LIBS $X_EXTRA_LIBS -lX11"
   fi
 fi
 
 AC_CACHE_CHECK([for XPointer], rxvt_cv_xpointer,
-[AC_TRY_COMPILE([#include <X11/Xlib.h>], [XPointer dummy;],
-rxvt_cv_xpointer=yes, rxvt_cv_xpointer=no)])
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <X11/Xlib.h>]], [[XPointer dummy;]])],[rxvt_cv_xpointer=yes],[rxvt_cv_xpointer=no])])
 if test x$rxvt_cv_xpointer = xyes; then
   AC_DEFINE(HAVE_XPOINTER, 1, Define if you have XPointer typedef)
 fi
@@ -568,33 +600,29 @@ dnl> AC_CHECK_TYPE(off_t, long)
 AC_TYPE_PID_T
 AC_TYPE_UID_T
 
-
-AC_CHECK_SIZEOF(char, 1)
 AC_CHECK_SIZEOF(short, 2)
 AC_CHECK_SIZEOF(int, 4)
-AC_CHECK_SIZEOF(long, 4)
+dnl AC_CHECK_SIZEOF(long, 4)
 AC_CHECK_SIZEOF(long long, 8)
 AC_CHECK_SIZEOF(int *, 4)
 
 dnl# see usage below
 AC_DEFUN(RXVT_CHECK_SIZE,
   [AC_CACHE_CHECK([for $2], $1,
-    [AC_TRY_COMPILE([#include <stdint.h>], $2 dummy;,
-      [$1=yes],
-      [dnl
-if test $ac_cv_sizeof_char -ge $3; then
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[$2 dummy;]])],[$1=yes],[dnl
+if test "$ac_cv_sizeof_char" -ge $3; then
   $1="$4 char"
 else
-  if test $ac_cv_sizeof_short -ge $3; then
+  if test "$ac_cv_sizeof_short" -ge $3; then
     $1="$4 short"
   else
-    if test $ac_cv_sizeof_int -ge $3; then
+    if test "$ac_cv_sizeof_int" -ge $3; then
       $1="$4 int"
     else
-      if test $ac_cv_sizeof_long -ge $3; then
+      if test "$ac_cv_sizeof_long" -ge $3; then
         $1="$4 long"
       else
-        if test $ac_cv_sizeof_long_long -ge $3; then
+        if test "$ac_cv_sizeof_long_long" -ge $3; then
           $1="$4 long long"
         else
           $1="$4 $5" # we _must_ have a (possibly wrong) default
@@ -631,15 +659,15 @@ dnl AC_SUBST(rxvt_uint64_typedef)
 dnl#
 dnl# Now look for another we use
 dnl#
-if test $ac_cv_sizeof_int_p -eq 8; then
+if test "$ac_cv_sizeof_int_p" -eq 8; then
   rxvt_intp_define="#define intp_t int64_t"
   rxvt_u_intp_define="#define u_intp_t u_int64_t"
 else
-  if test $ac_cv_sizeof_int_p -eq 4; then
+  if test "$ac_cv_sizeof_int_p" -eq 4; then
     rxvt_intp_define="#define intp_t int32_t"
     rxvt_u_intp_define="#define u_intp_t u_int32_t"
   else
-    if test $ac_cv_sizeof_int_p -eq 2; then
+    if test "$ac_cv_sizeof_int_p" -eq 2; then
       rxvt_intp_define="#define intp_t int16_t"
       rxvt_u_intp_define="#define u_intp_t u_int16_t"
     else
@@ -681,6 +709,7 @@ AC_CHECK_FUNCS( \
 	on_exit \
 	nanosleep \
 	updwtmp \
+	updwtmpx \
 	ttyslot \
 )
 dnl# Note: On NetBSD, openpty() exists in libutil.  Don't pull it in
@@ -693,30 +722,24 @@ dnl# check for host field in utmp structure
 dnl# --------------------------------------------
 AC_CHECK_HEADER(utmp.h,
 [AC_CACHE_CHECK([for struct utmp], rxvt_cv_struct_utmp,
-[AC_TRY_COMPILE([#include <sys/types.h>
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <stdint.h>
-#include <utmp.h>],
-[struct utmp ut;],
-rxvt_cv_struct_utmp=yes, rxvt_cv_struct_utmp=no)])
+#include <utmp.h>]], [[struct utmp ut;]])],[rxvt_cv_struct_utmp=yes],[rxvt_cv_struct_utmp=no])])
 if test x$rxvt_cv_struct_utmp = xyes; then
   AC_DEFINE(HAVE_STRUCT_UTMP, 1, Define if utmp.h has struct utmp)
 fi
 ]
 
 AC_CACHE_CHECK(for ut_host in utmp struct, rxvt_cv_struct_utmp_host,
-[AC_TRY_COMPILE([#include <sys/types.h>
-#include <utmp.h>],
-[struct utmp ut; ut.ut_host;],
-rxvt_cv_struct_utmp_host=yes, rxvt_cv_struct_utmp_host=no)])
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <utmp.h>]], [[struct utmp ut; ut.ut_host;]])],[rxvt_cv_struct_utmp_host=yes],[rxvt_cv_struct_utmp_host=no])])
 if test x$rxvt_cv_struct_utmp_host = xyes; then
   AC_DEFINE(HAVE_UTMP_HOST, 1, Define if struct utmp contains ut_host)
 fi
 
 AC_CACHE_CHECK(for ut_pid in utmp struct, rxvt_cv_struct_utmp_pid,
-[AC_TRY_COMPILE([#include <sys/types.h>
-#include <utmp.h>],
-[struct utmp ut; ut.ut_pid;],
-rxvt_cv_struct_utmp_pid=yes, rxvt_cv_struct_utmp_pid=no)])
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <utmp.h>]], [[struct utmp ut; ut.ut_pid;]])],[rxvt_cv_struct_utmp_pid=yes],[rxvt_cv_struct_utmp_pid=no])])
 if test x$rxvt_cv_struct_utmp_pid = xyes; then
   AC_DEFINE(HAVE_UTMP_PID, 1, Define if struct utmp contains ut_pid)
 fi
@@ -726,51 +749,51 @@ dnl# --------------------------------------------
 
 AC_CHECK_HEADER(utmpx.h,
 [AC_CACHE_CHECK([for struct utmpx], rxvt_cv_struct_utmpx,
-[AC_TRY_COMPILE([#include <sys/types.h>
-#include <utmpx.h>],
-[struct utmpx ut;],
-rxvt_cv_struct_utmpx=yes, rxvt_cv_struct_utmpx=no)])
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <utmpx.h>]], [[struct utmpx ut;]])],[rxvt_cv_struct_utmpx=yes],[rxvt_cv_struct_utmpx=no])])
 if test x$rxvt_cv_struct_utmpx = xyes; then
   AC_DEFINE(HAVE_STRUCT_UTMPX, 1, Define if utmpx.h has struct utmpx)
 fi
 ]
 
 AC_CACHE_CHECK(for host in utmpx struct, rxvt_cv_struct_utmpx_host,
-[AC_TRY_COMPILE([#include <sys/types.h>
-#include <utmpx.h>],
-[struct utmpx utx; utx.ut_host;],
-rxvt_cv_struct_utmpx_host=yes, rxvt_cv_struct_utmpx_host=no)])
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+#include <utmpx.h>]], [[struct utmpx utx; utx.ut_host;]])],[rxvt_cv_struct_utmpx_host=yes],[rxvt_cv_struct_utmpx_host=no])])
 if test x$rxvt_cv_struct_utmpx_host = xyes; then
   AC_DEFINE(HAVE_UTMPX_HOST, 1, Define if struct utmpx contains ut_host)
 fi
-) dnl# AC_CHECK_HEADER(utmpx.h
 
+AC_CACHE_CHECK(for session in utmpx struct, rxvt_cv_struct_utmpx_session,
+[AC_TRY_COMPILE([#include <sys/types.h>
+#include <utmpx.h>],
+[struct utmpx utx; utx.ut_session;],
+rxvt_cv_struct_utmpx_session=yes, rxvt_cv_struct_utmpx_session=no)])
+if test x$rxvt_cv_struct_utmpx_session = xyes; then
+  AC_DEFINE(HAVE_UTMPX_SESSION, 1, Define if struct utmpx contains ut_session)
+fi
+) dnl# AC_CHECK_HEADER(utmpx.h
 
 dnl# --------------------------------------------------------------------------
 dnl# check for struct lastlog
 AC_CACHE_CHECK(for struct lastlog, rxvt_cv_struct_lastlog,
-[AC_TRY_COMPILE([#include <sys/types.h>
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <utmp.h>
 #ifdef HAVE_LASTLOG_H
 #include <lastlog.h>
 #endif
-],
-[struct lastlog ll;],
-rxvt_cv_struct_lastlog=yes, rxvt_cv_struct_lastlog=no)])
+]], [[struct lastlog ll;]])],[rxvt_cv_struct_lastlog=yes],[rxvt_cv_struct_lastlog=no])])
 if test x$rxvt_cv_struct_lastlog = xyes; then
   AC_DEFINE(HAVE_STRUCT_LASTLOG, 1, Define if utmp.h or lastlog.h has struct lastlog)
 fi
 
 dnl# check for struct lastlogx
 AC_CACHE_CHECK(for struct lastlogx, rxvt_cv_struct_lastlogx,
-[AC_TRY_COMPILE([#include <sys/types.h>
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <utmpx.h>
 #ifdef HAVE_LASTLOG_H
 #include <lastlog.h>
 #endif
-],
-[struct lastlogx ll;],
-rxvt_cv_struct_lastlogx=yes, rxvt_cv_struct_lastlogx=no)])
+]], [[struct lastlogx ll;]])],[rxvt_cv_struct_lastlogx=yes],[rxvt_cv_struct_lastlogx=no])])
 if test x$rxvt_cv_struct_lastlogx = xyes; then
   AC_DEFINE(HAVE_STRUCT_LASTLOGX, 1, Define if utmpx.h or lastlog.h has struct lastlogx)
 fi
@@ -781,7 +804,7 @@ dnl# --------------------------------------------------------------------------
 
 dnl# find utmp
 AC_CACHE_CHECK(where utmp is located, rxvt_cv_path_utmp,
-[AC_TRY_RUN([#include <stdio.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 #include <sys/types.h>
 #include <utmp.h>
 #include <errno.h>
@@ -806,8 +829,8 @@ main()
 	}
     }
     exit(0);
-}], rxvt_cv_path_utmp=`cat conftestval`, rxvt_cv_path_utmp=, dnl
-  AC_MSG_WARN([Define RXVT_UTMP_FILE in config.h manually]))])
+}]])],[rxvt_cv_path_utmp=`cat conftestval`],[rxvt_cv_path_utmp=],[dnl
+  AC_MSG_WARN(Define RXVT_UTMP_FILE in config.h manually)])])
 if test x$rxvt_cv_path_utmp != x; then
   AC_DEFINE_UNQUOTED(RXVT_UTMP_FILE, "$rxvt_cv_path_utmp", Define location of utmp)
 fi
@@ -817,7 +840,7 @@ dnl# --------------------------------------------------------------------------
 dnl# find utmpx - if a utmp file exists at the same location and is more than
 dnl# a day newer, then dump the utmpx.  People leave lots of junk around.
 AC_CACHE_CHECK(where utmpx is located, rxvt_cv_path_utmpx,
-[AC_TRY_RUN([#include <stdio.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 #include <sys/types.h>
 #include <utmpx.h>
 #include <errno.h>
@@ -852,8 +875,8 @@ main()
 	}
     }
     exit(0);
-}], rxvt_cv_path_utmpx=`cat conftestval`, rxvt_cv_path_utmpx=, dnl
-  AC_MSG_WARN([Define RXVT_UTMPX_FILE in config.h manually]))])
+}]])],[rxvt_cv_path_utmpx=`cat conftestval`],[rxvt_cv_path_utmpx=],[dnl
+  AC_MSG_WARN(Define RXVT_UTMPX_FILE in config.h manually)])])
 if test x$rxvt_cv_path_utmpx != x; then
   AC_DEFINE_UNQUOTED(RXVT_UTMPX_FILE, "$rxvt_cv_path_utmpx", Define location of utmpx)
 fi
@@ -862,7 +885,7 @@ dnl# --------------------------------------------------------------------------
 
 dnl# find wtmp
 AC_CACHE_CHECK(where wtmp is located, rxvt_cv_path_wtmp,
-[AC_TRY_RUN([#include <stdio.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 #include <sys/types.h>
 #ifdef HAVE_UTMP_H
 #include <utmp.h>
@@ -889,8 +912,8 @@ main()
 	}
     }
     exit(0);
-}], rxvt_cv_path_wtmp=`cat conftestval`, rxvt_cv_path_wtmp=, dnl
-  AC_MSG_WARN([Define RXVT_WTMP_FILE in config.h manually]))])
+}]])],[rxvt_cv_path_wtmp=`cat conftestval`],[rxvt_cv_path_wtmp=],[dnl
+  AC_MSG_WARN(Define RXVT_WTMP_FILE in config.h manually)])])
 if test x$rxvt_cv_path_wtmp != x; then
   AC_DEFINE_UNQUOTED(RXVT_WTMP_FILE, "$rxvt_cv_path_wtmp", Define location of wtmp)
 fi
@@ -898,7 +921,7 @@ dnl# --------------------------------------------------------------------------
 
 dnl# find wtmpx
 AC_CACHE_CHECK(where wtmpx is located, rxvt_cv_path_wtmpx,
-[AC_TRY_RUN([#include <stdio.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 #ifdef HAVE_UTMPX_H
 #include <utmpx.h>
 #endif
@@ -924,8 +947,8 @@ main()
 	}
     }
     exit(0);
-}], rxvt_cv_path_wtmpx=`cat conftestval`, rxvt_cv_path_wtmpx=, dnl
-  AC_MSG_WARN([Define RXVT_WTMPX_FILE in config.h manually]))])
+}]])],[rxvt_cv_path_wtmpx=`cat conftestval`],[rxvt_cv_path_wtmpx=],[dnl
+  AC_MSG_WARN(Define RXVT_WTMPX_FILE in config.h manually)])])
 if test x$rxvt_cv_path_wtmpx != x; then
   AC_DEFINE_UNQUOTED(RXVT_WTMPX_FILE, "$rxvt_cv_path_wtmpx", Define location of wtmpx)
 fi
@@ -933,7 +956,7 @@ dnl# --------------------------------------------------------------------------
 
 dnl# find lastlog
 AC_CACHE_CHECK(where lastlog is located, rxvt_cv_path_lastlog,
-[AC_TRY_RUN([#include <stdio.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 #include <sys/types.h>
 #ifdef HAVE_UTMPX_H
 #include <utmpx.h>
@@ -964,8 +987,8 @@ main()
 	}
     }
     exit(0);
-}], rxvt_cv_path_lastlog=`cat conftestval`, rxvt_cv_path_lastlog=, dnl
-  AC_MSG_WARN([Define RXVT_LASTLOG_FILE in config.h manually]))])
+}]])],[rxvt_cv_path_lastlog=`cat conftestval`],[rxvt_cv_path_lastlog=],[dnl
+  AC_MSG_WARN(Define RXVT_LASTLOG_FILE in config.h manually)])])
 if test x$rxvt_cv_path_lastlog != x; then
   AC_DEFINE_UNQUOTED(RXVT_LASTLOG_FILE, "$rxvt_cv_path_lastlog", Define location of lastlog)
   if test -d "$rxvt_cv_path_lastlog"; then
@@ -976,7 +999,7 @@ dnl# --------------------------------------------------------------------------
 
 dnl# find lastlogx
 AC_CACHE_CHECK(where lastlogx is located, rxvt_cv_path_lastlogx,
-[AC_TRY_RUN([#include <stdio.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
 #ifdef HAVE_UTMPX_H
 #include <utmpx.h>
 #endif
@@ -1001,8 +1024,8 @@ main()
 	}
     }
     exit(0);
-}], rxvt_cv_path_lastlogx=`cat conftestval`, rxvt_cv_path_lastlogx=, dnl
-  AC_MSG_WARN([Define RXVT_LASTLOGX_FILE in config.h manually]))])
+}]])],[rxvt_cv_path_lastlogx=`cat conftestval`],[rxvt_cv_path_lastlogx=],[dnl
+  AC_MSG_WARN(Define RXVT_LASTLOGX_FILE in config.h manually)])])
 if test x$rxvt_cv_path_lastlogx != x; then
   AC_DEFINE_UNQUOTED(RXVT_LASTLOGX_FILE, "$rxvt_cv_path_lastlogx", Define location of lastlogx)
 fi
@@ -1036,24 +1059,22 @@ if test x$rxvt_cv_rpath = xyes -o x$rxvt_cv_R = xyes; then
   LIBS=`echo $LIBS | sed "$R_TRANSLATE"`
 fi
 AC_CACHE_CHECK(for working Xlocale, rxvt_cv_func_xlocale,
-[AC_TRY_RUN([#include <X11/Xlib.h>
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <X11/Xlib.h>
 main() {
 char *p;
 if ((p = XSetLocaleModifiers("@im=none")) != NULL && *p)
 exit (XSupportsLocale() ? 0 : 1);
 else
-exit (1);}],  dnl
-  rxvt_cv_func_xlocale=yes, rxvt_cv_func_xlocale=no,  dnl
-  AC_MSG_WARN([Define NO_XLOCALE in config.h manually]))])
+exit (1);}]])],[dnl
+  rxvt_cv_func_xlocale=yes],[rxvt_cv_func_xlocale=no],[dnl
+  AC_MSG_WARN(Define NO_XLOCALE in config.h manually)])])
 if test x$rxvt_cv_func_xlocale = xyes; then
   AC_DEFINE(HAVE_XLOCALE, 1, Define if Xlocale support works)
 fi
 
 AC_CACHE_CHECK(for working X setlocale, rxvt_cv_func_xsetlocale,
-[AC_TRY_LINK([#define X_LOCALE 1
-#include <X11/Xlocale.h>],
-  [setlocale(LC_CTYPE, "");],
-  rxvt_cv_func_xsetlocale=yes, rxvt_cv_func_xsetlocale=no)])
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define X_LOCALE 1
+#include <X11/Xlocale.h>]], [[setlocale(LC_CTYPE, "");]])],[rxvt_cv_func_xsetlocale=yes],[rxvt_cv_func_xsetlocale=no])])
 if test x$rxvt_cv_func_xsetlocale = xyes; then
   AC_DEFINE(HAVE_XSETLOCALE, 1, Define if setlocale (defined to Xsetlocale) works)
 fi
@@ -1061,28 +1082,38 @@ LIBS=$ac_save_LIBS
 CFLAGS=$ac_save_CFLAGS
 
 AC_CACHE_CHECK(for working plain setlocale, rxvt_cv_func_setlocale,
-[AC_TRY_LINK([#include <clocale>],
-  [setlocale(LC_CTYPE, "");],
-  rxvt_cv_func_setlocale=yes, rxvt_cv_func_setlocale=no)])
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <clocale>]], [[setlocale(LC_CTYPE, "");]])],[rxvt_cv_func_setlocale=yes],[rxvt_cv_func_setlocale=no])])
 if test x$rxvt_cv_func_setlocale = xyes; then
   AC_DEFINE(HAVE_SETLOCALE, 1, Define if plain old setlocale works)
 fi
 
 AC_CACHE_CHECK(for working nl_langinfo, rxvt_cv_func_nl_langinfo,
-[AC_TRY_LINK([#include <langinfo.h>],
-  [nl_langinfo(CODESET);],
-  rxvt_cv_func_nl_langinfo=yes, rxvt_cv_func_nl_langinfo=no)])
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <langinfo.h>]], [[nl_langinfo(CODESET);]])],[rxvt_cv_func_nl_langinfo=yes],[rxvt_cv_func_nl_langinfo=no])])
 if test x$rxvt_cv_func_nl_langinfo = xyes; then
   AC_DEFINE(HAVE_NL_LANGINFO, 1, Define if nl_langinfo(CODESET) works)
 fi
 
+AC_CACHE_CHECK(for broken XIM callback, rxvt_broken_ximcb,
+[AC_COMPILE_IFELSE([
+#include <X11/Xlib.h>
+
+void im_destroy_cb (XIC unused1, XPointer client_data, XPointer unused3);
+
+void f() {
+  XIMCallback cb;
+  cb.callback = im_destroy_cb;
+}
+],rxvt_broken_ximcb=yes,rxvt_broken_ximcb=no)])
+
+if test x$rxvt_broken_ximcb = xyes; then
+   AC_DEFINE(XIMCB_PROTO_BROKEN, 1, Define if your XIMCallback specifies XIC as first type.)
+fi
+
 AC_CACHE_CHECK(for getpt, rxvt_cv_func_getpt,
-[AC_TRY_LINK([#define _GNU_SOURCE
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 #ifdef HAVE_STDLIB_H
 # include <cstdlib>
-#endif],
-  [(void)getpt();],
-  rxvt_cv_func_getpt=yes, rxvt_cv_func_getpt=no)])
+#endif]], [[(void)getpt();]])],[rxvt_cv_func_getpt=yes],[rxvt_cv_func_getpt=no])])
 if test x$rxvt_cv_func_getpt = xyes; then
   AC_DEFINE(HAVE_GETPT, 1, Define if you have _GNU_SOURCE getpt() )
 fi
@@ -1150,7 +1181,7 @@ if test x$rxvt_cv_ptys = xBSD -o x$rxvt_cv_ptys = xHPUX -o x$rxvt_cv_ptys = xGLI
 fi
 
 
-AC_CHECKING(for pty ranges)
+AS_MESSAGE(checking for pty ranges...)
 ptys=`echo /dev/pty??`
 pch1=`echo $ptys | tr ' ' '\012' | sed -e 's/^.*\(.\).$/\1/g' | sort -u | tr -d '\012'`
 pch2=`echo $ptys | tr ' ' '\012' | sed -e 's/^.*\(.\)$/\1/g' | sort -u | tr -d '\012'`
@@ -1164,6 +1195,30 @@ fi
 dnl# --------------------------------------------------------------------------
 dnl# now add and remove other stuff
 dnl# --------------------------------------------------------------------------
+if test x$support_xft = xyes; then
+  LIBS="$LIBS `pkg-config xft --libs`"
+  CFLAGS="$CFLAGS `pkg-config xft --cflags`"
+  CPPFLAGS="$CPPFLAGS `pkg-config xft --cflags`"
+
+  AC_CHECK_HEADERS(X11/Xft/Xft.h,,[support_xft=no])
+  AC_CHECK_LIB(Xft,XftDrawString32,,[support_xft=no])
+
+  if test x$support_xft = xyes; then
+    AC_DEFINE(XFT, 1, Define to enable xft support)
+  fi
+fi
+if test x$support_styles = xyes; then
+  AC_DEFINE(ENABLE_STYLES, 1, Define if you want bold and italic support)
+fi
+if test x$support_iso14755 = xyes; then
+  AC_DEFINE(ISO_14755, 1, Define if you want ISO 14755 extended support)
+fi
+if test x$support_8bitctrls = xyes; then
+  AC_DEFINE(EIGHT_BIT_CONTROLS, 1, Define if you want 8 bit control sequences)
+fi
+if test x$support_fading = xyes; then
+  AC_DEFINE(OFF_FOCUS_FADING, 1, Define if you want faded colors when focus is lost)
+fi
 if test x$support_tinting = xyes; then
   AC_DEFINE(TINTING, 1, Define if you want your background to be tinted)
 fi
@@ -1179,11 +1234,8 @@ fi
 if test x$support_menubar = xyes; then
   AC_DEFINE(MENUBAR, 1, Define if you want Menubar support)
 fi
-if test x$support_frills = xno; then
-  AC_DEFINE(NO_FRILLS, 1, Define if you don't want handling for rarely used features)
-fi
-if test x$support_linespace = xno; then
-  AC_DEFINE(NO_LINESPACE, 1, Define if you don't want support linespace)
+if test x$support_frills = xyes; then
+  AC_DEFINE(ENABLE_FRILLS, 1, Define if you want handling for rarely used but handy features)
 fi
 if test x$support_24bit = xyes; then
   AC_DEFINE(PREFER_24BIT, 1, Define to use a 24 bit visual if the screen has 24 bit mode, even if the default is 8 bit)
@@ -1243,17 +1295,17 @@ if test x$support_combining = xyes; then
   AC_DEFINE(ENABLE_COMBINING, 1, Define if you want to automatically compose combining characters)
 fi
 if test x$codesets = xall; then
-  codesets=jp,jp-ext,kr,cn,cn-ext
+  codesets=jp,jp-ext,kr,zh,zh-ext
 fi
+AC_DEFINE(ENCODING_EU, 1, Define if you want european extended codesets)
+AC_DEFINE(ENCODING_VN, 1, Define if you want vietnamese codesets)
 for codeset in `echo $codesets | tr "[a-z,\\-]" "[A-Z _]"`; do
-  AC_DEFINE(ENCODING_EU, 1, Define if you want european extended codesets)
-  AC_DEFINE(ENCODING_VN, 1, Define if you want vietnamese codesets)
   case "$codeset" in
     JP     ) AC_DEFINE(ENCODING_JP,     1, Define if you want japanese codesets) ;;
     JP_EXT ) AC_DEFINE(ENCODING_JP_EXT, 1, Define if you want extended japanese codesets) ;;
     KR     ) AC_DEFINE(ENCODING_KR,     1, Define if you want korean codesets) ;;
-    CN     ) AC_DEFINE(ENCODING_CN,     1, Define if you want chinese codesets) ;;
-    CN_EXT ) AC_DEFINE(ENCODING_CN_EXT, 1, Define if you want extended chinese codesets) ;;
+    ZH     ) AC_DEFINE(ENCODING_ZH,     1, Define if you want chinese codesets) ;;
+    ZH_EXT ) AC_DEFINE(ENCODING_ZH_EXT, 1, Define if you want extended chinese codesets) ;;
   esac
 done
 
@@ -1318,27 +1370,13 @@ RXVT_DEFINE_TO_INCLUDE(include_sys_strredir_h, sys/strredir.h, ac_cv_header_sys_
 RXVT_DEFINE_TO_INCLUDE(include_sys_time_h, sys/time.h, ac_cv_header_sys_time_h, yes, notset, dontmatch)
 RXVT_DEFINE_TO_INCLUDE(include_time_h, time.h, ac_cv_header_sys_time_h, no, ac_cv_header_time, yes)
 
-if test x$support_xft = xyes; then
-  LIBS="$LIBS `pkg-config xft --libs`"
-  CFLAGS="$CFLAGS `pkg-config xft --cflags`"
-  CPPFLAGS="$CPPFLAGS `pkg-config xft --cflags`"
-
-  AC_CHECK_HEADERS(X11/Xft/Xft.h,,[support_xft=no])
-  AC_CHECK_LIB(Xft,XftDrawString32,,[support_xft=no])
-
-  if test x$support_xft = xyes; then
-    AC_DEFINE(XFT, 1, Define to enable xft support)
-  fi
-fi
-
-AC_OUTPUT(autoconf/Make.common \
+AC_CONFIG_FILES([autoconf/Make.common \
 Makefile \
 doc/Makefile \
 src/Makefile \
-src/test/Makefile \
 src/rxvtlib.h \
-W11/Makefile \
-)
+])
+AC_OUTPUT
 
 echo "Configuration:
 
@@ -1416,12 +1454,17 @@ if test x$support_xim = xyes -a x$rxvt_cv_func_xlocale = xno; then
   echo ".----------------------------------------------------------------."
 fi
 
-echo "  *** Please check src/feature.h for further options ***"
+echo "  *** Optionally check src/feature.h for further options ***"
 echo
 
 echo ".----------------------------------------------------------------."
 echo ". NOTE: most features are disabled by default, try               ."
-echo ". configure --help to get an idea of the optional features       ."
+echo ". configure --help to get an idea of the optional features,      ."
+echo ". or read ./README.configure                                     ."
+echo ".                                                                ."
+echo ". The script ./reconf gives a reasonable baseline, try it if     ."
+echo ". you do not want to read documentation and still want some      ."
+echo ". useful features.                                               ."
 echo ".----------------------------------------------------------------."
 echo
 

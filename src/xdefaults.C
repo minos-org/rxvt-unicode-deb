@@ -30,11 +30,14 @@
 #include "../config.h"		/* NECESSARY */
 #include "rxvt.h"		/* NECESSARY */
 #include "version.h"
-#include "xdefaults.intpro"	/* PROTOS for internal routines */
+
+#include <sys/utsname.h>
+
+#ifdef KEYSYM_RESOURCE
+#include "keyboard.h"
+#endif
 
 /* #define DEBUG_RESOURCES */
-
-static const char *const xnames[2] = { ".Xdefaults", ".Xresources" };
 
 /*{{{ monolithic option/resource structure: */
 /*
@@ -65,12 +68,12 @@ static const char *const xnames[2] = { ".Xdefaults", ".Xresources" };
 
 /* convenient macros */
 #define optList_strlen(i)						\
-    (optList[i].flag ? 0 : (optList[i].arg ? STRLEN (optList[i].arg) : 1))
+    (optList[i].flag ? 0 : (optList[i].arg ? strlen (optList[i].arg) : 1))
 #define optList_isBool(i)						\
     (optList[i].flag & Opt_Boolean)
 #define optList_isReverse(i)						\
     (optList[i].flag & Opt_Reverse)
-#define optList_size()							\
+#define optList_size							\
     (sizeof (optList) / sizeof (optList[0]))
 
 static const struct
@@ -94,10 +97,14 @@ optList[] = {
               BOOL (Rs_reverseVideo, "reverseVideo", "rv", Opt_reverseVideo, "reverse video"),
               BOOL (Rs_loginShell, "loginShell", "ls", Opt_loginShell, "login shell"),
               BOOL (Rs_jumpScroll, "jumpScroll", "j", Opt_jumpScroll, "jump scrolling"),
+              BOOL (Rs_pastableTabs, "pastableTabs", "ptab", Opt_pastableTabs, "tab characters are pastable"),
 #ifdef HAVE_SCROLLBARS
+              RSTRG (Rs_scrollstyle, "scrollstyle", "mode"),
               BOOL (Rs_scrollBar, "scrollBar", "sb", Opt_scrollBar, "scrollbar"),
               BOOL (Rs_scrollBar_right, "scrollBar_right", "sr", Opt_scrollBar_right, "scrollbar right"),
               BOOL (Rs_scrollBar_floating, "scrollBar_floating", "st", Opt_scrollBar_floating, "scrollbar without a trough"),
+              RSTRG (Rs_scrollBar_align, "scrollBar_align", "mode"),
+              STRG (Rs_scrollBar_thickness, "thickness", "sbt", "number", "scrollbar thickness/width in pixels"),
 #endif
               BOOL (Rs_scrollTtyOutput, "scrollTtyOutput", NULL, Opt_scrollTtyOutput, NULL),
               BOOL (Rs_scrollTtyOutput, NULL, "si", Opt_Reverse | Opt_scrollTtyOutput, "scroll-on-tty-output inhibit"),
@@ -110,6 +117,12 @@ optList[] = {
 #if TINTING
               STRG (Rs_color + Color_tint, "tintColor", "tint", "color", "tint color"),
 #endif
+#endif
+#ifdef OFF_FOCUS_FADING
+              STRG (Rs_fade, "fading", "fade", "%", "make colors x% darker when rxvt-unicode is losing focus."),
+#endif
+#ifdef TINTING
+              STRG (Rs_shade, "shading", "sh", "%", "shade background by x% when tinting."),
 #endif
               BOOL (Rs_utmpInhibit, "utmpInhibit", "ut", Opt_utmpInhibit, "utmp inhibit"),
 #ifndef NO_BELL
@@ -124,7 +137,7 @@ optList[] = {
 #ifdef MOUSE_WHEEL
               BOOL (Rs_mouseWheelScrollPage, "mouseWheelScrollPage", NULL, Opt_mouseWheelScrollPage, NULL),
 #endif
-#ifndef NO_FRILLS
+#if ENABLE_FRILLS
               BOOL (Rs_tripleclickwords, "tripleclickwords", "tcw", Opt_tripleclickwords, "triple click word selection"),
               BOOL (Rs_insecure, "insecure", "insecure", Opt_insecure, "enable possibly insecure escape sequences"),
 #endif
@@ -156,9 +169,13 @@ optList[] = {
 #endif				/* NO_BRIGHTCOLOR */
 #ifndef NO_BOLD_UNDERLINE_REVERSE
               RSTRG (Rs_color + Color_BD, "colorBD", "color"),
+              RSTRG (Rs_color + Color_IT, "colorIT", "color"),
               RSTRG (Rs_color + Color_UL, "colorUL", "color"),
               RSTRG (Rs_color + Color_RV, "colorRV", "color"),
 #endif				/* ! NO_BOLD_UNDERLINE_REVERSE */
+#if ENABLE_FRILLS
+              RSTRG (Rs_color + Color_underline, "underlineColor", "color"),
+#endif
 #ifdef KEEP_SCROLLCOLOR
               RSTRG (Rs_color + Color_scroll, "scrollColor", "color"),
               RSTRG (Rs_color + Color_trough, "troughColor", "color"),
@@ -166,6 +183,14 @@ optList[] = {
 #ifdef OPTION_HC
               STRG (Rs_color + Color_HC, "highlightColor", "hc", "color", "highlight color"),
 #endif
+#ifndef NO_CURSORCOLOR
+              STRG (Rs_color + Color_cursor, "cursorColor", "cr", "color", "cursor color"),
+              /* command-line option = resource name */
+              RSTRG (Rs_color + Color_cursor2, "cursorColor2", "color"),
+#endif				/* NO_CURSORCOLOR */
+              STRG (Rs_color + Color_pointer_fg, "pointerColor", "pr", "color", "pointer color"),
+              STRG (Rs_color + Color_pointer_bg, "pointerColor2", "pr2", "color", "pointer bg color"),
+              STRG (Rs_color + Color_border, "borderColor", "bd", "color", "border color"),
 #if defined (XPM_BACKGROUND) || (MENUBAR_MAX)
               RSTRG (Rs_path, "path", "search path"),
 #endif				/* defined (XPM_BACKGROUND) || (MENUBAR_MAX) */
@@ -175,38 +200,36 @@ optList[] = {
 #if (MENUBAR_MAX)
               RSTRG (Rs_menu, "menu", "name[;tag]"),
 #endif
-              STRG (Rs_font, "font", "fn", "fontname", "normal text font"),
               /* fonts: command-line option = resource name */
+              STRG (Rs_font, "font", "fn", "fontname", "normal text font"),
+#if ENABLE_STYLES
+              STRG (Rs_boldFont, "boldFont", "fb", "fontname", "bold font"),
+              STRG (Rs_italicFont, "italicFont", "fi", "fontname", "italic font"),
+              STRG (Rs_boldItalicFont, "boldItalicFont", "fbi", "fontname", "bold italic font"),
+#endif
 #ifdef USE_XIM
               STRG (Rs_inputMethod, "inputMethod", "im", "name", "name of input method"),
               STRG (Rs_preeditType, "preeditType", "pt", "style", "input style: style = OverTheSpot|OffTheSpot|Root"),
-#if defined(HAVE_XSETLOCALE) || defined(HAVE_SETLOCALE)
               STRG (Rs_imLocale, "imLocale", "imlocale", "string", "locale to use for input method"),
-#endif
+              STRG (Rs_imFont, "imFont", "imfont", "fontname", "fontset for styles OverTheSpot and OffTheSpot"),
 #endif				/* USE_XIM */
               STRG (Rs_name, NULL, "name", "string", "client instance, icon, and title strings"),
               STRG (Rs_title, "title", "title", "string", "title name for window"),
               STRG (Rs_title, NULL, "T", NULL, NULL),	/* short form */
               STRG (Rs_iconName, "iconName", "n", "string", "icon name for window"),
-#ifndef NO_CURSORCOLOR
-              STRG (Rs_color + Color_cursor, "cursorColor", "cr", "color", "cursor color"),
-              /* command-line option = resource name */
-              RSTRG (Rs_color + Color_cursor2, "cursorColor2", "color"),
-#endif				/* NO_CURSORCOLOR */
-              STRG (Rs_color + Color_pointer_fg, "pointerColor", "pr", "color", "pointer color"),
-              STRG (Rs_color + Color_pointer_bg, "pointerColor2", "pr2", "color", "pointer bg color"),
-              STRG (Rs_color + Color_border, "borderColor", "bd", "color", "border color"),
               STRG (Rs_saveLines, "saveLines", "sl", "number", "number of scrolled lines to save"),
-#ifndef NO_FRILLS
+#if ENABLE_XEMBED
+              STRG (Rs_embed, NULL, "embed", "windowid", "window id to embed terminal in"),
+#endif
+#if ENABLE_FRILLS
+              STRG (Rs_pty_fd, NULL, "pty-fd", "fileno", "file descriptor of pty to use"),
               STRG (Rs_ext_bwidth, "externalBorder", "w", "number", "external border in pixels"),
               STRG (Rs_ext_bwidth, NULL, "bw", NULL, NULL),
               STRG (Rs_ext_bwidth, NULL, "borderwidth", NULL, NULL),
               STRG (Rs_int_bwidth, "internalBorder", "b", "number", "internal border in pixels"),
-#endif
-#ifndef NO_LINESPACE
+              BOOL (Rs_borderLess, "borderLess", "bl", Opt_borderLess, "borderless window"),
               STRG (Rs_lineSpace, "lineSpace", "lsp", "number", "number of extra pixels between rows"),
 #endif
-              STRG (Rs_scrollBar_thickness, "thickness", "sbt", "number", "scrollbar thickness/width in pixels"),
 #ifdef POINTER_BLANK
               RSTRG (Rs_pointerBlankDelay, "pointerBlankDelay", "number"),
 #endif
@@ -217,15 +240,10 @@ optList[] = {
               RSTRG (Rs_delete_key, "deletekey", "string"),
 #endif
               RSTRG (Rs_selectstyle, "selectstyle", "mode"),
-              RSTRG (Rs_scrollstyle, "scrollstyle", "mode"),
-#ifdef HAVE_SCROLLBARS
-              RSTRG (Rs_scrollBar_align, "scrollBar_align", "mode"),
-#endif
 #ifdef PRINTPIPE
               RSTRG (Rs_print_pipe, "print-pipe", "string"),
 #endif
               STRG (Rs_modifier, "modifier", "mod", "modifier", "meta modifier = alt|meta|hyper|super|mod1|...|mod5"),
-              INFO ("xrm", "string", "X resource"),
 #ifdef CUTCHAR_RESOURCE
               RSTRG (Rs_cutchars, "cutchars", "string"),
 #endif				/* CUTCHAR_RESOURCE */
@@ -233,6 +251,11 @@ optList[] = {
 #ifndef NO_SECONDARY_SCREEN
               BOOL (Rs_secondaryScreen, "secondaryScreen", "ssc", Opt_secondaryScreen, "enable secondary screen"),
               BOOL (Rs_secondaryScroll, "secondaryScroll", "ssr", Opt_secondaryScroll, "enable secondary screen scroll"),
+#endif
+#if 0 && TODO
+#if !defined(NO_RESOURCES) && defined(USE_XGETDEFAULT)
+              INFO ("xrm", "string", "X resource"),
+#endif
 #endif
               INFO ("e", "command arg ...", "command to execute")
             };
@@ -244,28 +267,60 @@ optList[] = {
 #undef BOOL
 /*}}} */
 
-static const char releasestring[] = "Rxvt v" VERSION " - released: " DATE "\n";
-static const char optionsstring[] = "Options: "
+static const char releasestring[] = "rxvt-unicode (" RXVTNAME ") v" VERSION " - released: " DATE "\n";
+static const char optionsstring[] = "options: "
+#if XFT
+                                    "xft,"
+#endif
+#if ENABLE_STYLES
+                                    "styles,"
+#endif
+#if ENABLE_COMBINING
+                                    "combining,"
+#endif
+#if TEXT_BLINK
+                                    "blink,"
+#endif
+#if ISO_14755
+                                    "iso14755,"
+#endif
+#if UNICODE_3
+                                    "unicode3,"
+#endif
+                                    "encodings=eu+vn"
+#if ENCODING_JP
+                                    "+jp"
+#endif
+#if ENCODING_JP_EXT
+                                    "+jp-ext"
+#endif
+#if ENCODING_KR
+                                    "+kr"
+#endif
+#if ENCODING_ZH
+                                    "+zh"
+#endif
+#if ENCODING_ZH_EXT
+                                    "+zh-ext"
+#endif
+                                    ","
+#if OFF_FOCUS_FADING
+                                    "fade,"
+#endif
 #if defined(XPM_BACKGROUND)
                                     "XPM,"
 #endif
 #if defined(TRANSPARENT)
                                     "transparent,"
 #endif
+#if TINTING
+                                    "tint,"
+#endif
 #if defined(UTMP_SUPPORT)
                                     "utmp,"
 #endif
 #if defined(MENUBAR)
                                     "menubar,"
-#endif
-#if !defined(NO_FRILLS)
-                                    "frills,"
-#endif
-#if !defined(NO_LINESPACE)
-                                    "linespace,"
-#endif
-#if defined(PREFER_24BIT)
-                                    "24bit,"
 #endif
 #if defined(USE_XIM)
                                     "XIM,"
@@ -303,11 +358,35 @@ static const char optionsstring[] = "Options: "
 #if defined(NO_DELETE_KEY)
                                     "no_delete,"
 #endif
+#if EIGHT_BIT_CONTROLS
+                                    "8bitctrls,"
+#endif
 #if !defined(NO_STRINGS)
                                     "strings,"
 #endif
-#if defined(TTY_256COLOR)
-                                    "256colour,"
+#if defined(ENABLE_FRILLS)
+                                    "frills,"
+#endif
+#if defined(PREFER_24BIT)
+                                    "24bit,"
+#endif
+#if defined(SELECTION_SCROLLING)
+                                    "selectionscrolling,"
+#endif
+#if MOUSE_WHEEL
+                                    "wheel,"
+#endif
+#if MOUSE_SLIP_WHEELING
+                                    "slipwheel,"
+#endif
+#if defined(SMART_RESIZE)
+                                    "smart-resize,"
+#endif
+#if defined(CURSOR_BLINK)
+                                    "cursorBlink,"
+#endif
+#if defined(POINTER_BLANK)
+                                    "pointerBlank,"
 #endif
 #if defined(NO_RESOURCES)
                                     "NoResources"
@@ -336,7 +415,7 @@ rxvt_usage (int type)
       case 0:			/* brief listing */
         rxvt_log (" [-help] [--help]\n");
 
-        for (col = 1, i = 0; i < optList_size (); i++)
+        for (col = 1, i = 0; i < optList_size; i++)
           if (optList[i].desc != NULL)
             {
               int             len = 0;
@@ -350,7 +429,7 @@ rxvt_usage (int type)
 #ifdef DEBUG_STRICT
               assert (optList[i].opt != NULL);
 #endif
-              len += 4 + STRLEN (optList[i].opt) + (optList_isBool (i) ? 2: 0);
+              len += 4 + strlen (optList[i].opt) + (optList_isBool (i) ? 2: 0);
               col += len;
               if (col > 79)
                 {	/* assume regular width */
@@ -369,7 +448,7 @@ rxvt_usage (int type)
       case 1:			/* full command-line listing */
         rxvt_log (" [options] [-e command args]\n\nwhere options include:\n");
 
-        for (i = 0; i < optList_size (); i++)
+        for (i = 0; i < optList_size; i++)
           if (optList[i].desc != NULL)
             {
 #ifdef DEBUG_STRICT
@@ -377,7 +456,7 @@ rxvt_usage (int type)
 #endif
               rxvt_log ("  %s%s %-*s%s%s\n",
                          (optList_isBool (i) ? "-/+" : "-"), optList[i].opt,
-                         (INDENT - STRLEN (optList[i].opt)
+                         (INDENT - strlen (optList[i].opt)
                           + (optList_isBool (i) ? 0 : 2)),
                          (optList[i].arg ? optList[i].arg : ""),
                          (optList_isBool (i) ? "turn on/off " : ""),
@@ -390,11 +469,11 @@ rxvt_usage (int type)
         rxvt_log (" [options] [-e command args]\n\n"
                    "where resources (long-options) include:\n");
 
-        for (i = 0; i < optList_size (); i++)
+        for (i = 0; i < optList_size; i++)
           if (optList[i].kw != NULL)
             rxvt_log ("  %s: %*s%s\n",
                     optList[i].kw,
-                    (INDENT - STRLEN (optList[i].kw)), "", /* XXX */
+                    (INDENT - strlen (optList[i].kw)), "", /* XXX */
                     (optList_isBool (i) ? "boolean" : optList[i].arg));
 #ifdef KEYSYM_RESOURCE
         rxvt_log ("  " "keysym.sym" ": %*s%s\n",
@@ -421,8 +500,8 @@ rxvt_term::get_options (int argc, const char *const *argv)
 
   for (i = 1; i < argc; i++)
     {
-      unsigned int    entry, longopt = 0;
-      const char     *flag, *opt;
+      unsigned int entry, longopt = 0;
+      const char *flag, *opt;
 
       opt = argv[i];
 #ifdef DEBUG_RESOURCES
@@ -447,48 +526,34 @@ rxvt_term::get_options (int argc, const char *const *argv)
           continue;
         }
 
-      if (!STRCMP (opt, "help"))
+      if (!strcmp (opt, "help"))
         rxvt_usage (longopt ? 2 : 1);
-      if (!STRCMP (opt, "h"))
+      if (!strcmp (opt, "h"))
         rxvt_usage (0);
 
       /* feature: always try to match long-options */
-      for (entry = 0; entry < optList_size (); entry++)
-        if ((optList[entry].kw && !STRCMP (opt, optList[entry].kw))
+      for (entry = 0; entry < optList_size; entry++)
+        if ((optList[entry].kw && !strcmp (opt, optList[entry].kw))
             || (!longopt
-                && optList[entry].opt && !STRCMP (opt, optList[entry].opt)))
+                && optList[entry].opt && !strcmp (opt, optList[entry].opt)))
           break;
 
-      if (entry < optList_size ())
+      if (entry < optList_size)
         {
           if (optList_isReverse (entry))
             flag = flag == On ? Off : On;
+
           if (optList_strlen (entry))
-            {	/* string value */
-              const char *str = argv[++i];
+            {
+              /*
+               * special cases are handled in main.c:main () to allow
+               * X resources to set these values before we settle for
+               * default values
+               */
 
-#ifdef DEBUG_RESOURCES
-              fprintf (stderr, "string (%s,%s) = ",
-                      optList[entry].opt ? optList[entry].opt : "nil",
-                      optList[entry].kw ? optList[entry].kw : "nil");
-#endif
-              if (flag == On && str && (optList[entry].doff != -1))
-                {
-#ifdef DEBUG_RESOURCES
-                  fprintf (stderr, "\"%s\"\n", str);
-#endif
-                  rs[optList[entry].doff] = str;
-                  /*
-                   * special cases are handled in main.c:main () to allow
-                   * X resources to set these values before we settle for
-                   * default values
-                   */
-                }
-#ifdef DEBUG_RESOURCES
-              else
-                fprintf (stderr, "???\n");
-#endif
-
+              if (optList[entry].doff != -1)
+                rs[optList[entry].doff] = flag == On && argv[i+1]
+                                          ? argv[++i] : 0;
             }
           else
             {		/* boolean value */
@@ -497,9 +562,9 @@ rxvt_term::get_options (int argc, const char *const *argv)
                       optList[entry].opt, optList[entry].kw, flag);
 #endif
               if (flag == On)
-                Options |= (optList[entry].flag);
+                options |= optList[entry].flag;
               else
-                Options &= ~ (optList[entry].flag);
+                options &= ~optList[entry].flag;
 
               if (optList[entry].doff != -1)
                 rs[optList[entry].doff] = flag;
@@ -507,7 +572,7 @@ rxvt_term::get_options (int argc, const char *const *argv)
         }
       else
 #ifdef KEYSYM_RESOURCE
-        /* if (!STRNCMP (opt, "keysym.", sizeof ("keysym.") - 1)) */
+        /* if (!strncmp (opt, "keysym.", sizeof ("keysym.") - 1)) */
         if (rxvt_Str_match (opt, "keysym."))
           {
             const char *str = argv[++i];
@@ -548,10 +613,11 @@ rxvt_define_key (XrmDatabase *database __attribute__((unused)),
                  XrmValue *value,
                  XPointer closure __attribute__((unused)))
 {
-  int             last;
+  int last;
 
   for (last = 0; quarks[last] != NULLQUARK; last++)	/* look for last quark in list */
     ;
+
   last--;
   GET_R->parse_keysym (XrmQuarkToString (quarks[last]), (char *)value->addr);//D//TODO
   return False;
@@ -566,27 +632,96 @@ rxvt_define_key (XrmDatabase *database __attribute__((unused)),
  *      non-NULL for command-line options (need to allocate)
  */
 #define NEWARGLIM	500	/* `reasonable' size */
+
+struct keysym_vocabulary_t
+{
+  const char    *name;
+  unsigned short len;
+  unsigned short value;
+};
+keysym_vocabulary_t keysym_vocabulary[] =
+{
+  { "ISOLevel3", 9, Level3Mask    },
+  { "AppKeypad", 9, AppKeypadMask },
+  { "Control",   7, ControlMask   },
+  { "NumLock",   7, NumLockMask   },
+  { "Shift",     5, ShiftMask     },
+  { "Meta",      4, MetaMask      },
+  { "Lock",      4, LockMask      },
+  { "Mod1",      4, Mod1Mask      },
+  { "Mod2",      4, Mod2Mask      },
+  { "Mod3",      4, Mod3Mask      },
+  { "Mod4",      4, Mod4Mask      },
+  { "Mod5",      4, Mod5Mask      },
+  { "I",         1, Level3Mask    },
+  { "K",         1, AppKeypadMask },
+  { "C",         1, ControlMask   },
+  { "N",         1, NumLockMask   },
+  { "S",         1, ShiftMask     },
+  { "M",         1, MetaMask      },
+  { "A",         1, MetaMask      },
+  { "L",         1, LockMask      },
+  { "1",         1, Mod1Mask      },
+  { "2",         1, Mod2Mask      },
+  { "3",         1, Mod3Mask      },
+  { "4",         1, Mod4Mask      },
+  { "5",         1, Mod5Mask      },
+};
+
 int
 rxvt_term::parse_keysym (const char *str, const char *arg)
 {
-  int             n, sym;
-  char           *key_string, *newarg = NULL;
-  char            newargstr[NEWARGLIM];
+  int n, sym;
+  unsigned int state = 0;
+  const char *pmodend = NULL;
+  char *newarg = NULL;
+  char newargstr[NEWARGLIM];
 
   if (arg == NULL)
     {
       if ((n = rxvt_Str_match (str, "keysym.")) == 0)
         return 0;
+
       str += n;		/* skip `keysym.' */
+      if ((pmodend = strchr (str, ':')) < str)
+        return -1;
     }
-  /* some scanf () have trouble with a 0x prefix */
-  if (isdigit (str[0]))
+  else
+    pmodend = str + strlen(str);
+
+  for (--pmodend; str < pmodend; --pmodend)
+    if (*pmodend == '-')
+      break;
+
+  while (str < pmodend)
     {
-      if (str[0] == '0' && toupper (str[1]) == 'X')
-        str += 2;
+      unsigned int i;
+
+      for (i=0; i < sizeof (keysym_vocabulary) / sizeof (keysym_vocabulary_t); ++i)
+        {
+          if (strncmp (str, keysym_vocabulary [i].name, keysym_vocabulary [i].len) == 0)
+            {
+              state |= keysym_vocabulary[i].value;
+              str += keysym_vocabulary[i].len;
+              break;
+            }
+        }
+
+      if (i >= sizeof (keysym_vocabulary) / sizeof (keysym_vocabulary_t))
+        return -1;
+
+      if (*str == '-')
+        ++str;
+    }
+
+  /* some scanf () have trouble with a 0x prefix */
+  if (str[0] == '0' && toupper (str[1]) == 'X')
+    {
+      str += 2;
+
       if (arg)
         {
-          if (sscanf (str, (STRCHR (str, ':') ? "%x:" : "%x"), &sym) != 1)
+          if (sscanf (str, (strchr (str, ':') ? "%x:" : "%x"), &sym) != 1)
             return -1;
         }
       else
@@ -595,7 +730,7 @@ rxvt_term::parse_keysym (const char *str, const char *arg)
             return -1;
 
           /* cue to ':', it's there since sscanf () worked */
-          STRNCPY (newargstr, STRCHR (str, ':') + 1, NEWARGLIM - 1);
+          strncpy (newargstr, strchr (str, ':') + 1, NEWARGLIM - 1);
           newargstr[NEWARGLIM - 1] = '\0';
           newarg = newargstr;
         }
@@ -605,40 +740,33 @@ rxvt_term::parse_keysym (const char *str, const char *arg)
       /*
        * convert keysym name to keysym number
        */
-      STRNCPY (newargstr, str, NEWARGLIM - 1);
+      strncpy (newargstr, str, NEWARGLIM - 1);
       newargstr[NEWARGLIM - 1] = '\0';
+
       if (arg == NULL)
         {
-          if ((newarg = STRCHR (newargstr, ':')) == NULL)
+          if ((newarg = strchr (newargstr, ':')) == NULL)
             return -1;
+
           *newarg++ = '\0';	/* terminate keysym name */
         }
+
       if ((sym = XStringToKeysym (newargstr)) == None)
         return -1;
     }
 
-  if (sym < 0xFF00 || sym > 0xFFFF)	/* we only do extended keys */
-    return -1;
-  sym &= 0xFF;
-  if (Keysym_map[sym] != NULL)	/* already set ? */
-    return -1;
-
   if (newarg == NULL)
     {
-      STRNCPY (newargstr, arg, NEWARGLIM - 1);
+      strncpy (newargstr, arg, NEWARGLIM - 1);
       newargstr[NEWARGLIM - 1] = '\0';
       newarg = newargstr;
     }
+
   rxvt_Str_trim (newarg);
   if (*newarg == '\0' || (n = rxvt_Str_escaped (newarg)) == 0)
     return -1;
-  MIN_IT (n, 255);
-  key_string = (char *)rxvt_malloc ((n + 1) * sizeof (char));
 
-  key_string[0] = n;
-  STRNCPY (key_string + 1, newarg, n);
-  Keysym_map[sym] = (unsigned char *)key_string;
-
+  keyboard->register_user_translation (sym, state, newarg);
   return 1;
 }
 
@@ -658,36 +786,37 @@ rxvt_term::get_xdefaults (FILE *stream, const char *name)
   if (stream == NULL)
     return;
 
-  len = STRLEN (name);
+  len = strlen (name);
   while ((str = fgets (buffer, sizeof (buffer), stream)) != NULL)
     {
-      unsigned int    entry, n;
+      unsigned int entry, n;
 
       while (*str && isspace (*str))
         str++;		/* leading whitespace */
 
       if ((str[len] != '*' && str[len] != '.')
-          || (len && STRNCMP (str, name, len)))
+          || (len && strncmp (str, name, len)))
         continue;
       str += (len + 1);	/* skip `name*' or `name.' */
 
 # ifdef KEYSYM_RESOURCE
       if (!parse_keysym (str, NULL))
 # endif				/* KEYSYM_RESOURCE */
-        for (entry = 0; entry < optList_size (); entry++)
+        for (entry = 0; entry < optList_size; entry++)
           {
             const char *kw = optList[entry].kw;
 
             if (kw == NULL)
               continue;
 
-            n = STRLEN (kw);
+            n = strlen (kw);
             if (str[n] == ':' && rxvt_Str_match (str, kw))
               {
                 /* skip `keyword:' */
                 str += n + 1;
                 rxvt_Str_trim (str);
-                n = STRLEN (str);
+                n = strlen (str);
+
                 if (n && rs[optList[entry].doff] == NULL)
                   {
                     /* not already set */
@@ -697,7 +826,7 @@ rxvt_term::get_xdefaults (FILE *stream, const char *name)
                     for (int o = 0;;)
                       {
                         p = (char *)rxvt_realloc (p, o + n + 1);
-                        MEMCPY (p + o, str, n);
+                        memcpy (p + o, str, n);
                         o += n;
                         p[o] = 0;
 
@@ -710,7 +839,7 @@ rxvt_term::get_xdefaults (FILE *stream, const char *name)
                           break;
 
                         rxvt_Str_trim (str);
-                        n = STRLEN (str);
+                        n = strlen (str);
                       }
 
                     rs[optList[entry].doff] = p;
@@ -718,18 +847,18 @@ rxvt_term::get_xdefaults (FILE *stream, const char *name)
 
                     if (optList_isBool (entry))
                       {
-                        s = STRCASECMP (str, "TRUE") == 0
-                            || STRCASECMP (str, "YES") == 0
-                            || STRCASECMP (str, "ON") == 0
-                            || STRCASECMP (str, "1") == 0;
+                        s = strcasecmp (str, "true") == 0
+                            || strcasecmp (str, "yes") == 0
+                            || strcasecmp (str, "on") == 0
+                            || strcmp (str, "1") == 0;
 
                         if (optList_isReverse (entry))
                           s = !s;
 
                         if (s)
-                          Options |= optList[entry].flag;
+                          options |= optList[entry].flag;
                         else
-                          Options &= ~optList[entry].flag;
+                          options &= ~optList[entry].flag;
                       }
                   }
 
@@ -751,253 +880,251 @@ rxvt_term::get_xdefaults (FILE *stream, const char *name)
  */
 /* ARGSUSED */
 void
-rxvt_term::extract_resources (Display *display __attribute__ ((unused)), const char *name)
+rxvt_term::extract_resources ()
 {
+  dDisp;
+
 #ifndef NO_RESOURCES
+
+  char *homedir = (char *)getenv ("HOME");
+  char fname[1024];
 
 # if defined XAPPLOADDIR
 #  if defined(HAVE_XSETLOCALE) || defined(HAVE_SETLOCALE)
   /* Compute the path of the possibly available localized Rxvt file */
-  char *localepath = NULL;
+  char localepath[1024];
 
-  if (locale != NULL)
-    {	/* XXX: must limit length of string */
-      localepath = (char *)rxvt_malloc (256);
-      sprintf (localepath, XAPPLOADDIRLOCALE "/" RESCLASS,
-              (int) (258 - sizeof (XAPPLOADDIRLOCALE) - sizeof (RESCLASS)),
-              locale);	/* 258 = 255 + 4 (-.*s) - 1 (/) */
-    }
-
-  {
+  if (locale)
+    snprintf (localepath, sizeof (localepath), XAPPLOADDIRLOCALE "/" RESCLASS, locale);
+  else
+    localepath[0] = 0;
 #  endif
 # endif
 
 # ifdef USE_XGETDEFAULT
-    /*
-     * get resources using the X library function
-     */
-    int entry;
+  /*
+   * get resources using the X library function
+   */
+  int entry;
 
 #  ifdef XrmEnumOneLevel
-    int i;
-    char *displayResource, *xe;
-    XrmName name_prefix[3];
-    XrmClass class_prefix[3];
-    XrmDatabase database, rdb1;
-    char fname[1024];
+  int i;
+  char *displayResource, *xe;
+  XrmName name_prefix[3];
+  XrmClass class_prefix[3];
+  XrmDatabase database, rdb1;
 
-    XrmInitialize ();
-    database = NULL;
+  XrmInitialize ();
+  database = NULL;
 
-    /* Get any Xserver defaults */
+  // for ordering, see for example http://www.faqs.org/faqs/Xt-FAQ/ Subject: 20
 
-    displayResource = XResourceManagerString (display);
-    if (displayResource != NULL)
-      database = XrmGetStringDatabase (displayResource);
+  // 6. System wide per application default file.
+  /* Add in Rxvt file */
+#   if defined(HAVE_XSETLOCALE) || defined(HAVE_SETLOCALE)
+  if (*localepath
+      && ((rdb1 = XrmGetFileDatabase (localepath))
+          || (rdb1 = XrmGetFileDatabase (XAPPLOADDIR "/" RESCLASS))))
+#   endif
+    XrmMergeDatabases (rdb1, &database);
 
-#   ifdef HAVE_EXTRA_XRESOURCE_FILES
-    /* Add in ~/.Xdefaults or ~/.Xresources */
+  /* Add in $XAPPLRESDIR/Rxvt only; not bothering with XUSERFILESEARCHPATH */
+  if ((xe = (char *)getenv ("XAPPLRESDIR")))
     {
-      char           *ptr;
+      snprintf (fname, sizeof (fname), "%s/%s", xe, RESCLASS);
 
-      if ((ptr = (char *)getenv ("HOME")) == NULL)
-        ptr = ".";
+      if ((rdb1 = XrmGetFileDatabase (fname)))
+        XrmMergeDatabases (rdb1, &database);
+    }
 
-      for (i = 0; i < (sizeof (xnames) / sizeof (xnames[0])); i++)
+  // 5. User's per application default file.
+  // none
+
+  // 4. User's defaults file.
+  /* Get any Xserver defaults */
+  displayResource = XResourceManagerString (disp);
+  if (displayResource != NULL)
+    {
+      if ((rdb1 = XrmGetStringDatabase (displayResource)))
+        XrmMergeDatabases (rdb1, &database);
+    }
+  else if (homedir)
+    {
+      snprintf (fname, sizeof (fname), "%s/.Xdefaults", homedir);
+
+      if ((rdb1 = XrmGetFileDatabase (fname)))
+        XrmMergeDatabases (rdb1, &database);
+    }
+
+  /* Get screen specific resources */
+  displayResource = XScreenResourceString (ScreenOfDisplay (disp, display->screen));
+  if (displayResource != NULL)
+    {
+      if ((rdb1 = XrmGetStringDatabase (displayResource)))
+        /* Merge with screen-independent resources */
+        XrmMergeDatabases (rdb1, &database);
+
+      XFree (displayResource);
+    }
+
+  // 3. User's per host defaults file
+  /* Add in XENVIRONMENT file */
+  if ((xe = (char *)getenv ("XENVIRONMENT"))
+      && (rdb1 = XrmGetFileDatabase (xe)))
+    XrmMergeDatabases (rdb1, &database);
+  else if (homedir)
+    {
+      struct utsname un;
+
+      if (!uname (&un))
         {
-          sprintf (fname, "%-.*s/%s", sizeof (fname) - STRLEN (xnames[i]) - 2,
-                  ptr, xnames[i]);
-          if ((rdb1 = XrmGetFileDatabase (fname)))
-            {
-              XrmMergeDatabases (rdb1, &database);
-#    ifndef HAVE_BOTH_XRESOURCE_FILES
-              break;
-#    endif
+          snprintf (fname, sizeof (fname), "%s/.Xdefaults-%s", homedir, un.nodename);
 
+          if ((rdb1 = XrmGetFileDatabase (fname)))
+            XrmMergeDatabases (rdb1, &database);
+        }
+    }
+
+  XrmSetDatabase (disp, database);
+#  endif
+
+  /*
+   * Query resources for options that affect us
+   */
+  for (entry = 0; entry < optList_size; entry++)
+    {
+      int s;
+      char *p, *p0;
+      const char *kw = optList[entry].kw;
+
+      if (kw == NULL || rs[optList[entry].doff] != NULL)
+        continue;		/* previously set */
+
+      p = XGetDefault (disp, rs[Rs_name], kw);
+      p0 = XGetDefault (disp, "!INVALIDPROGRAMMENAMEDONTMATCH!", kw);
+      if (p == NULL || (p0 && strcmp (p, p0) == 0))
+        {
+          p = XGetDefault (disp, RESCLASS, kw);
+#ifdef RESFALLBACK
+          if (p == NULL || (p0 && strcmp (p, p0) == 0))
+            p = XGetDefault (disp, RESFALLBACK, kw);
+#endif
+        }
+
+      if (p == NULL && p0)
+        p = p0;
+
+      if (p)
+        {
+          rs[optList[entry].doff] = p;
+
+          if (optList_isBool (entry))
+            {
+              s = strcasecmp (p, "TRUE") == 0
+                  || strcasecmp (p, "YES") == 0
+                  || strcasecmp (p, "ON") == 0
+                  || strcasecmp (p, "1") == 0;
+
+              if (optList_isReverse (entry))
+                s = !s;
+
+              if (s)
+                options |= optList[entry].flag;
+              else
+                options &= ~optList[entry].flag;
             }
         }
     }
-#   endif
 
-    /* Add in XENVIRONMENT file */
-
-    if ((xe = (char *)getenv ("XENVIRONMENT")) != NULL
-        && (rdb1 = XrmGetFileDatabase (xe)) != NULL)
-      XrmMergeDatabases (rdb1, &database);
-
-    /* Add in Rxvt file */
-#   if defined(HAVE_XSETLOCALE) || defined(HAVE_SETLOCALE)
-    if (localepath == NULL || (rdb1 = XrmGetFileDatabase (localepath)) == NULL)
-#   endif
-      rdb1 = XrmGetFileDatabase (XAPPLOADDIR "/" RESCLASS);
-
-    if (rdb1 != NULL)
-      XrmMergeDatabases (rdb1, &database);
-
-    /* Add in $XAPPLRESDIR/Rxvt only; not bothering with XUSERFILESEARCHPATH */
-    if ((xe = (char *)getenv ("XAPPLRESDIR")) != NULL)
-      {
-        sprintf (fname, "%-.*s/" RESCLASS, sizeof (fname)
-                - sizeof (RESCLASS) - 2, xe);
-        if ((rdb1 = XrmGetFileDatabase (fname)) != NULL)
-          XrmMergeDatabases (rdb1, &database);
-      }
-
-    XrmSetDatabase (display, database);
-#  endif
-
-    /*
-     * Query resources for options that affect us
-     */
-    for (entry = 0; entry < optList_size (); entry++)
-      {
-        int             s;
-        char           *p, *p0;
-        const char     *kw = optList[entry].kw;
-
-        if (kw == NULL || rs[optList[entry].doff] != NULL)
-          continue;		/* previously set */
-
-        p = XGetDefault (display, name, kw);
-        p0 = XGetDefault (display, "!INVALIDPROGRAMMENAMEDONTMATCH!", kw);
-        if (p == NULL || (p0 && STRCMP (p, p0) == 0))
-          {
-            p = XGetDefault (display, RESCLASS, kw);
-#ifdef RESFALLBACK
-            if (p == NULL || (p0 && STRCMP (p, p0) == 0))
-              p = XGetDefault (display, RESFALLBACK, kw);
-#endif
-          }
-
-        if (p == NULL && p0)
-          p = p0;
-
-        if (p)
-          {
-            rs[optList[entry].doff] = p;
-
-            if (optList_isBool (entry))
-              {
-                s = STRCASECMP (p, "TRUE") == 0
-                    || STRCASECMP (p, "YES") == 0
-                    || STRCASECMP (p, "ON") == 0
-                    || STRCASECMP (p, "1") == 0;
-                if (optList_isReverse (entry))
-                  s = !s;
-                if (s)
-                  Options |= (optList[entry].flag);
-                else
-                  Options &= ~ (optList[entry].flag);
-              }
-          }
-      }
-
-    /*
-     * [R5 or later]: enumerate the resource database
-     */
-#  ifdef XrmEnumOneLevel
-#   ifdef KEYSYM_RESOURCE
-    name_prefix[0] = XrmStringToName (name);
-    name_prefix[1] = XrmStringToName ("keysym");
-    name_prefix[2] = NULLQUARK;
-    class_prefix[0] = XrmStringToName (RESCLASS);
-    class_prefix[1] = XrmStringToName ("Keysym");
-    class_prefix[2] = NULLQUARK;
-    /* XXX: Need to check sizeof (rxvt_t) == sizeof (XPointer) */
-    XrmEnumerateDatabase (XrmGetDatabase (display), name_prefix, class_prefix,
-                          XrmEnumOneLevel, rxvt_define_key, NULL);
-#    ifdef RESFALLBACK
-    name_prefix[0] = XrmStringToName (RESFALLBACK);
-    name_prefix[1] = XrmStringToName ("keysym");
-    class_prefix[0] = XrmStringToName (RESFALLBACK);
-    class_prefix[1] = XrmStringToName ("Keysym");
-    /* XXX: Need to check sizeof (rxvt_t) == sizeof (XPointer) */
-    XrmEnumerateDatabase (XrmGetDatabase (display), name_prefix, class_prefix,
-                          XrmEnumOneLevel, rxvt_define_key, NULL);
-#    endif
+  /*
+   * [R5 or later]: enumerate the resource database
+   */
+#  ifdef KEYSYM_RESOURCE
+  name_prefix[0] = XrmStringToName (rs[Rs_name]);
+  name_prefix[1] = XrmStringToName ("keysym");
+  name_prefix[2] = NULLQUARK;
+  class_prefix[0] = XrmStringToName (RESCLASS);
+  class_prefix[1] = XrmStringToName ("Keysym");
+  class_prefix[2] = NULLQUARK;
+  /* XXX: Need to check sizeof (rxvt_t) == sizeof (XPointer) */
+  XrmEnumerateDatabase (XrmGetDatabase (disp), name_prefix, class_prefix,
+                        XrmEnumOneLevel, rxvt_define_key, NULL);
+#   ifdef RESFALLBACK
+  name_prefix[0] = XrmStringToName (RESFALLBACK);
+  name_prefix[1] = XrmStringToName ("keysym");
+  class_prefix[0] = XrmStringToName (RESFALLBACK);
+  class_prefix[1] = XrmStringToName ("Keysym");
+  /* XXX: Need to check sizeof (rxvt_t) == sizeof (XPointer) */
+  XrmEnumerateDatabase (XrmGetDatabase (disp), name_prefix, class_prefix,
+                        XrmEnumOneLevel, rxvt_define_key, NULL);
 #   endif
 #  endif
 
 # else				/* USE_XGETDEFAULT */
-    /* get resources the hard way, but save lots of memory */
-    FILE           *fd = NULL;
-    char           *home;
+  /* get resources the hard way, but save lots of memory */
+  FILE *fd = NULL;
 
-    if ((home = getenv ("HOME")) != NULL)
-      {
-        unsigned int    i, len = STRLEN (home) + 2;
-        char           *f = NULL;
+  if (homedir)
+    {
+      static const char *const xnames[2] = { ".Xdefaults", ".Xresources" };
 
-        for (i = 0; i < (sizeof (xnames) / sizeof (xnames[0])); i++)
-          {
-            f = (char *)rxvt_realloc (f, (len + STRLEN (xnames[i])) * sizeof (char));
+      for (int i = 0; i < (sizeof (xnames) / sizeof (xnames [0])); i++)
+        {
+          snprintf (fname, sizeof (fname), "%s/%s", homedir, xnames [i]);
 
-            sprintf (f, "%s/%s", home, xnames[i]);
+          if ((fd = fopen (fname, "r")) != NULL)
+            break;
+        }
+    }
+  /*
+  * The normal order to match resources is the following:
+  * @ global resources (partial match, ~/.Xdefaults)
+  * @ application file resources (XAPPLOADDIR/Rxvt)
+  * @ class resources (~/.Xdefaults)
+  * @ private resources (~/.Xdefaults)
+  *
+  * However, for the hand-rolled resources, the matching algorithm
+  * checks if a resource string value has already been allocated
+  * and won't overwrite it with (in this case) a less specific
+  * resource value.
+  *
+  * This avoids multiple allocation.  Also, when we've called this
+  * routine command-line string options have already been applied so we
+  * needn't to allocate for those resources.
+  *
+  * So, search in resources from most to least specific.
+  *
+  * Also, use a special sub-class so that we can use either or both of
+  * "XTerm" and "Rxvt" as class names.
+  */
 
-            if ((fd = fopen (f, "r")) != NULL)
-              break;
-          }
-        free (f);
-      }
-    /*
-    * The normal order to match resources is the following:
-    * @ global resources (partial match, ~/.Xdefaults)
-    * @ application file resources (XAPPLOADDIR/Rxvt)
-    * @ class resources (~/.Xdefaults)
-    * @ private resources (~/.Xdefaults)
-    *
-    * However, for the hand-rolled resources, the matching algorithm
-    * checks if a resource string value has already been allocated
-    * and won't overwrite it with (in this case) a less specific
-    * resource value.
-    *
-    * This avoids multiple allocation.  Also, when we've called this
-    * routine command-line string options have already been applied so we
-    * needn't to allocate for those resources.
-    *
-    * So, search in resources from most to least specific.
-    *
-    * Also, use a special sub-class so that we can use either or both of
-    * "XTerm" and "Rxvt" as class names.
-    */
-
-    get_xdefaults (fd, name);
-    get_xdefaults (fd, RESCLASS);
+  get_xdefaults (fd, rs[Rs_name]);
+  get_xdefaults (fd, RESCLASS);
 #  ifdef RESFALLBACK
-    get_xdefaults (fd, RESFALLBACK);
+  get_xdefaults (fd, RESFALLBACK);
 #  endif
 
 #  if defined(XAPPLOADDIR) && defined(USE_XAPPLOADDIR)
-    {
-      FILE *ad = NULL;
+  {
+    FILE *ad = NULL;
 
 #   if defined(HAVE_XSETLOCALE) || defined(HAVE_SETLOCALE)
-      if (localepath == NULL || (ad = fopen (localepath, "r")) == NULL)
+    if (!*localepath || (ad = fopen (localepath, "r")) == NULL)
 #   endif
-        ad = fopen (XAPPLOADDIR "/" RESCLASS, "r");
-      if (ad != NULL)
-        {
-          get_xdefaults (ad, RESCLASS);
-          get_xdefaults (ad, "");
-          fclose (ad);
-        }
-    }
+      ad = fopen (XAPPLOADDIR "/" RESCLASS, "r");
+    if (ad != NULL)
+      {
+        get_xdefaults (ad, RESCLASS);
+        get_xdefaults (ad, "");
+        fclose (ad);
+      }
+  }
 #  endif			/* XAPPLOADDIR */
 
-    get_xdefaults (fd, "");	/* partial match */
-    if (fd != NULL)
-      fclose (fd);
+  get_xdefaults (fd, "");	/* partial match */
+  if (fd != NULL)
+    fclose (fd);
 # endif				/* USE_XGETDEFAULT */
-
-# if defined XAPPLOADDIR
-#  if defined(HAVE_XSETLOCALE) || defined(HAVE_SETLOCALE)
-
-  }
-
-  /* Free the path of the possibly available localized Rxvt file */
-  free (localepath);
-#  endif
-# endif
 
 #endif				/* NO_RESOURCES */
 }

@@ -1,5 +1,5 @@
 /*
-    iom_conf.h -- generic I/O multiplexor config
+    iom_conf.h -- generic I/O multiplexer config
     Copyright (C) 2003, 2004 Marc Lehmann <pcg@goof.com>
  
     This program is free software; you can redistribute it and/or modify
@@ -20,11 +20,12 @@
 #ifndef RXVT_IOM_CONF_H__
 #define RXVT_IOM_CONF_H__
 
-#include <rxvtstl.h>
+#include <rxvtutil.h>
 
 #define IOM_IO 1
 #define IOM_TIME 1
 #define IOM_CHECK 1
+#define IOM_SIG 1
 
 #endif
 

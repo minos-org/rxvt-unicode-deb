@@ -31,7 +31,7 @@
 #endif
 #ifndef XAPPLOADDIR
 # define XAPPLOADDIR		X11LIBDIR "/app-defaults" 
-# define XAPPLOADDIRLOCALE	X11LIBDIR "/%-.*s/app-defaults"
+# define XAPPLOADDIRLOCALE	X11LIBDIR "/%s/app-defaults"
 #endif
 
 /*-----------------------SCREEN OPTIONS AND COLOURS---------------------*/
@@ -120,7 +120,7 @@
  * Define to remove support for XCopyArea () support.  XCopyArea () is useful
  * for scrolling on non-local X displays
  */
-/* #define NO_SLOW_LINK_SUPPORT */
+#define NO_SLOW_LINK_SUPPORT
 
 /*
  * Printer pipe which will be used for emulation of attached vt100 printer
@@ -150,8 +150,7 @@
  * Define defaults for backspace and delete keys - unless they have been
  * configured out with --disable-backspace-key / --disable-delete-key
  */
-//#define DEFAULT_BACKSPACE	"DEC"		/* SPECIAL */
-#define DEFAULT_BACKSPACE	"\010"		/* wrong, but match terminfo etc. */
+#define DEFAULT_BACKSPACE	"DEC"		/* SPECIAL */
 #define DEFAULT_DELETE		"\033[3~"
 
 /*
@@ -167,12 +166,12 @@
  * with various KeySyms (0xFF00 - 0xFFFF).
  * Only works with the default hand-rolled resources.
  */
-#ifndef NO_RESOURCES
+#if !NO_RESOURCES && ENABLE_FRILLS
 # define KEYSYM_RESOURCE
 #endif
 
 /*
- * Modifier/s to use to allow up/down arrows and Priot/Next keys
+ * Modifier/s to use to allow up/down arrows and Prior/Next keys
  * to scroll single or page-fulls
  */
 #define SCROLL_ON_SHIFT
@@ -218,7 +217,7 @@
  * Default separating chars for multiple-click selection
  * Space and tab are separate separating characters and are not settable
  */
-#define CUTCHARS	"\"&'()*,;<=>?@[\\]^`{|}~"
+#define CUTCHARS	"\"&'()*,;<=>?@[\\]^`{|}"
 
 /*
  * Add run-time support for changing the cutchars for double click selection
@@ -228,7 +227,7 @@
 /*
  * Have mouse reporting include double-click info for button1
  */
-/* #define MOUSE_REPORT_DOUBLECLICK */
+//#define MOUSE_REPORT_DOUBLECLICK
 
 /*
  * Set delay between multiple click events [default: 500 milliseconds]
@@ -250,22 +249,22 @@
 /*
  * Set delay periods for continuous scrolling with scrollbar buttons
  */
-/* #define SCROLLBAR_INITIAL_DELAY 40 */
-/* #define SCROLLBAR_CONTINUOUS_DELAY 2 */
+/* #define SCROLLBAR_INITIAL_DELAY 0.33 */
+/* #define SCROLLBAR_CONTINUOUS_DELAY 0.05 */
 
 /*
  * The speed of selection scrolling is proportional to the distance
  * the mouse pointer is out of the text window.  This is the max
  * number of lines to scroll at a time.
  */
-#define SELECTION_SCROLL_MAX_LINES 2
+#define SELECTION_SCROLL_MAX_LINES 8
 
 /*
  * The number of lines (measured in character's heights, not pixels)
  * the pointer must be out of the window for each increase in the
  * number of lines scrolled.
  */
-#define SELECTION_SCROLL_LINE_SPEEDUP 4
+#define SELECTION_SCROLL_LINE_SPEEDUP 3
 
 /*--------------------------------MISC----------------------------------*/
 /*
@@ -365,7 +364,7 @@
  * Check the current value of the window-time/icon-name and avoid
  * re-setting it to the same value -- avoids unnecessary window refreshes
  */
-#define SMART_WINDOW_TITLE
+//#define SMART_WINDOW_TITLE // currently disabled, needs to be reimplemented
 
 /*
  * Allow foreground/background colour to be changed with an
@@ -401,7 +400,7 @@
 /*
  * Provide termcap/terminfo bw support (wrap backwards on cub1)
  */
-/* #define TERMCAP_HAS_BW */
+#define TERMCAP_HAS_BW
 
 /*
  * Some (older, e.g. fvwm 2.2.2) window managers need some time when
@@ -411,3 +410,4 @@
 /* #define WAIT_FOR_WM */
 
 #endif
+

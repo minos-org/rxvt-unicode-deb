@@ -24,9 +24,10 @@
 
 #include "../config.h"		/* NECESSARY */
 #include "rxvt.h"		/* NECESSARY */
-#include "xpm.intpro"		/* PROTOS for internal routines */
 
 #ifdef XPM_BACKGROUND
+
+static void      rxvt_pixmap_incr                 (unsigned int *wh, unsigned int *xy, float *incr, float *p, unsigned int widthheight, unsigned int xpmwidthheight);
 
 /*
  * These GEOM strings indicate absolute size/position:
@@ -63,7 +64,7 @@ rxvt_term::scale_pixmap (const char *geom)
   if (geom == NULL)
     return 0;
   str = (char *)rxvt_malloc (MAXLEN_GEOM + 1);
-  if (!STRCMP (geom, "?"))
+  if (!strcmp (geom, "?"))
     {
       sprintf (str, "[%dx%d+%d+%d]",	/* can't presume snprintf () ! */
               min (bgpixmap->w, 9999), min (bgpixmap->h, 9999),
@@ -73,12 +74,12 @@ rxvt_term::scale_pixmap (const char *geom)
       return 0;
     }
 
-  if ((p = STRCHR (geom, ';')) == NULL)
-    p = STRCHR (geom, '\0');
+  if ((p = strchr (geom, ';')) == NULL)
+    p = strchr (geom, '\0');
   n = (p - geom);
   if (n <= MAXLEN_GEOM)
     {
-      STRNCPY (str, geom, n);
+      strncpy (str, geom, n);
       str[n] = '\0';
 
       flags = XParseGeometry (str, &x, &y, &w, &h);
@@ -163,28 +164,31 @@ rxvt_term::resize_pixmap ()
   GC              gc;
   unsigned int    width = TermWin_TotalWidth ();
   unsigned int    height = TermWin_TotalHeight ();
+  dDisp;
 
   if (TermWin.pixmap != None)
-    XFreePixmap (display->display, TermWin.pixmap);
+    XFreePixmap (disp, TermWin.pixmap);
 
   if (bgPixmap.pixmap == None)
     { /* So be it: I'm not using pixmaps */
       TermWin.pixmap = None;
-      if (! (Options & Opt_transparent) || am_transparent == 0)
-        XSetWindowBackground (display->display, TermWin.vt,
-                             PixColors[Color_bg]);
+
+      if (!(options & Opt_transparent) || !am_transparent)
+        XSetWindowBackground (disp, TermWin.vt,
+                              pix_colors[Color_bg]);
+
       return;
     }
 
-  gcvalue.foreground = PixColors[Color_bg];
-  gc = XCreateGC (display->display, TermWin.vt, GCForeground, &gcvalue);
+  gcvalue.foreground = pix_colors[Color_bg];
+  gc = XCreateGC (disp, TermWin.vt, GCForeground, &gcvalue);
 
   if (bgPixmap.pixmap != None)
     {	/* we have a specified pixmap */
       unsigned int    w = bgPixmap.w, h = bgPixmap.h,
-                                          x = bgPixmap.x, y = bgPixmap.y;
+                      x = bgPixmap.x, y = bgPixmap.y;
       unsigned int    xpmh = xpmAttr.height,
-                             xpmw = xpmAttr.width;
+                      xpmw = xpmAttr.width;
 
       /*
        * don't zoom pixmap too much nor expand really small pixmaps
@@ -198,10 +202,10 @@ rxvt_term::resize_pixmap ()
       if (w == 0)
         {
           /* basic X tiling - let the X server do it */
-          TermWin.pixmap = XCreatePixmap (display->display, TermWin.vt,
+          TermWin.pixmap = XCreatePixmap (disp, TermWin.vt,
                                          xpmw, xpmh,
-                                         (unsigned int)XDEPTH);
-          XCopyArea (display->display, bgPixmap.pixmap, TermWin.pixmap, gc,
+                                         (unsigned int)display->depth);
+          XCopyArea (disp, bgPixmap.pixmap, TermWin.pixmap, gc,
                     0, 0, xpmw, xpmh, 0, 0);
         }
       else
@@ -209,17 +213,17 @@ rxvt_term::resize_pixmap ()
           float           incr, p;
           Pixmap          tmp;
 
-          TermWin.pixmap = XCreatePixmap (display->display, TermWin.vt,
+          TermWin.pixmap = XCreatePixmap (disp, TermWin.vt,
                                          width, height,
-                                         (unsigned int)XDEPTH);
+                                         (unsigned int)display->depth);
           /*
            * horizontal scaling
            */
           rxvt_pixmap_incr (&w, &x, &incr, &p, width, xpmw);
 
-          tmp = XCreatePixmap (display->display, TermWin.vt,
-                              width, xpmh, (unsigned int)XDEPTH);
-          XFillRectangle (display->display, tmp, gc, 0, 0, width,
+          tmp = XCreatePixmap (disp, TermWin.vt,
+                              width, xpmh, (unsigned int)display->depth);
+          XFillRectangle (disp, tmp, gc, 0, 0, width,
                          xpmh);
 
           for ( /*nil */ ; x < w; x++, p += incr)
@@ -227,7 +231,7 @@ rxvt_term::resize_pixmap ()
               if (p >= xpmw)
                 p = 0;
               /* copy one column from the original pixmap to the tmp pixmap */
-              XCopyArea (display->display, bgPixmap.pixmap, tmp, gc,
+              XCopyArea (disp, bgPixmap.pixmap, tmp, gc,
                         (int)p, 0, 1, xpmh, (int)x, 0);
             }
 
@@ -237,36 +241,34 @@ rxvt_term::resize_pixmap ()
           rxvt_pixmap_incr (&h, &y, &incr, &p, height, xpmh);
 
           if (y > 0)
-            XFillRectangle (display->display, TermWin.pixmap, gc, 0, 0, width,
-                           y);
+            XFillRectangle (disp, TermWin.pixmap, gc, 0, 0, width, y);
+
           if (h < height)
-            XFillRectangle (display->display, TermWin.pixmap, gc, 0, (int)h,
-                           width, height - h + 1);
+            XFillRectangle (disp, TermWin.pixmap, gc, 0, (int)h, width, height - h + 1);
+
           for ( /*nil */ ; y < h; y++, p += incr)
             {
               if (p >= xpmh)
                 p = 0;
+
               /* copy one row from the tmp pixmap to the main pixmap */
-              XCopyArea (display->display, tmp, TermWin.pixmap, gc,
+              XCopyArea (disp, tmp, TermWin.pixmap, gc,
                         0, (int)p, width, 1, 0, (int)y);
             }
-          XFreePixmap (display->display, tmp);
+
+          XFreePixmap (disp, tmp);
         }
     }
-  XSetWindowBackgroundPixmap (display->display, TermWin.vt, TermWin.pixmap);
-  XFreeGC (display->display, gc);
+
+  XSetWindowBackgroundPixmap (disp, TermWin.vt, TermWin.pixmap);
+  XFreeGC (disp, gc);
   am_transparent = 0;
-
-  XClearWindow (display->display, TermWin.vt);
-
-  XSync (display->display, False);
 }
 
 /*
  * Calculate tiling sizes and increments
  * At start, p == 0, incr == xpmwidthheight
  */
-/* INTPROTO */
 static void
 rxvt_pixmap_incr (unsigned int *wh, unsigned int *xy, float *incr, float *p, unsigned int widthheight, unsigned int xpmwidthheight)
 {
@@ -342,7 +344,7 @@ rxvt_pixmap_incr (unsigned int *wh, unsigned int *xy, float *incr, float *p, uns
 Pixmap
 rxvt_term::set_bgPixmap (const char *file)
 {
-  char           *f;
+  char *f;
 
   assert (file != NULL);
 
@@ -351,7 +353,8 @@ rxvt_term::set_bgPixmap (const char *file)
       XFreePixmap (display->display, bgPixmap.pixmap);
       bgPixmap.pixmap = None;
     }
-  XSetWindowBackground (display->display, TermWin.vt, PixColors[Color_bg]);
+
+  XSetWindowBackground (display->display, TermWin.vt, pix_colors[Color_bg]);
 
   if (*file != '\0')
     {
@@ -363,9 +366,9 @@ rxvt_term::set_bgPixmap (const char *file)
       /*      XGetWindowAttributes (display->display, TermWin.vt, &attr); */
 
       xpmAttr.closeness = 30000;
-      xpmAttr.colormap = XCMAP;
-      xpmAttr.visual = XVISUAL;
-      xpmAttr.depth = XDEPTH;
+      xpmAttr.colormap = display->cmap;
+      xpmAttr.visual = display->visual;
+      xpmAttr.depth = display->depth;
       xpmAttr.valuemask = (XpmCloseness | XpmColormap | XpmVisual |
                            XpmDepth | XpmSize | XpmReturnPixels);
 
@@ -379,10 +382,10 @@ rxvt_term::set_bgPixmap (const char *file)
           char *p;
 
           /* semi-colon delimited */
-          if ((p = STRCHR (file, ';')) == NULL)
-            p = STRCHR (file, '\0');
+          if ((p = strchr (file, ';')) == NULL)
+            p = strchr (file, '\0');
 
-          rxvt_warn ("couldn't load XPM file \"%.*s\", ignoring.", (p - file), file);
+          rxvt_warn ("couldn't load XPM file \"%.*s\", ignoring.\n", (p - file), file);
         }
 
       free (f);

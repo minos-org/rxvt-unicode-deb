@@ -1,12 +1,12 @@
 /*
- * $Id: command.h,v 1.8 2004/04/08 20:22:25 pcg Exp $
+ * command.h
  */
 
 #ifndef COMMAND_H_
 #define COMMAND_H_
 
 // STRING_MAX __MUST__ not be larger than what CBUFSIZ can hold.
-#define STRING_MAX	1024	/* max string size for process_rxvt_xterm_seq() */
+#define STRING_MAX	2048	/* max string size for process_rxvt_xterm_seq() */
 
 #define ESC_ARGS	32	/* max # of args for esc sequences */
 
@@ -23,14 +23,10 @@
 # define MULTICLICK_TIME	500
 #endif
 #ifndef SCROLLBAR_INITIAL_DELAY
-# ifdef NEXT_SCROLLER
-#  define SCROLLBAR_INITIAL_DELAY	20
-# else
-#  define SCROLLBAR_INITIAL_DELAY	40
-# endif
+# define SCROLLBAR_INITIAL_DELAY	0.33
 #endif
 #ifndef SCROLLBAR_CONTINUOUS_DELAY
-# define SCROLLBAR_CONTINUOUS_DELAY	2
+# define SCROLLBAR_CONTINUOUS_DELAY	0.05
 #endif
 
 /*
@@ -46,20 +42,28 @@
 
 #ifdef SCROLL_ON_SHIFT
 # define SCROLL_SHIFTKEY (shft)
+# define NOSCROLL_SHIFTKEY 0
 #else
 # define SCROLL_SHIFTKEY 0
+# define NOSCROLL_SHIFTKEY (shft)
 #endif
 #ifdef SCROLL_ON_CTRL
 # define SCROLL_CTRLKEY  (ctrl)
+# define NOSCROLL_CTRLKEY 0
 #else
 # define SCROLL_CTRLKEY 0
+# define NOSCROLL_CTRLKEY (ctrl)
 #endif
 #ifdef SCROLL_ON_META
 # define SCROLL_METAKEY  (meta)
+# define NOSCROLL_METAKEY 0
 #else
 # define SCROLL_METAKEY 0
+# define NOSCROLL_METAKEY (meta)
 #endif
-#define IS_SCROLL_MOD  (SCROLL_SHIFTKEY || SCROLL_CTRLKEY || SCROLL_METAKEY)
+#define IS_SCROLL_MOD  ((SCROLL_SHIFTKEY || SCROLL_CTRLKEY || SCROLL_METAKEY) \
+              && (!NOSCROLL_SHIFTKEY && !NOSCROLL_CTRLKEY && !NOSCROLL_METAKEY))
+
 
 /*
  * ESC-Z processing:
@@ -85,5 +89,4 @@
 # define ESCZ_ANSWER	VT100_ANS	/* obsolete ANSI ESC[c */
 #endif
 
-#include "command.intpro"	/* PROTOS for internal routines */
 #endif	/* _COMMAND_H_ */

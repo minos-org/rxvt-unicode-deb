@@ -25,19 +25,19 @@
 
 #include "../config.h"		/* NECESSARY */
 #include "rxvt.h"		/* NECESSARY */
-#include "misc.intpro"		/* PROTOS for internal routines */
 
-/* EXTPROTO */
 char *
 rxvt_wcstombs (const wchar_t *str, int len)
 {
+  if (len < 0) len = wcslen (str);
+
   mbstate mbs;
   char *r = (char *)rxvt_malloc (len * MB_CUR_MAX + 1);
 
   char *dst = r;
   while (len--)
     {
-      int l = wcrtomb (dst, *str++, mbs);
+      ssize_t l = wcrtomb (dst, *str++, mbs);
       if (l < 0)
         *dst++ = '?';
       else
@@ -46,21 +46,133 @@ rxvt_wcstombs (const wchar_t *str, int len)
 
   *dst++ = 0;
 
+  return (char *)rxvt_realloc (r, dst - r);
+}
+
+wchar_t *
+rxvt_mbstowcs (const char *str, int len)
+{
+  if (len < 0) len = strlen (str);
+
+  wchar_t *r = (wchar_t *)rxvt_malloc ((len + 1) * sizeof (wchar_t));
+
+  if ((ssize_t)mbstowcs (r, str, len + 1) < 0)
+    *r = 0;
+
   return r;
 }
 
-/* EXTPROTO */
+char *
+rxvt_wcstoutf8 (const wchar_t *str, int len)
+{
+  if (len < 0) len = wcslen (str);
+
+  char *r = (char *)rxvt_malloc (len * 4 + 1);
+  char *p = r;
+
+  while (len--)
+    {
+      unicode_t w = *str++ & UNICODE_MASK;
+
+      if      (w < 0x000080)
+        *p++ = w;
+      else if (w < 0x000800)
+        *p++ = 0xc0 | ( w >>  6),
+        *p++ = 0x80 | ( w        & 0x3f);
+      else if (w < 0x010000)
+        *p++ = 0xe0 | ( w >> 12       ),
+        *p++ = 0x80 | ((w >>  6) & 0x3f),
+        *p++ = 0x80 | ( w        & 0x3f);
+      else if (w < 0x110000)
+        *p++ = 0xf0 | ( w >> 18),
+        *p++ = 0x80 | ((w >> 12) & 0x3f),
+        *p++ = 0x80 | ((w >>  6) & 0x3f),
+        *p++ = 0x80 | ( w        & 0x3f);
+      else
+        *p++ = '?';
+    }
+
+  *p++ = 0;
+
+  return (char *)rxvt_realloc (r, p - r);
+}
+
+wchar_t *
+rxvt_utf8towcs (const char *str, int len)
+{
+  if (len < 0) len = strlen (str);
+
+  wchar_t *r = (wchar_t *)rxvt_malloc ((len + 1) * sizeof (wchar_t)),
+          *p = r;
+
+  unsigned char *s = (unsigned char *)str,
+                *e = s + len;
+
+  for (;;)
+    {
+      len = e - s;
+
+      if (len == 0)
+        break;
+      else if (s[0] < 0x80)
+        *p++ = *s++;
+      else if (len >= 2
+               && s[0] >= 0xc2 && s[0] <= 0xdf 
+               && (s[1] & 0xc0) == 0x80)
+        {
+          *p++ = ((s[0] & 0x1f) << 6)
+               |  (s[1] & 0x3f);
+          s += 2;
+        }
+      else if (len >= 3
+               && (   (s[0] == 0xe0                 && s[1] >= 0xa0 && s[1] <= 0xbf)
+                   || (s[0] >= 0xe1 && s[0] <= 0xec && s[1] >= 0x80 && s[1] <= 0xbf)
+                   || (s[0] == 0xed                 && s[1] >= 0x80 && s[1] <= 0x9f)
+                   || (s[0] >= 0xee && s[0] <= 0xef && s[1] >= 0x80 && s[1] <= 0xbf)
+                  )
+               && (s[2] & 0xc0) == 0x80)
+        {
+          *p++ = ((s[0] & 0x0f) << 12)
+               | ((s[1] & 0x3f) <<  6)
+               |  (s[2] & 0x3f);
+          s += 3;
+        }
+      else if (len >= 4
+               && (   (s[0] == 0xf0                 && s[1] >= 0x90 && s[1] <= 0xbf)
+                   || (s[0] >= 0xf1 && s[0] <= 0xf3 && s[1] >= 0x80 && s[1] <= 0xbf)
+                   || (s[0] == 0xf4                 && s[1] >= 0x80 && s[1] <= 0x8f)
+                  )
+               && (s[2] & 0xc0) == 0x80
+               && (s[3] & 0xc0) == 0x80)
+        {
+          *p++ = ((s[0] & 0x07) << 18) 
+               | ((s[1] & 0x3f) << 12) 
+               | ((s[2] & 0x3f) <<  6) 
+               |  (s[3] & 0x3f);
+          s += 4;
+        }
+      else
+        {
+          *p++ = 0xfffd;
+          s++;
+        }
+    }
+
+  *p = 0;
+
+  return r;
+}
+
 char *
 rxvt_strdup (const char *str)
 {
   return str ? strdup (str) : 0;
 }
 
-/* EXTPROTO */
 char *
 rxvt_r_basename (const char *str)
 {
-  char *base = STRRCHR (str, '/');
+  char *base = strrchr (str, '/');
 
   return (char *) (base ? base + 1 : str);
 }
@@ -68,7 +180,6 @@ rxvt_r_basename (const char *str)
 /*
  * Print an error message
  */
-/* EXTPROTO */
 void
 rxvt_vlog (const char *fmt, va_list arg_ptr)
 {
@@ -82,7 +193,6 @@ rxvt_vlog (const char *fmt, va_list arg_ptr)
     write (STDOUT_FILENO, msg, strlen (msg));
 }
 
-/* EXTPROTO */
 void
 rxvt_log (const char *fmt,...)
 {
@@ -96,7 +206,6 @@ rxvt_log (const char *fmt,...)
 /*
  * Print an error message
  */
-/* EXTPROTO */
 void
 rxvt_warn (const char *fmt,...)
 {
@@ -109,7 +218,6 @@ rxvt_warn (const char *fmt,...)
   va_end (arg_ptr);
 }
 
-/* EXTPROTO */
 void
 rxvt_fatal (const char *fmt,...)
 {
@@ -126,7 +234,6 @@ rxvt_fatal (const char *fmt,...)
 
 class rxvt_failure_exception rxvt_failure_exception;
 
-/* EXTPROTO */
 void
 rxvt_exit_failure ()
 {
@@ -139,18 +246,16 @@ rxvt_exit_failure ()
  * No Match
  *      return: 0
  * Match
- *      return: STRLEN (S2)
+ *      return: strlen (S2)
  */
-/* EXTPROTO */
 int
 rxvt_Str_match (const char *s1, const char *s2)
 {
-  int n = STRLEN (s2);
+  int n = strlen (s2);
 
-  return ((STRNCMP (s1, s2, n) == 0) ? n : 0);
+  return ((strncmp (s1, s2, n) == 0) ? n : 0);
 }
 
-/* EXTPROTO */
 const char *
 rxvt_Str_skip_space (const char *str)
 {
@@ -165,37 +270,35 @@ rxvt_Str_skip_space (const char *str)
  * remove leading/trailing space and strip-off leading/trailing quotes.
  * in place.
  */
-/* EXTPROTO */
 char           *
 rxvt_Str_trim (char *str)
 {
   char *r, *s;
-  int n;
 
   if (!str || !*str)		/* shortcut */
     return str;
 
   /* skip leading spaces */
   for (s = str; *s && isspace (*s); s++) ;
+
   /* goto end of string */
-  for (n = 0, r = s; *r++; n++) ;
-  r -= 2;
-  /* dump return */
-  if (n > 0 && *r == '\n')
-    n--, r--;
-  /* backtrack along trailing spaces */
-  for (; n > 0 && isspace (*r); r--, n--) ;
+  r = s + strlen (s) - 1;
+
+  /* dump return and other trailing whitespace */
+  while (r > s && isspace (*r))
+    r--;
+
+#if 0
   /* skip matching leading/trailing quotes */
   if (*s == '"' && *r == '"' && n > 1)
     {
       s++;
       n -= 2;
     }
+#endif
 
-  /* copy back over: forwards copy */
-  for (r = str; n; n--)
-    *r++ = *s++;
-  *r = '\0';
+  memmove (str, s, r + 1 - s);
+  str[r + 1 - s] = 0;
 
   return str;
 }
@@ -214,7 +317,6 @@ rxvt_Str_trim (char *str)
  *
  * returns the converted string length
  */
-/* EXTPROTO */
 int
 rxvt_Str_escaped (char *str)
 {
@@ -288,11 +390,9 @@ rxvt_Str_escaped (char *str)
 
 /*
  * Split a comma-separated string into an array, stripping leading and
- * trailing spaces (and paired quotes) from each entry.  Empty strings
- * are properly returned
+ * trailing spaces from each entry.  Empty strings are properly returned
  * Caller should free each entry and array when done
  */
-/* EXTPROTO */
 char          **
 rxvt_splitcommastring (const char *cs)
 {
@@ -306,6 +406,7 @@ rxvt_splitcommastring (const char *cs)
   for (n = 1, t = s; *t; t++)
     if (*t == ',')
       n++;
+
   ret = (char **)malloc ((n + 1) * sizeof (char *));
   ret[n] = NULL;
 
@@ -319,7 +420,17 @@ rxvt_splitcommastring (const char *cs)
       rxvt_Str_trim (ret[l]);
       s = ++t;
     }
+
   return ret;
+}
+
+void
+rxvt_freecommastring (char **cs)
+{
+  for (int i = 0; cs[i]; ++i)
+    free (cs[i]);
+
+  free (cs);
 }
 
 /*----------------------------------------------------------------------*
@@ -335,7 +446,6 @@ rxvt_splitcommastring (const char *cs)
  *
  * FILE is either semi-colon or zero terminated
  */
-/* INTPROTO */
 char           *
 rxvt_File_search_path (const char *pathlist, const char *file, const char *ext)
 {
@@ -344,13 +454,13 @@ rxvt_File_search_path (const char *pathlist, const char *file, const char *ext)
   char            name[256];
 
   if (!access (file, R_OK))	/* found (plain name) in current directory */
-    return STRDUP (file);
+    return strdup (file);
 
   /* semi-colon delimited */
-  if ((p = STRCHR (file, ';')))
+  if ((p = strchr (file, ';')))
     len = (p - file);
   else
-    len = STRLEN (file);
+    len = strlen (file);
 
 #ifdef DEBUG_SEARCH_PATH
   getcwd (name, sizeof (name));
@@ -359,29 +469,29 @@ rxvt_File_search_path (const char *pathlist, const char *file, const char *ext)
 #endif
 
   /* leave room for an extra '/' and trailing '\0' */
-  maxpath = sizeof (name) - (len + (ext ? STRLEN (ext) : 0) + 2);
+  maxpath = sizeof (name) - (len + (ext ? strlen (ext) : 0) + 2);
   if (maxpath <= 0)
     return NULL;
 
   /* check if we can find it now */
-  STRNCPY (name, file, len);
+  strncpy (name, file, len);
   name[len] = '\0';
 
   if (!access (name, R_OK))
-    return STRDUP (name);
+    return strdup (name);
   if (ext)
     {
-      STRCAT (name, ext);
+      strcat (name, ext);
       if (!access (name, R_OK))
-        return STRDUP (name);
+        return strdup (name);
     }
   for (path = pathlist; path != NULL && *path != '\0'; path = p)
     {
       int             n;
 
       /* colon delimited */
-      if ((p = STRCHR (path, ':')) == NULL)
-        p = STRCHR (path, '\0');
+      if ((p = strchr (path, ':')) == NULL)
+        p = strchr (path, '\0');
 
       n = (p - path);
       if (*p != '\0')
@@ -389,26 +499,25 @@ rxvt_File_search_path (const char *pathlist, const char *file, const char *ext)
 
       if (n > 0 && n <= maxpath)
         {
-          STRNCPY (name, path, n);
+          strncpy (name, path, n);
           if (name[n - 1] != '/')
             name[n++] = '/';
           name[n] = '\0';
-          STRNCAT (name, file, len);
+          strncat (name, file, len);
 
           if (!access (name, R_OK))
-            return STRDUP (name);
+            return strdup (name);
           if (ext)
             {
-              STRCAT (name, ext);
+              strcat (name, ext);
               if (!access (name, R_OK))
-                return STRDUP (name);
+                return strdup (name);
             }
         }
     }
   return NULL;
 }
 
-/* EXTPROTO */
 char           *
 rxvt_File_find (const char *file, const char *ext, const char *path)
 {
@@ -441,7 +550,6 @@ rxvt_File_find (const char *file, const char *ext, const char *path)
  * Draw top/left and bottom/right border shadows around windows
  */
 #if defined(RXVT_SCROLLBAR) || defined(MENUBAR)
-/* EXTPROTO */
 void
 rxvt_Draw_Shadow (Display *display, Window win, GC topShadow, GC botShadow, int x, int y, int w, int h)
 {
@@ -462,7 +570,6 @@ rxvt_Draw_Shadow (Display *display, Window win, GC topShadow, GC botShadow, int 
 
 /* button shapes */
 #ifdef MENUBAR
-/* EXTPROTO */
 void
 rxvt_Draw_Triangle (Display *display, Window win, GC topShadow, GC botShadow, int x, int y, int w, int type)
 {

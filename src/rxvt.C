@@ -27,14 +27,14 @@ int
 main (int argc, const char *const *argv)
 try
   {
-    rxvt_init_signals ();
+    rxvt_init ();
 
     rxvt_term *t = new rxvt_term;
 
     if (!t->init (argc, argv))
       return EXIT_FAILURE;
 
-    iom.loop ();
+    io_manager::loop ();
 
     return EXIT_SUCCESS;
   }

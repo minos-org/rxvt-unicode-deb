@@ -25,7 +25,6 @@
 
 #include "../config.h"		/* NECESSARY */
 #include "rxvt.h"		/* NECESSARY */
-#include "scrollbar.intpro"	/* PROTOS for internal routines */
 
 /*----------------------------------------------------------------------*/
 
@@ -38,18 +37,20 @@ rxvt_term::scrollbar_mapping (int map)
   int             change = 0;
 
 #ifdef HAVE_SCROLLBARS
-  if (map && !scrollbar_visible ())
+  if (map)
     {
       scrollBar.setIdle ();
+
       if (!scrollBar.win)
         resize_scrollbar ();
+
       if (scrollBar.win)
         {
           XMapWindow (display->display, scrollBar.win);
           change = 1;
         }
     }
-  else if (!map && scrollbar_visible ())
+  else
     {
       scrollBar.state = 0;
       XUnmapWindow (display->display, scrollBar.win);
@@ -69,10 +70,10 @@ rxvt_term::resize_scrollbar ()
 #define R_SCROLLEND_XTERM	szHint.height
 #define R_SCROLLBEG_NEXT	0
 #define R_SCROLLEND_NEXT	szHint.height - (SB_BUTTON_TOTAL_HEIGHT + \
-						    SB_PADDING)
+                                                    SB_PADDING)
 #define R_SCROLLBEG_RXVT	(scrollBar.width + 1) + sb_shadow
 #define R_SCROLLEND_RXVT	szHint.height - R_SCROLLBEG_RXVT - \
-				    (2 * sb_shadow)
+                                    (2 * sb_shadow)
 
 #if defined(PLAIN_SCROLLBAR)
   if (scrollBar.style == R_SB_PLAIN)
@@ -116,8 +117,8 @@ rxvt_term::resize_scrollbar ()
                                           scrollbar_TotalWidth (),
                                           szHint.height,
                                           0,
-                                          PixColors[Color_fg],
-                                          PixColors[Color_bg]);
+                                          pix_colors[Color_fg],
+                                          pix_colors[Color_border]);
 #ifdef DEBUG_X
       XStoreName (display->display, scrollBar.win, "scrollbar");
 #endif
@@ -203,15 +204,15 @@ rxvt_term::setup_scrollbar (const char *scrollalign, const char *scrollstyle, co
   if (scrollstyle)
     {
 #  ifdef NEXT_SCROLLBAR
-      if (STRNCASECMP (scrollstyle, "next", 4) == 0)
+      if (strncasecmp (scrollstyle, "next", 4) == 0)
         style = R_SB_NEXT;
 #  endif
 #  ifdef XTERM_SCROLLBAR
-      if (STRNCASECMP (scrollstyle, "xterm", 5) == 0)
+      if (strncasecmp (scrollstyle, "xterm", 5) == 0)
         style = R_SB_XTERM;
 #  endif
 #  ifdef PLAIN_SCROLLBAR
-      if (STRNCASECMP (scrollstyle, "plain", 5) == 0)
+      if (strncasecmp (scrollstyle, "plain", 5) == 0)
         style = R_SB_PLAIN;
 #  endif
 
@@ -231,7 +232,7 @@ rxvt_term::setup_scrollbar (const char *scrollalign, const char *scrollstyle, co
       width = min (i, SB_WIDTH_MAXIMUM);
 
 # if defined(RXVT_SCROLLBAR)
-  if (! (Options & Opt_scrollBar_floating) && style == R_SB_RXVT)
+  if (! (options & Opt_scrollBar_floating) && style == R_SB_RXVT)
     sb_shadow = SHADOW;
 # endif
 
@@ -241,9 +242,9 @@ rxvt_term::setup_scrollbar (const char *scrollalign, const char *scrollstyle, co
   /* scrollbar_align = R_SB_ALIGN_CENTRE; */
   if (scrollalign)
     {
-      if (STRNCASECMP (scrollalign, "top", 3) == 0)
+      if (strncasecmp (scrollalign, "top", 3) == 0)
         scrollbar_align = R_SB_ALIGN_TOP;
-      else if (STRNCASECMP (scrollalign, "bottom", 6) == 0)
+      else if (strncasecmp (scrollalign, "bottom", 6) == 0)
         scrollbar_align = R_SB_ALIGN_BOTTOM;
     }
 #endif

@@ -27,9 +27,10 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <csignal>
 
 #include <unistd.h>
-#include <signal.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -53,7 +54,7 @@ client::client ()
 
   if (connect (fd, (sockaddr *)&sa, sizeof (sa)))
     {
-      perror ("unable to connect to rxvtd");
+      perror ("unable to connect to the rxvt-unicode daemon");
       exit (EXIT_FAILURE);
     }
 }
@@ -64,8 +65,6 @@ int
 main (int argc, const char *const *argv)
 {
   client c;
-  char buf[PATH_MAX];
-
   {
     sigset_t ss;
 
@@ -75,13 +74,26 @@ main (int argc, const char *const *argv)
   }
 
   c.send ("NEW");
+
   // instead of getcwd we could opendir (".") and pass the fd for fchdir *g*
-  c.send ("CWD"), c.send (getcwd (buf, sizeof (buf)));
+  char cwd[PATH_MAX];
+
+  if (!getcwd (cwd, sizeof (cwd)))
+    {
+      perror ("unable to determine current working directory");
+      exit (EXIT_FAILURE);
+    }
+
+  c.send ("CWD"), c.send (cwd);
 
   for (char **var = environ; *environ; environ++)
     c.send ("ENV"), c.send (*environ);
 
-  for (int i = 0; i < argc; i++)
+  const char *base = strrchr (argv[0], '/');
+  base = base ? base + 1 : argv[0];
+  c.send ("ARG"), c.send (strcmp (base, RXVTNAME "c") ? base : RXVTNAME);
+
+  for (int i = 1; i < argc; i++)
     c.send ("ARG"), c.send (argv[i]);
 
   c.send ("END");

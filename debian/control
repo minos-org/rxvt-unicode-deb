@@ -3,7 +3,7 @@ Section: x11
 Priority: optional
 Maintainer: Eduard Bloch <blade@debian.org>
 Build-Depends: debhelper (>= 4.0.0), xlibs-dev, groff-base, autotools-dev, xutils, libxft-dev, x-dev, dpatch, chrpath, yodl
-Standards-Version: 3.6.0
+Standards-Version: 3.6.1
 
 Package: rxvt-unicode
 Architecture: any
@@ -27,7 +27,7 @@ Package: rxvt-unicode-ml
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, base-passwd (>= 2.0.3.4)
 Provides: x-terminal-emulator
-Suggests: ttf-bitstream-vera
+Suggests: ttf-bitstream-vera, ttf-kochi-gothic
 Conflicts: rxvt-unicode
 Provides: rxvt-unicode
 Description: multi-lingual terminal emulator with Unicode support for X11
