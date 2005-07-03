@@ -260,6 +260,14 @@ might be forced to use a different font.
 All of this is not a problem when using X11 core fonts, as their bounding
 box data is correct.
 
+=item On Solaris 9, many line-drawing characters are too wide.
+
+Seems to be a known bug, read
+L<http://nixdoc.net/files/forum/about34198.html>. Some people use the
+following ugly workaround to get non-double-wide-characters working:
+
+   #define wcwidth(x) wcwidth(x) > 1 ? 1 : wcwidth(x)
+
 =item My Compose (Multi_key) key is no longer working.
 
 The most common causes for this are that either your locale is not set
@@ -312,13 +320,16 @@ As you might have guessed, FreeBSD does neither define this symobl nor
 does it support it. Instead, it uses it's own internal representation of
 B<wchar_t>. This is, of course, completely fine with respect to standards.
 
-However, C<__STDC_ISO_10646__> is the only sane way to support
-multi-language apps in an OS, as using a locale-dependent (and
-non-standardized) representation of B<wchar_t> makes it impossible to
-convert between B<wchar_t> (as used by X11 and your applications) and any
-other encoding without implementing OS-specific-wrappers for each and
-every locale. There simply are no APIs to convert B<wchar_t> into anything
-except the current locale encoding.
+However, that means rxvt-unicode only works in C<POSIX>, C<ISO-8859-1> and
+C<UTF-8> locales under FreeBSD (which all use Unicode as B<wchar_t>.
+
+C<__STDC_ISO_10646__> is the only sane way to support multi-language
+apps in an OS, as using a locale-dependent (and non-standardized)
+representation of B<wchar_t> makes it impossible to convert between
+B<wchar_t> (as used by X11 and your applications) and any other encoding
+without implementing OS-specific-wrappers for each and every locale. There
+simply are no APIs to convert B<wchar_t> into anything except the current
+locale encoding.
 
 Some applications (such as the formidable B<mlterm>) work around this
 by carrying their own replacement functions for character set handling
@@ -329,6 +340,11 @@ encodings slightly different than the terminal emulator).
 The rxvt-unicode author insists that the right way to fix this is in the
 system libraries once and for all, instead of forcing every app to carry
 complete replacements for them :)
+
+=item I use Solaris 9 and it doesn't compile/work/etc.
+
+Try the diff in F<doc/solaris9.patch> as a base. It fixes the worst
+problems with C<wcwidth> and a compile problem.
 
 =item How does rxvt-unicode determine the encoding to use?
 
@@ -2186,12 +2202,13 @@ styles. The fonts can be set manually or automatically.
 
 =item --with-codesets=NAME,...
 
-Compile in support for additional codeset (encoding) groups (eu, vn are
-always compiled in, which includes most 8-bit character sets). These
-codeset tables are currently only used for driving X11 core fonts, they
-are not required for Xft fonts. Compiling them in will make your binary
-bigger (together about 700kB), but it doesn't increase memory usage unless
-you use an X11 font requiring one of these encodings.
+Compile in support for additional codeset (encoding) groups (C<eu>, C<vn>
+are always compiled in, which includes most 8-bit character sets). These
+codeset tables are used for driving X11 core fonts, they are not required
+for Xft fonts, although having them compiled in lets rxvt-unicode choose
+replacement fonts more intelligently. Compiling them in will make your
+binary bigger (all of together cost about 700kB), but it doesn't increase
+memory usage unless you use a font requiring one of these encodings.
 
 =begin table
 
@@ -2382,6 +2399,7 @@ in combination with other switches) is:
   tripleclickwords
   settable insecure mode
   keysym remapping support
+  cursor blinking and underline cursor
   -embed and -pty-fd options
 
 =item --enable-iso14755
@@ -2430,10 +2448,6 @@ See L<http://g.oswego.edu/dl/html/malloc.html> for details.
 Add smart growth/shrink behaviour when changing font size via from hot
 keys. This should keep in a fixed position the rxvt corner which is
 closest to a corner of the screen.
-
-=item --enable-cursor-blink
-
-Add support for a blinking cursor.
 
 =item --enable-pointer-blank
 

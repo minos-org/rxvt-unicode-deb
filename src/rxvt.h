@@ -24,6 +24,7 @@
 #if ENABLE_FRILLS
 # define ENABLE_XEMBED 1
 # define ENABLE_EWMH   1
+# define CURSOR_BLINK  1
 #endif
 
 /*
@@ -138,7 +139,7 @@ struct grwin_t;
 /* If we're using either the rxvt scrollbar or menu bars, keep the
  * scrollColor resource.
  */
-#if defined(RXVT_SCROLLBAR) || defined(MENUBAR) || defined(PLAIN_SCROLLBAR)
+#if defined(RXVT_SCROLLBAR) || defined(NEXT_SCROLLBAR) || defined(MENUBAR) || defined(PLAIN_SCROLLBAR)
 # define KEEP_SCROLLCOLOR 1
 #else
 # undef KEEP_SCROLLCOLOR
@@ -268,10 +269,10 @@ typedef struct _mwmhints {
 #define R_SB_ALIGN_TOP          1
 #define R_SB_ALIGN_BOTTOM       2
 
-#define R_SB_RXVT               0
 #define R_SB_NEXT               1
 #define R_SB_XTERM              2
 #define R_SB_PLAIN              4
+#define R_SB_RXVT               8
 
 #define SB_WIDTH_NEXT           19
 #define SB_WIDTH_XTERM          15
@@ -645,6 +646,10 @@ enum {
   Rs_borderLess,
   Rs_lineSpace,
   Rs_pty_fd,
+  Rs_cursorUnderline,
+#endif
+#if CURSOR_BLINK
+  Rs_cursorBlink,
 #endif
 #if ENABLE_XEMBED
   Rs_embed,
@@ -654,7 +659,6 @@ enum {
   Rs_answerbackstring,
   Rs_tripleclickwords,
   Rs_insecure,
-  Rs_cursorBlink,
   Rs_pointerBlank,
   Rs_pointerBlankDelay,
   Rs_imLocale,
@@ -1225,6 +1229,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
                         text_t text,
                         rend_t rend = OVERLAY_RSTYLE);
   void scr_overlay_set (int x, int y, const char *s);
+  void scr_overlay_set (int x, int y, const wchar_t *s);
 #endif
 
   vector<void *> allocated;           // free these memory blocks with free()

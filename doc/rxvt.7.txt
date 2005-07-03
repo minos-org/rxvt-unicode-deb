@@ -249,6 +249,13 @@ FREQUENTLY ASKED QUESTIONS
         All of this is not a problem when using X11 core fonts, as their
         bounding box data is correct.
 
+    On Solaris 9, many line-drawing characters are too wide.
+        Seems to be a known bug, read
+        <http://nixdoc.net/files/forum/about34198.html>. Some people use the
+        following ugly workaround to get non-double-wide-characters working:
+
+           #define wcwidth(x) wcwidth(x) > 1 ? 1 : wcwidth(x)
+
     My Compose (Multi_key) key is no longer working.
         The most common causes for this are that either your locale is not
         set correctly, or you specified a preeditStyle that is not supported
@@ -302,13 +309,16 @@ FREQUENTLY ASKED QUESTIONS
         representation of wchar_t. This is, of course, completely fine with
         respect to standards.
 
-        However, "__STDC_ISO_10646__" is the only sane way to support
-        multi-language apps in an OS, as using a locale-dependent (and
-        non-standardized) representation of wchar_t makes it impossible to
-        convert between wchar_t (as used by X11 and your applications) and
-        any other encoding without implementing OS-specific-wrappers for
-        each and every locale. There simply are no APIs to convert wchar_t
-        into anything except the current locale encoding.
+        However, that means rxvt-unicode only works in "POSIX", "ISO-8859-1"
+        and "UTF-8" locales under FreeBSD (which all use Unicode as wchar_t.
+
+        "__STDC_ISO_10646__" is the only sane way to support multi-language
+        apps in an OS, as using a locale-dependent (and non-standardized)
+        representation of wchar_t makes it impossible to convert between
+        wchar_t (as used by X11 and your applications) and any other
+        encoding without implementing OS-specific-wrappers for each and
+        every locale. There simply are no APIs to convert wchar_t into
+        anything except the current locale encoding.
 
         Some applications (such as the formidable mlterm) work around this
         by carrying their own replacement functions for character set
@@ -320,6 +330,10 @@ FREQUENTLY ASKED QUESTIONS
         The rxvt-unicode author insists that the right way to fix this is in
         the system libraries once and for all, instead of forcing every app
         to carry complete replacements for them :)
+
+    I use Solaris 9 and it doesn't compile/work/etc.
+        Try the diff in doc/solaris9.patch as a base. It fixes the worst
+        problems with "wcwidth" and a compile problem.
 
     How does rxvt-unicode determine the encoding to use?
     Is there an option to switch encodings?
@@ -1669,13 +1683,14 @@ CONFIGURE OPTIONS
         fonts can be set manually or automatically.
 
     --with-codesets=NAME,...
-        Compile in support for additional codeset (encoding) groups (eu, vn
-        are always compiled in, which includes most 8-bit character sets).
-        These codeset tables are currently only used for driving X11 core
-        fonts, they are not required for Xft fonts. Compiling them in will
-        make your binary bigger (together about 700kB), but it doesn't
-        increase memory usage unless you use an X11 font requiring one of
-        these encodings.
+        Compile in support for additional codeset (encoding) groups ("eu",
+        "vn" are always compiled in, which includes most 8-bit character
+        sets). These codeset tables are used for driving X11 core fonts,
+        they are not required for Xft fonts, although having them compiled
+        in lets rxvt-unicode choose replacement fonts more intelligently.
+        Compiling them in will make your binary bigger (all of together cost
+        about 700kB), but it doesn't increase memory usage unless you use a
+        font requiring one of these encodings.
 
            all             all available codeset groups 
            zh              common chinese encodings 
@@ -1836,6 +1851,7 @@ CONFIGURE OPTIONS
           tripleclickwords
           settable insecure mode
           keysym remapping support
+          cursor blinking and underline cursor
           -embed and -pty-fd options
 
     --enable-iso14755
@@ -1875,9 +1891,6 @@ CONFIGURE OPTIONS
         Add smart growth/shrink behaviour when changing font size via from
         hot keys. This should keep in a fixed position the rxvt corner which
         is closest to a corner of the screen.
-
-    --enable-cursor-blink
-        Add support for a blinking cursor.
 
     --enable-pointer-blank
         Add support to have the pointer disappear when typing or inactive.

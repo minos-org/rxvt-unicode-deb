@@ -373,6 +373,18 @@ might be forced to use a different font.</p>
 box data is correct.</p>
 </dd>
 <p></p>
+<dt><strong><a name="item_on_solaris_9_2c_many_line_2ddrawing_characters_are">On Solaris 9, many line-drawing characters are too wide.</a></strong><br />
+</dt>
+<dd>
+Seems to be a known bug, read
+<a href="http://nixdoc.net/files/forum/about34198.html">http://nixdoc.net/files/forum/about34198.html</a>. Some people use the
+following ugly workaround to get non-double-wide-characters working:
+</dd>
+<dd>
+<pre>
+   #define wcwidth(x) wcwidth(x) &gt; 1 ? 1 : wcwidth(x)</pre>
+</dd>
+<p></p>
 <dt><strong><a name="item_compose">My Compose (Multi_key) key is no longer working.</a></strong><br />
 </dt>
 <dd>
@@ -440,13 +452,17 @@ does it support it. Instead, it uses it's own internal representation of
 <strong>wchar_t</strong>. This is, of course, completely fine with respect to standards.</p>
 </dd>
 <dd>
-<p>However, <code>__STDC_ISO_10646__</code> is the only sane way to support
-multi-language apps in an OS, as using a locale-dependent (and
-non-standardized) representation of <strong>wchar_t</strong> makes it impossible to
-convert between <strong>wchar_t</strong> (as used by X11 and your applications) and any
-other encoding without implementing OS-specific-wrappers for each and
-every locale. There simply are no APIs to convert <strong>wchar_t</strong> into anything
-except the current locale encoding.</p>
+<p>However, that means rxvt-unicode only works in <code>POSIX</code>, <code>ISO-8859-1</code> and
+<code>UTF-8</code> locales under FreeBSD (which all use Unicode as <strong>wchar_t</strong>.</p>
+</dd>
+<dd>
+<p><code>__STDC_ISO_10646__</code> is the only sane way to support multi-language
+apps in an OS, as using a locale-dependent (and non-standardized)
+representation of <strong>wchar_t</strong> makes it impossible to convert between
+<strong>wchar_t</strong> (as used by X11 and your applications) and any other encoding
+without implementing OS-specific-wrappers for each and every locale. There
+simply are no APIs to convert <strong>wchar_t</strong> into anything except the current
+locale encoding.</p>
 </dd>
 <dd>
 <p>Some applications (such as the formidable <strong>mlterm</strong>) work around this
@@ -459,6 +475,13 @@ encodings slightly different than the terminal emulator).</p>
 <p>The rxvt-unicode author insists that the right way to fix this is in the
 system libraries once and for all, instead of forcing every app to carry
 complete replacements for them :)</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_i_use_solaris_9_and_it_doesn_27t_compile_2fwork_2f">I use Solaris 9 and it doesn't compile/work/etc.</a></strong><br />
+</dt>
+<dd>
+Try the diff in <em>doc/solaris9.patch</em> as a base. It fixes the worst
+problems with <code>wcwidth</code> and a compile problem.
 </dd>
 <p></p>
 <dt><strong><a name="item_how_does_rxvt_2dunicode_determine_the_encoding_to_">How does rxvt-unicode determine the encoding to use?</a></strong><br />
@@ -2531,12 +2554,13 @@ styles. The fonts can be set manually or automatically.
 <dt><strong><a name="item__2d_2dwith_2dcodesets_3dname_2c_2e_2e_2e">--with-codesets=NAME,...</a></strong><br />
 </dt>
 <dd>
-Compile in support for additional codeset (encoding) groups (eu, vn are
-always compiled in, which includes most 8-bit character sets). These
-codeset tables are currently only used for driving X11 core fonts, they
-are not required for Xft fonts. Compiling them in will make your binary
-bigger (together about 700kB), but it doesn't increase memory usage unless
-you use an X11 font requiring one of these encodings.
+Compile in support for additional codeset (encoding) groups (<code>eu</code>, <code>vn</code>
+are always compiled in, which includes most 8-bit character sets). These
+codeset tables are used for driving X11 core fonts, they are not required
+for Xft fonts, although having them compiled in lets rxvt-unicode choose
+replacement fonts more intelligently. Compiling them in will make your
+binary bigger (all of together cost about 700kB), but it doesn't increase
+memory usage unless you use a font requiring one of these encodings.
 </dd>
 <table>
 <tr><td>all</td><td>all available codeset groups</td></tr>
@@ -2785,6 +2809,7 @@ in combination with other switches) is:</p>
   tripleclickwords
   settable insecure mode
   keysym remapping support
+  cursor blinking and underline cursor
   -embed and -pty-fd options</pre>
 </dd>
 <p></p>
@@ -2850,12 +2875,6 @@ See <a href="http://g.oswego.edu/dl/html/malloc.html">http://g.oswego.edu/dl/htm
 Add smart growth/shrink behaviour when changing font size via from hot
 keys. This should keep in a fixed position the rxvt corner which is
 closest to a corner of the screen.
-</dd>
-<p></p>
-<dt><strong><a name="item__2d_2denable_2dcursor_2dblink">--enable-cursor-blink</a></strong><br />
-</dt>
-<dd>
-Add support for a blinking cursor.
 </dd>
 <p></p>
 <dt><strong><a name="item__2d_2denable_2dpointer_2dblank">--enable-pointer-blank</a></strong><br />

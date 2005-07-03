@@ -240,7 +240,7 @@ Put scrollbar on right/left; resource B<scrollBar_right>.
 
 =item B<-st>|B<+st>
 
-Display normal (non XTerm/NeXT) scrollbar without/with a trough;
+Display rxvt (non XTerm/NeXT) scrollbar without/with a trough;
 resource B<scrollBar_floating>.
 
 =item B<-ptab>|B<+ptab>
@@ -568,7 +568,7 @@ Use the specified colour for the scrollbar [default #B2B2B2].
 =item B<troughColor:> I<colour>
 
 Use the specified colour for the scrollbar's trough area [default
-#969696]. Only relevant for normal (non XTerm/NeXT) scrollbar.
+#969696]. Only relevant for rxvt (non XTerm/NeXT) scrollbar.
 
 =item B<borderColor:> I<colour>
 
@@ -670,7 +670,7 @@ xterm style selection.
 =item B<scrollstyle:> I<mode>
 
 Set scrollbar style to B<rxvt>, B<plain>, B<next> or B<xterm>. B<plain> is
-the author's favourite..
+the author's favourite.
 
 =item B<title:> I<string>
 
@@ -817,7 +817,8 @@ Mouse pointer background colour.
 
 =item B<pointerBlankDelay:> I<number>
 
-Specifies number of seconds before blanking the pointer [default 2].
+Specifies number of seconds before blanking the pointer [default 2]. Use a
+large number (e.g. C<987654321>) to effectively disable the timeout.
 
 =item B<backspacekey:> I<string>
 
@@ -958,6 +959,25 @@ example the following means "change the current locale to C<zh_CN.GBK>
 when Control-Meta-c is being pressed":
 
   URxvt.keysym.M-C-c: command:\033]701;zh_CN.GBK\007
+
+Due the the large number of modifier combinations, a defined key mapping
+will match if at I<at least> the specified identifiers are being set, and
+no other key mappings with those and more bits are being defined. That
+means that defining a key map for C<a> will automatically provide
+definitions for C<Meta-a>, C<Shift-a> and so on, unless some of those are defined
+mappings themselves.
+
+Unfortunately, this will override built-in key mappings. For example
+if you overwrite the C<Insert> key you will disable @@RXVT_NAME@@'s
+C<Shift-Insert> mapping. To re-enable that, you can poke "holes" into the
+user-defined keymap using the C<builtin:> replacement:
+
+  URxvt.keysym.Insert: <my insert key sequence>
+  URxvt.keysym.S-Insert: builtin:
+
+The first line defines a mapping for C<Insert> and I<any> combination
+of modifiers. The second line re-establishes the default mapping for
+C<Shift-Insert>.
 
 The following example will map Control-Meta-1 and Control-Meta-2 to
 the fonts C<suxuseuro> and C<9x15bold>, so you can have some limited
