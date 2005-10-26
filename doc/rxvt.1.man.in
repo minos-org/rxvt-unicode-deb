@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "rxvt 1"
-.TH rxvt 1 "2005-06-18" "5.5" "RXVT-UNICODE"
+.TH rxvt 1 "2005-10-25" "5.8" "RXVT-UNICODE"
 .SH "NAME"
 rxvt\-unicode (ouR XVT, unicode) \- (a VT102 emulator for the X window system)
 .SH "SYNOPSIS"
@@ -225,19 +225,30 @@ Turn on/off simulated reverse video; resource \fBreverseVideo\fR.
 .IP "\fB\-j\fR|\fB+j\fR" 4
 .IX Item "-j|+j"
 Turn on/off jump scrolling; resource \fBjumpScroll\fR.
-.IP "\fB\-ip\fR|\fB+ip\fR" 4
-.IX Item "-ip|+ip"
+.IP "\fB\-ip\fR|\fB+ip\fR | \fB\-tr\fR|\fB+tr\fR" 4
+.IX Item "-ip|+ip | -tr|+tr"
 Turn on/off inheriting parent window's pixmap. Alternative form is
 \&\fB\-tr\fR; resource \fBinheritPixmap\fR.
 .IP "\fB\-fade\fR \fInumber\fR" 4
 .IX Item "-fade number"
-Fade the text by the given percentage when focus is lost. resource \fBfading\fR.
+Fade the text by the given percentage when focus is lost. Small values
+fade a little only, 100 completely replaces all colours by the fade
+colour; resource \fBfading\fR.
+.IP "\fB\-fadecolor\fR \fIcolour\fR" 4
+.IX Item "-fadecolor colour"
+Fade to this colour when fading is used (see \fB\-fade\fR). The default colour
+is black. resource \fBfadeColor\fR.
 .IP "\fB\-tint\fR \fIcolour\fR" 4
 .IX Item "-tint colour"
 Tint the transparent background pixmap with the given colour when
-transparency is enabled with \fB\-tr\fR or \fB\-ip\fR. See also the \fB\-sh\fR
-option that can be used to brighten or darken the image in addition to
-tinting it.
+transparency is enabled with \fB\-tr\fR or \fB\-ip\fR. This only works for
+non-tiled backgrounds, currently. See also the \fB\-sh\fR option that can be
+used to brighten or darken the image in addition to tinting it; resource
+\&\fItintColor\fR. Example:
+.Sp
+.Vb 1
+\&   @@RXVT_NAME@@ -tr -tint blue -sh 40
+.Ve
 .IP "\fB\-sh\fR" 4
 .IX Item "-sh"
 \&\fInumber\fR Darken (0 .. 100) or lighten (\-1 .. \-100) the transparent
@@ -614,10 +625,15 @@ artificial transparency. \fBFalse\fR: do not inherit the parent windows'
 pixmap.
 .IP "\fBfading:\fR \fInumber\fR" 4
 .IX Item "fading: number"
-Fade the text by the given percentage when focus is lost.
+Fade the text by the given percentage when focus is lost; option \fB\-fade\fR.
+.IP "\fBfadeColor:\fR \fIcolour\fR" 4
+.IX Item "fadeColor: colour"
+Fade to this colour, when fading is used (see \fBfading:\fR). The default
+colour is black; option \fB\-fadecolor\fR.
 .IP "\fBtintColor:\fR \fIcolour\fR" 4
 .IX Item "tintColor: colour"
-Tint the transparent background pixmap with the given colour.
+Tint the transparent background pixmap with the given colour; option
+\&\fB\-tint\fR.
 .IP "\fBshading:\fR \fInumber\fR" 4
 .IX Item "shading: number"
 Darken (0 .. 100) or lighten (\-1 .. \-100) the transparent background
@@ -760,6 +776,17 @@ option \fB\-ut\fR. \fBFalse\fR: write record into the system log file \fButmp\fR
 Specify a command pipe for vt100 printer [default \fI\fIlpr\fI\|(1)\fR]. Use
 \&\fBPrint\fR to initiate a screen dump to the printer and \fBCtrl-Print\fR or
 \&\fBShift-Print\fR to include the scrollback as well.
+.Sp
+The string will be interpreted as if typed into the shell as\-is.
+.Sp
+Example:
+.Sp
+.Vb 1
+\&   URxvt*print-pipe: cat > $(TMPDIR=$HOME mktemp urxvt.XXXXXX)
+.Ve
+.Sp
+This creates a new file in your home directory with the screen contents
+everytime you hit \f(CW\*(C`Print\*(C'\fR.
 .IP "\fBscrollBar:\fR \fIboolean\fR" 4
 .IX Item "scrollBar: boolean"
 \&\fBTrue\fR: enable the scrollbar [default]; option \fB\-sb\fR. \fBFalse\fR:
@@ -1226,7 +1253,7 @@ Used in the same way as \f(CW\*(C`RXVTPATH\*(C'\fR.
 The unix domain socket path used by @@RXVT_NAME@@c(1) and
 @@RXVT_NAME@@d(1).
 .Sp
-Default \f(CW\*(C`$HOME/.rxvt\-unicode\-<nodename\*(C'\fR.
+Default \fI$HOME/.rxvt\-unicode\-\fI<nodename\fI\fR.
 .IP "\fB\s-1HOME\s0\fR" 4
 .IX Item "HOME"
 Used to locate the default directory for the unix domain socket for
@@ -1246,14 +1273,7 @@ If set and accessible, gives the name of a X resource file to be loaded by
 Color names.
 .SH "SEE ALSO"
 .IX Header "SEE ALSO"
-@@RXVT_NAME@@(7), \fIxterm\fR\|(1), \fIsh\fR\|(1), \fIresize\fR\|(1), X(1), \fIpty\fR\|(4), \fItty\fR\|(4), \fIutmp\fR\|(5)
-.SH "BUGS"
-.IX Header "BUGS"
-Check the \s-1BUGS\s0 file for an up-to-date list.
-.PP
-Cursor change support is not yet implemented.
-.PP
-Click-and-drag doesn't work with X11 mouse report overriding.
+@@RXVT_NAME@@(7), @@RXVT_NAME@@c(1), @@RXVT_NAME@@d(1), \fIxterm\fR\|(1), \fIsh\fR\|(1), \fIresize\fR\|(1), X(1), \fIpty\fR\|(4), \fItty\fR\|(4), \fIutmp\fR\|(5)
 .SH "CURRENT PROJECT COORDINATOR"
 .IX Header "CURRENT PROJECT COORDINATOR"
 .IP "Project Coordinator" 4

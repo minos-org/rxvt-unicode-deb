@@ -1654,18 +1654,18 @@ rxvt_term::focus_in ()
     {
       TermWin.focus = 1;
       want_refresh = 1;
-#ifdef USE_XIM
+#if USE_XIM
       if (Input_Context != NULL)
         {
           IMSetStatusPosition ();
           XSetICFocus (Input_Context);
         }
 #endif
-#ifdef CURSOR_BLINK
+#if CURSOR_BLINK
       if (options & Opt_cursorBlink)
         cursor_blink_ev.start (NOW + BLINK_INTERVAL);
 #endif
-#ifdef OFF_FOCUS_FADING
+#if OFF_FOCUS_FADING
       if (rs[Rs_fade])
         {
           pix_colors = pix_colors_focused;
@@ -1689,16 +1689,16 @@ rxvt_term::focus_out ()
 #if ENABLE_OVERLAY
       scr_overlay_off ();
 #endif
-#ifdef USE_XIM
+#if USE_XIM
       if (Input_Context != NULL)
         XUnsetICFocus (Input_Context);
 #endif
-#ifdef CURSOR_BLINK
+#if CURSOR_BLINK
       if (options & Opt_cursorBlink)
         cursor_blink_ev.stop ();
       hidden_cursor = 0;
 #endif
-#ifdef OFF_FOCUS_FADING
+#if OFF_FOCUS_FADING
       if (rs[Rs_fade])
         {
           pix_colors = pix_colors_unfocused;
@@ -2563,7 +2563,7 @@ rxvt_term::check_our_parents ()
 
       if (n > (int) (sizeof (TermWin.parent) / sizeof (TermWin.parent[0])))
         {
-          XSetWindowBackground (disp, TermWin.parent[0], pix_colors_focused[Color_fg]);
+          XSetWindowBackground (disp, TermWin.parent[0], pix_colors_focused[Color_border]);
           XSetWindowBackground (disp, TermWin.vt, pix_colors_focused[Color_bg]);
           am_transparent = 0;
           /* XXX: also turn off Opt_transparent? */
@@ -2648,6 +2648,7 @@ rxvt_term::cmd_parse ()
           bool refreshnow = false;
           int nlines = 0;
           unicode_t *str = buf;
+          unicode_t *eol = str + min (TermWin.ncol, UBUFSIZ);
 
           for (;;)
             {
@@ -2656,9 +2657,11 @@ rxvt_term::cmd_parse ()
 
               *str++ = ch;
 
-              if (ch == C0_LF)
+              if (ch == C0_LF || str >= eol)
                 {
-                  nlines++;
+                  if (ch == C0_LF)
+                    nlines++;
+
                   refresh_count++;
 
                   if (!(options & Opt_jumpScroll)
@@ -2675,13 +2678,20 @@ rxvt_term::cmd_parse ()
                       scr_add_lines (buf, nlines, str - buf);
                       nlines = 0;
                       str = buf;
+                      eol = str + min (TermWin.ncol, UBUFSIZ);
                     }
-                }
 
-              if (str >= buf + UBUFSIZ)
-                {
-                  ch = NOCHAR;
-                  break;
+                  if (str >= eol)
+                    {
+                      if (eol >= buf + UBUFSIZ)
+                        {
+                          ch = NOCHAR;
+                          break;
+                        }
+                      else
+                        eol = min (eol + TermWin.ncol, buf + UBUFSIZ);
+                    }
+
                 }
 
               seq_begin = cmdbuf_ptr;
