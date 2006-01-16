@@ -40,30 +40,15 @@
  * NOTE:
  *
  * Most of these configuration options have not been tested within the new
- * rxvt-unicode framework. Changing them might work, might have no effect,
+ * rxvt-unicode framework. Changing them should work, might have no effect,
  * destroy your disks or have any other effects. You may freely try (and
  * report bugs, too!), but don't _expect_ them to work.
  */
 
 /*
- * Define the name of the environment variable to be used in
- * addition to the "PATH" environment and the `path' resource.
- * Usually it should point to where you keep your background pixmaps and/or
- * your menu files
- */
-#define PATH_ENV	"RXVTPATH"
-
-/*
  * Avoid enabling the colour cursor (-cr, cursorColor, cursorColor2)
  */
 /* #define NO_CURSORCOLOR */
-
-/*
- * Suppress use of BOLD and BLINK attributes for setting bright foreground
- * and background, respectively.  Simulate BOLD using colorBD or
- * overstrike characters.
- */
-/* #define NO_BRIGHTCOLOR */
 
 /*
  * Make colours match xterm colours instead of `traditional' rxvt colours
@@ -78,8 +63,13 @@
 /*
  * Define maximum possible columns and rows
  */
-#define MAX_COLS	4000
-#define MAX_ROWS	1000
+#define MAX_COLS	10000
+#define MAX_ROWS	10000
+
+/*
+ * Define maximum possible savelines
+ */
+#define MAX_SAVELINES   10000000
 
 /*
  * Define default colours for certain items.  If you have a low colour
@@ -120,7 +110,7 @@
  * Define to remove support for XCopyArea () support.  XCopyArea () is useful
  * for scrolling on non-local X displays
  */
-#define NO_SLOW_LINK_SUPPORT
+#undef NO_SLOW_LINK_SUPPORT
 
 /*
  * Printer pipe which will be used for emulation of attached vt100 printer
@@ -132,13 +122,6 @@
  */
 /* #define ALLOW_132_MODE */
  
-/*------------------------------RESOURCES-------------------------------*/
-/*
- * Define to find installed application defaults for rxvt
- * Only if USE_XGETDEFAULT is not defined.
- */
-#define USE_XAPPLOADDIR
-
 /*
  * Add support for the Offix DND (Drag 'n' Drop) protocol
  */
@@ -164,9 +147,9 @@
 /*
  * Enable the keysym resource which allows you to define strings associated
  * with various KeySyms (0xFF00 - 0xFFFF).
- * Only works with the default hand-rolled resources.
+ * Required by perl.
  */
-#if !NO_RESOURCES && ENABLE_FRILLS
+#if ENABLE_FRILLS || ENABLE_PERL
 # define KEYSYM_RESOURCE
 #endif
 
@@ -239,12 +222,6 @@
  * this long after the last mouse click [default: 50 milliseconds]
  */
 #define MOUSE_THRESHOLD		50
-
-/*
- * If mouse wheel is defined, then scrolling is by 5 lines (or 1 line
- * if the shift key is down).  Scrolling can be smooth or jump scrolling
- */
-#define JUMP_MOUSE_WHEEL
 
 /*
  * Set delay periods for continuous scrolling with scrollbar buttons
@@ -361,14 +338,8 @@
 /* #define ESCZ_ANSWER	"\033[?1;2C" */
 
 /*
- * Check the current value of the window-time/icon-name and avoid
- * re-setting it to the same value -- avoids unnecessary window refreshes
- */
-//#define SMART_WINDOW_TITLE // currently disabled, needs to be reimplemented
-
-/*
  * Allow foreground/background colour to be changed with an
- * xterm escape sequence "\E]39;colour^G" -- still experimental
+ * xterm escape sequence "\E]39;colour^G"
  */
 #define XTERM_COLOR_CHANGE
 
@@ -395,7 +366,7 @@
 /*
  * Default number of lines in the scrollback buffer
  */
-#define SAVELINES	64
+#define SAVELINES	1000
 
 /*
  * Provide termcap/terminfo bw support (wrap backwards on cub1)

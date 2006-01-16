@@ -33,12 +33,12 @@
 #include "menubar.h"
 
 #define Menu_PixelWidth(menu)					\
-    (2 * SHADOW + Width2Pixel ((menu)->width + 3 * HSPACE))
+    (2 * MENU_SHADOW + Width2Pixel ((menu)->width + 3 * HSPACE))
 
 static const struct
   {
-    const char      name;	/* (l)eft, (u)p, (d)own, (r)ight */
-    const unsigned char str[5];	/* str[0] = strlen (str+1) */
+    const char name;	/* (l)eft, (u)p, (d)own, (r)ight */
+    const char str[5];	/* str[0] = strlen (str+1) */
   }
 Arrows[NARROWS] = {
                     { 'l', "\003\033[D" },
@@ -149,7 +149,7 @@ rxvt_term::menuitem_free (menu_t *menu, menuitem_t *item)
  * remove the first character of STR if it's '\0'
  */
 int
-rxvt_action_type (action_t *action, unsigned char *str)
+rxvt_action_type (action_t *action, char *str)
 {
   unsigned int    len;
 
@@ -168,9 +168,9 @@ rxvt_action_type (action_t *action, unsigned char *str)
   if (str[0] == '\0')
     {
       /* the functional equivalent: memmove (str, str+1, len); */
-      unsigned char  *dst = (str);
-      unsigned char  *src = (str + 1);
-      unsigned char  *end = (str + len);
+      char *dst = (str);
+      char *src = (str + 1);
+      char *end = (str + len);
 
       while (src <= end)
         *dst++ = *src++;
@@ -179,6 +179,7 @@ rxvt_action_type (action_t *action, unsigned char *str)
       if (str[0] != '\0')
         action->type = MenuTerminalAction;
     }
+
   action->str = str;
   action->len = len;
 
@@ -351,13 +352,13 @@ rxvt_term::menuarrow_add (char *string)
 
   for (i = 0; i < NARROWS; i++)
     {
-      unsigned char  *str;
-      unsigned int    len;
+      char *str;
+      unsigned int len;
 
       if (!parse[i].len)
         continue;
 
-      str = (unsigned char *) rxvt_malloc (parse[i].len + xtra_len + 1);
+      str = (char *)rxvt_malloc (parse[i].len + xtra_len + 1);
 
       len = 0;
       if (beg.len)
@@ -478,7 +479,7 @@ Item_Found:
     }
   if (len)
     {
-      unsigned char *str = (unsigned char *)rxvt_malloc (len + 1);
+      char *str = (char *)rxvt_malloc (len + 1);
 
       strcpy (str, action);
 
@@ -755,10 +756,10 @@ rxvt_term::drawbox_menubar (int x, int len, int state)
 
   x = Width2Pixel (x);
   len = Width2Pixel (len + HSPACE);
-  if (x >= TermWin.width)
+  if (x >= width)
     return;
-  else if (x + len >= TermWin.width)
-    len = (TermWin_TotalWidth () - x);
+  else if (x + len >= width)
+    len = (this->width - x);
 
 #ifdef MENUBAR_SHADOW_IN
   state = -state;
@@ -806,10 +807,10 @@ rxvt_term::drawtriangle (int x, int y, int state)
         break;			/* neutral */
     }
 
-  w = Height2Pixel (1) - 2 * SHADOW;
+  w = Height2Pixel (1) - 2 * MENU_SHADOW;
 
-  x -= SHADOW + (3 * w / 2);
-  y += SHADOW * 3;
+  x -= MENU_SHADOW + (3 * w / 2);
+  y += MENU_SHADOW * 3;
 
   rxvt_Draw_Triangle (display->display, ActiveMenu->win, top, bot, x, y, w, 'r');
 }
@@ -838,9 +839,9 @@ rxvt_term::drawbox_menuitem (int y, int state)
     }
 
   rxvt_Draw_Shadow (display->display, ActiveMenu->win, top, bot,
-                   SHADOW + 0, SHADOW + y,
-                   ActiveMenu->w - 2 * (SHADOW),
-                   HEIGHT_TEXT + 2 * SHADOW);
+                   MENU_SHADOW + 0, MENU_SHADOW + y,
+                   ActiveMenu->w - 2 * (MENU_SHADOW),
+                   HEIGHT_TEXT + 2 * MENU_SHADOW);
   XFlush (display->display);
 }
 
@@ -944,19 +945,19 @@ rxvt_term::menu_show ()
       ActiveMenu->y = 1;
       ActiveMenu->w = Menu_PixelWidth (ActiveMenu);
 
-      if ((x + ActiveMenu->w) >= TermWin.width)
-        x = (TermWin_TotalWidth () - ActiveMenu->w);
+      if ((x + ActiveMenu->w) >= width)
+        x = (this->width - ActiveMenu->w);
 
       /* find the height */
       for (h = 0, item = ActiveMenu->head; item != NULL; item = item->next)
         h += isSeparator (item->name) ? HEIGHT_SEPARATOR
-             : HEIGHT_TEXT + 2 * SHADOW;
-      ActiveMenu->h = h + 2 * SHADOW;
+             : HEIGHT_TEXT + 2 * MENU_SHADOW;
+      ActiveMenu->h = h + 2 * MENU_SHADOW;
     }
 
   if (ActiveMenu->win == None)
     {
-      ActiveMenu->win = XCreateSimpleWindow (display->display, TermWin.vt,
+      ActiveMenu->win = XCreateSimpleWindow (display->display, vt,
                                              x, ActiveMenu->y,
                                              ActiveMenu->w, ActiveMenu->h,
                                              0,
@@ -977,7 +978,7 @@ rxvt_term::menu_show ()
 
   for (y = 0, item = ActiveMenu->head; item != NULL; item = item->next)
     {
-      const int xoff = (SHADOW + Width2Pixel (HSPACE) / 2);
+      const int xoff = (MENU_SHADOW + Width2Pixel (HSPACE) / 2);
       register int h;
       GC gc = menubarGC;
 
@@ -985,8 +986,8 @@ rxvt_term::menu_show ()
         {
           rxvt_Draw_Shadow (display->display, ActiveMenu->win,
                             topShadowGC, botShadowGC,
-                            SHADOW, y + SHADOW + 1,
-                            ActiveMenu->w - 2 * SHADOW, 0);
+                            MENU_SHADOW, y + MENU_SHADOW + 1,
+                            ActiveMenu->w - 2 * MENU_SHADOW, 0);
           h = HEIGHT_SEPARATOR;
         }
       else
@@ -1020,15 +1021,15 @@ rxvt_term::menu_show ()
               /* find the height of this submenu */
               for (h = 0, it = menu->head; it != NULL; it = it->next)
                 h += isSeparator (it->name) ? HEIGHT_SEPARATOR
-                     : HEIGHT_TEXT + 2 * SHADOW;
-              menu->h = h + 2 * SHADOW;
+                     : HEIGHT_TEXT + 2 * MENU_SHADOW;
+              menu->h = h + 2 * MENU_SHADOW;
 
               /* ensure menu is in window limits */
-              if ((x1 + menu->w) >= TermWin.width)
-                x1 = (TermWin_TotalWidth () - menu->w);
+              if ((x1 + menu->w) >= width)
+                x1 = (this->width - menu->w);
 
-              if ((y1 + menu->h) >= TermWin.height)
-                y1 = (TermWin_TotalHeight () - menu->h);
+              if ((y1 + menu->h) >= height)
+                y1 = (this->height - menu->h);
 
               menu->x = (x1 < 0 ? 0 : x1);
               menu->y = (y1 < 0 ? 0 : y1);
@@ -1037,17 +1038,17 @@ rxvt_term::menu_show ()
             name = NULL;
 
           if (len && name)
-            draw_string (*ActiveMenu->drawable, gc, TermWin.fontset[0],
-                         xoff, 2 * SHADOW + y, name, len);
+            draw_string (*ActiveMenu->drawable, gc, fontset[0],
+                         xoff, 2 * MENU_SHADOW + y, name, len);
 
           len = item->len2;
           name = item->name2;
 
           if (len && name)
-            draw_string (*ActiveMenu->drawable, gc, TermWin.fontset[0],
-                         ActiveMenu->w - (xoff + Width2Pixel (xright)), 2 * SHADOW + y, name, len);
+            draw_string (*ActiveMenu->drawable, gc, fontset[0],
+                         ActiveMenu->w - (xoff + Width2Pixel (xright)), 2 * MENU_SHADOW + y, name, len);
 
-          h = HEIGHT_TEXT + 2 * SHADOW;
+          h = HEIGHT_TEXT + 2 * MENU_SHADOW;
         }
       y += h;
     }
@@ -1284,7 +1285,7 @@ rxvt_term::menubar_remove (const char *name)
 void
 rxvt_action_decode (FILE *fp, action_t *act)
 {
-  unsigned char *str;
+  char *str;
   short len;
 
   if (act == NULL || (len = act->len) == 0 || (str = act->str) == NULL)
@@ -1327,7 +1328,7 @@ rxvt_action_decode (FILE *fp, action_t *act)
    */
   while (len > 0)
     {
-      unsigned char   ch = *str++;
+      char ch = *str++;
 
       switch (ch)
         {
@@ -1348,7 +1349,7 @@ rxvt_action_decode (FILE *fp, action_t *act)
           default:
             if (ch <= 31)
               fprintf (fp, "^%c", ('@' + ch));
-            else if (ch > 127)
+            else if ((unsigned char)ch > 127)
               fprintf (fp, "\\%o", ch);
             else
               fprintf (fp, "%c", ch);
@@ -1708,7 +1709,7 @@ rxvt_term::menubar_dispatch (char *str)
             else if ((n = rxvt_Str_match (str, "pixmap:")) != 0)
               {
                 str += n;
-                process_xterm_seq (XTerm_Pixmap, str, CHAR_ST);
+                process_xterm_seq (Rxvt_Pixmap, str, CHAR_ST);
               }
 #if (MENUBAR_MAX > 1)
             else if ((n = rxvt_Str_match (str, "rm")) != 0)
@@ -1946,6 +1947,7 @@ rxvt_term::menubar_dispatch (char *str)
                   else
                     BuildMenu = menu;
                 }
+
               if (BuildMenu != NULL)
                 {
                   if (name == NULL || name[0] == '\0')
@@ -1954,7 +1956,6 @@ rxvt_term::menubar_dispatch (char *str)
                     {
                       const char     *n1;
                       menuitem_t     *item;
-                      menu_t         *BuildMenu = BuildMenu;
 
                       n1 = strcmp (name, SEPARATOR_NAME) ? name : "";
                       item = rxvt_menuitem_find (BuildMenu, n1);
@@ -1969,10 +1970,11 @@ rxvt_term::menubar_dispatch (char *str)
                             {
                               short           l = item->len + item->len2;
 
-                              MAX_IT (BuildMenu->width, l);
+                              max_it (BuildMenu->width, l);
                             }
                         }
                     }
+
                   menubar_expose ();
                 }
               break;
@@ -2060,35 +2062,34 @@ rxvt_term::menubar_expose ()
           rxvt_print_menu_descendants (menu);
 #endif
 
-          if (x >= TermWin.ncol)
-            len = (TermWin.ncol - (menu->x + HSPACE));
+          if (x >= ncol)
+            len = (ncol - (menu->x + HSPACE));
 
           drawbox_menubar (menu->x, len, +1);
-          draw_string (*menuBar.drawable, menubarGC, TermWin.fontset[0],
+          draw_string (*menuBar.drawable, menubarGC, fontset[0],
                        (Width2Pixel (menu->x) + Width2Pixel (HSPACE) / 2),
-                       SHADOW, menu->name, len);
+                       MENU_SHADOW, menu->name, len);
 
-          if (x >= TermWin.ncol)
+          if (x >= ncol)
             break;
         }
     }
-  drawbox_menubar (x, TermWin.ncol, (CurrentBar ? +1 : -1));
+  drawbox_menubar (x, ncol, (CurrentBar ? +1 : -1));
 
   /* add the menuBar title, if it exists and there's plenty of room */
   Arrows_x = 0;
-  if (x < TermWin.ncol)
+  if (x < ncol)
     {
       const char     *str;
-      int             ncol;
       unsigned int    len;
       char            title[256];
 
-      ncol = (int)TermWin.ncol;
       if (x < (ncol - (NARROWS + 1)))
         {
           ncol -= (NARROWS + 1);
           Arrows_x = Width2Pixel (ncol);
         }
+
       draw_Arrows (0, +1);
 
       str = (CurrentBar
@@ -2127,9 +2128,9 @@ rxvt_term::menubar_expose ()
 
       ncol -= (x + len + HSPACE);
       if (len > 0 && ncol >= 0)
-        draw_string (*menuBar.drawable, menubarGC, TermWin.fontset[0],
+        draw_string (*menuBar.drawable, menubarGC, fontset[0],
                      Width2Pixel (x) + Width2Pixel (ncol + HSPACE) / 2,
-                     SHADOW, title, len);
+                     MENU_SHADOW, title, len);
     }
 }
 
@@ -2184,12 +2185,12 @@ rxvt_term::menu_select (XButtonEvent &ev)
     }
 
   /* determine the menu item corresponding to the Y index */
-  y = SHADOW;
-  if (ev.x >= 0 && ev.x <= (ActiveMenu->w - SHADOW))
+  y = MENU_SHADOW;
+  if (ev.x >= 0 && ev.x <= (ActiveMenu->w - MENU_SHADOW))
     {
       for (item = ActiveMenu->head; item != NULL; item = item->next)
         {
-          int h = HEIGHT_TEXT + 2 * SHADOW;
+          int h = HEIGHT_TEXT + 2 * MENU_SHADOW;
 
           if (isSeparator (item->name))
             h = HEIGHT_SEPARATOR;
@@ -2207,7 +2208,7 @@ rxvt_term::menu_select (XButtonEvent &ev)
     }
 
   thisitem = item;
-  this_y = y - SHADOW;
+  this_y = y - MENU_SHADOW;
 
   /* erase the last item */
   if (ActiveMenu->item != NULL)
@@ -2230,7 +2231,7 @@ rxvt_term::menu_select (XButtonEvent &ev)
                   break;
                 }
               else
-                h = HEIGHT_TEXT + 2 * SHADOW;
+                h = HEIGHT_TEXT + 2 * MENU_SHADOW;
 
               y += h;
             }
@@ -2405,8 +2406,8 @@ rxvt_term::menubar_control (XButtonEvent &ev)
         break;
 
       case MotionNotify:
-        while (XCheckTypedWindowEvent (display->display, TermWin.parent[0],
-                                       MotionNotify, (XEvent *)&ev)) ;
+        while (XCheckTypedWindowEvent (display->display, parent[0],
+                                       MotionNotify, (XEvent *)&ev));
 
         if (ActiveMenu)
           while (menu_select (ev)) ;

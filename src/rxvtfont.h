@@ -34,17 +34,17 @@ struct rxvt_fontprop {
     medium = 100, bold = 200,
     roman  = 0, italic = 100,
   };
-  int width, height;
+  int width, height, ascent;
   int weight, slant;
 };
 
 struct rxvt_drawable {
   rxvt_display *display;
-  Drawable drawable;
 #if XFT
   XftDraw *xftdrawable;
   operator XftDraw *();
 #endif
+  Drawable drawable;
 
   rxvt_drawable (rxvt_display *display, Drawable drawable)
   : display(display),

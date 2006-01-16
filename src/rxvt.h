@@ -5,6 +5,21 @@
 
 #include "feature.h"
 
+#if defined (ISO_14755) || defined (ENABLE_PERL)
+# define ENABLE_OVERLAY 1
+#endif
+
+#if ENABLE_PERL
+# define ENABLE_FRILLS 1
+# define ENABLE_COMBINING 1
+#endif
+
+#if ENABLE_FRILLS
+# define ENABLE_XEMBED 1
+# define ENABLE_EWMH   1
+# define CURSOR_BLINK  1
+#endif
+
 #include <limits.h>
 
 #include <X11/cursorfont.h>
@@ -21,11 +36,7 @@
 #include "iom.h"
 #include "salloc.h"
 
-#if ENABLE_FRILLS
-# define ENABLE_XEMBED 1
-# define ENABLE_EWMH   1
-# define CURSOR_BLINK  1
-#endif
+#include "rxvtperl.h"
 
 /*
  *****************************************************************************
@@ -43,7 +54,7 @@
 #endif
 
 #ifndef HAVE_XPOINTER
-typedef char   *XPointer;
+typedef char *XPointer;
 #endif
 
 #ifdef HAVE_TERMIOS_H
@@ -72,15 +83,6 @@ typedef struct {
 # define STDIN_FILENO   0
 # define STDOUT_FILENO  1
 # define STDERR_FILENO  2
-#endif
-
-#if defined(HAVE_GRANTPT) && defined(HAVE_UNLOCKPT)
-# if defined(PTYS_ARE_GETPT) || defined(PTYS_ARE_PTMX)
-#  define NO_SETOWNER_TTYDEV 1
-# endif
-#endif
-#if defined(__CYGWIN32__) || defined(PTYS_ARE_OPENPTY)
-# define NO_SETOWNER_TTYDEV 1
 #endif
 
 /*
@@ -121,6 +123,24 @@ char           * rxvt_File_find                   (const char *file, const char 
 void             rxvt_Draw_Shadow                 (Display *display, Window win, GC topShadow, GC botShadow, int x, int y, int w, int h);
 void             rxvt_Draw_Triangle               (Display *display, Window win, GC topShadow, GC botShadow, int x, int y, int w, int type);
 void             rxvt_usleep                      (int usecs);
+
+/////////////////////////////////////////////////////////////////////////////
+
+// temporarily replace the process environment
+extern char **environ;
+extern char **rxvt_environ; // the original environ pointer
+
+inline void set_environ (stringvec *envv)
+{
+  if (envv)
+    environ = (char **)envv->begin ();
+}
+
+inline void set_environ (char **envv)
+{
+  if (envv)
+    environ = envv;
+}
 
 /*
  *****************************************************************************
@@ -163,18 +183,6 @@ struct mouse_event {
   unsigned int state;    /* key or button mask */
   unsigned int button;   /* detail */
 };
-
-#define MAX_IT(current, other)  if ((other) > (current)) (current) = (other)
-#define MIN_IT(current, other)  if ((other) < (current)) (current) = (other)
-#define SWAP_IT(one, two, typeof)                                       \
-    do {                                                                \
-        typeof          swapittmp;                                      \
-        (swapittmp) = (one); (one) = (two); (two) = (swapittmp);        \
-    } while (/* CONSTCOND */ 0)
-#define BOUND_POSITIVE_INT16(val)                       \
-    (int16_t) ((val) <= 0                                \
-              ? 0                                       \
-              : min ((val), (((uint16_t)-1)>>1)))
 
 #if ENABLE_FRILLS
 typedef struct _mwmhints {
@@ -232,14 +240,6 @@ typedef struct _mwmhints {
 # define NO_MOUSE_REPORT_SCROLLBAR 1
 #endif
 
-#ifdef NO_RESOURCES
-# undef USE_XGETDEFAULT
-#endif
-
-#if ISO_14755
-# define ENABLE_OVERLAY 1
-#endif
-
 /* now look for other badly set stuff */
 
 #if !defined (EACCESS) && defined(EAGAIN)
@@ -261,9 +261,9 @@ typedef struct _mwmhints {
 
 /* width of scrollBar, menuBar shadow, must be 1 or 2 */
 #ifdef HALFSHADOW
-# define SHADOW 1
+# define MENU_SHADOW 1
 #else
-# define SHADOW 2
+# define MENU_SHADOW 2
 #endif
 
 #define R_SB_ALIGN_CENTRE       0
@@ -365,9 +365,9 @@ enum {
 
 /* flags for rxvt_scr_gotorc () */
 enum {
-  C_RELATIVE = 1    ,       /* col movement is relative */
-  R_RELATIVE =     2,       /* row movement is relative */
-  RELATIVE   = 1 | 2,
+  C_RELATIVE = 1,       /* col movement is relative */
+  R_RELATIVE = 2,       /* row movement is relative */
+  RELATIVE   = C_RELATIVE | R_RELATIVE,
 };
 
 /* modes for rxvt_scr_insdel_chars (), rxvt_scr_insdel_lines () */
@@ -390,21 +390,24 @@ enum {
   SECONDARY,
 };
 
-#define RS_None                 0               /* Normal */
+#define RS_None                 0
 
-#define RS_fgMask               0x0000007fUL    /* 128 colors */
-#define RS_bgMask               0x00003f80UL    /* 128 colors */
+#define RS_fgMask               0x0000007fUL    // 128 colors
+#define RS_bgMask               0x00003f80UL    // 128 colors
 
 // font styles
 #define RS_Bold                 0x00004000UL    // value 1
 #define RS_Italic		0x00008000UL    // value 2
 
 // fake styles
-#define RS_Blink                0x00010000UL    /* blink */
-#define RS_RVid                 0x00020000UL    /* reverse video */
-#define RS_Uline                0x00040000UL    /* underline */
+#define RS_Blink                0x00010000UL    // blink
+#define RS_RVid                 0x00020000UL    // reverse video
+#define RS_Uline                0x00040000UL    // underline
 
-// 5 bits still to go
+// 5 custom bits for extensions
+#define RS_customCount          32
+#define RS_customMask           0x00f80000UL
+#define RS_customShift          19
 
 // other flags
 #define RS_Careful		0x80000000UL	/* be careful when drawing these */
@@ -456,10 +459,10 @@ enum {
   XTerm_Color00          = 10,      // not implemented, CLASH!
   XTerm_Color01          = 11,      // not implemented
   XTerm_Color_cursor     = 12,      // change actual 'Cursor' color
-  XTerm_Color_pointer_fg = 13,      // change actual 'Pointer' color
-  XTerm_Color_pointer_bg = 14,      // not implemented
-  XTerm_Color05          = 15,      // not implemented
-  XTerm_Color06          = 16,      // not implemented
+  XTerm_Color_pointer_fg = 13,      // change actual 'Pointer' fg color
+  XTerm_Color_pointer_bg = 14,      // change actual 'Pointer' bg color
+  XTerm_Color05          = 15,      // not implemented (tektronix fg)
+  XTerm_Color06          = 16,      // not implemented (tektronix bg)
   XTerm_Color_RV         = 17,      // change actual 'Highlight' color
   XTerm_logfile          = 46,      // not implemented
   XTerm_font             = 50,
@@ -469,18 +472,21 @@ enum {
   XTerm_emacs51          = 51,      // reserved for emacs shell
   /*
    * rxvt extensions of XTerm OSCs: ESC ] Ps;Pt (ST|BEL)
+   * at least Rxvt_Color_BD and Rxvt_Color_UL clash with xterm
    */
-  XTerm_Color_BD         = 18,      // change actual 'Bold' color
-  XTerm_Color_UL         = 19,      // change actual 'Underline' color
-  XTerm_Pixmap           = 20,      // new bg pixmap
-  XTerm_restoreFG        = 39,      // change default fg color
-  XTerm_restoreBG        = 49,      // change default bg color
-  XTerm_dumpscreen       = 55,      // dump scrollback and all of screen
+  Rxvt_Color_BD          = 18,      // change actual 'Bold' color
+  Rxvt_Color_UL          = 19,      // change actual 'Underline' color
+  Rxvt_Pixmap            = 20,      // new bg pixmap
+  Rxvt_restoreFG         = 39,      // change default fg color
+  Rxvt_restoreBG         = 49,      // change default bg color
+  Rxvt_dumpscreen        = 55,      // dump scrollback and all of screen
 
   URxvt_locale           = 701,     // change locale
   URxvt_Menu             = 703,     // set menu item
   URxvt_Color_IT         = 704,     // change actual 'Italic' colour
   URxvt_Color_tint       = 705,     // change actual tint colour
+  URxvt_Color_BD         = 706,
+  URxvt_Color_UL         = 707,
 
   URxvt_font             = 710,
   URxvt_boldFont         = 711,
@@ -489,6 +495,8 @@ enum {
 
   URxvt_view_up          = 720,
   URxvt_view_down        = 721,
+
+  URxvt_perl             = 777,
 };
 
 /* Words starting with `Color_' are colours.  Others are counts */
@@ -575,107 +583,11 @@ enum colour_list {
  * Resource list
  */
 enum {
-  Rs_display_name = 0,
-  Rs_term_name,
-  Rs_iconName,
-  Rs_geometry,
-  Rs_reverseVideo,
-  Rs_color,
-  _Rs_color = Rs_color + NRS_COLORS - 1,
-  Rs_font,
-#if ENABLE_STYLES
-  Rs_boldFont,
-  Rs_italicFont,
-  Rs_boldItalicFont,
-#endif
-  Rs_name,
-  Rs_title,
-#if defined (XPM_BACKGROUND) || (MENUBAR_MAX)
-  Rs_path,
-#endif
-#ifdef XPM_BACKGROUND
-  Rs_backgroundPixmap,
-#endif
-#if (MENUBAR_MAX)
-  Rs_menu,
-#endif
-  Rs_loginShell,
-  Rs_jumpScroll,
-#ifdef HAVE_SCROLLBARS
-  Rs_scrollBar,
-  Rs_scrollBar_right,
-  Rs_scrollBar_floating,
-  Rs_scrollBar_align,
-  Rs_scrollstyle,     /* Rs_scrollBar_style */
-  Rs_scrollBar_thickness,
-#endif
-  Rs_scrollTtyOutput,
-  Rs_scrollTtyKeypress,
-  Rs_scrollWithBuffer,
-  Rs_saveLines,
-  Rs_utmpInhibit,
-  Rs_visualBell,
-#if ! defined(NO_MAPALERT) && defined(MAPALERT_OPTION)
-  Rs_mapAlert,
-#endif
-#ifdef META8_OPTION
-  Rs_meta8,
-#endif
-#ifdef MOUSE_WHEEL
-  Rs_mouseWheelScrollPage,
-#endif
-#ifndef NO_BACKSPACE_KEY
-  Rs_backspace_key,
-#endif
-#ifndef NO_DELETE_KEY
-  Rs_delete_key,
-#endif
-  Rs_selectstyle,
-#ifdef PRINTPIPE
-  Rs_print_pipe,
-#endif
-#ifdef USE_XIM
-  Rs_preeditType,
-  Rs_inputMethod,
-#endif
-#ifdef TRANSPARENT
-  Rs_transparent,
-  Rs_transparent_all,
-#endif
-#if ENABLE_FRILLS
-  Rs_ext_bwidth,
-  Rs_int_bwidth,
-  Rs_borderLess,
-  Rs_lineSpace,
-  Rs_pty_fd,
-  Rs_cursorUnderline,
-#endif
-#if CURSOR_BLINK
-  Rs_cursorBlink,
-#endif
-#if ENABLE_XEMBED
-  Rs_embed,
-#endif
-  Rs_cutchars,
-  Rs_modifier,
-  Rs_answerbackstring,
-  Rs_tripleclickwords,
-  Rs_insecure,
-  Rs_pointerBlank,
-  Rs_pointerBlankDelay,
-  Rs_imLocale,
-  Rs_imFont,
-  Rs_pastableTabs,
-#ifndef NO_SECONDARY_SCREEN
-  Rs_secondaryScreen,
-  Rs_secondaryScroll,
-#endif
-#ifdef OFF_FOCUS_FADING
-  Rs_fade,
-#endif
-#ifdef TINTING
-  Rs_shade,
-#endif
+# define def(name) Rs_ ## name,
+# define reserve(name,count) Rs_ ## name ## _ = Rs_ ## name + (count) - 1,
+# include "rsinc.h"
+# undef def
+# undef reserve
   NUM_RESOURCES
 };
 
@@ -760,8 +672,8 @@ enum {
 // do not change these constants lightly, there are many interdependencies
 #define IMBUFSIZ               128     // input modifier buffer sizes
 #define KBUFSZ                 512     // size of keyboard mapping buffer
-#define CBUFSIZ                4096    // size of command buffer
-#define UBUFSIZ                4096    // character buffer
+#define CBUFSIZ                2048    // size of command buffer
+#define UBUFSIZ                2048    // character buffer
 
 #ifndef PATH_MAX
 # define PATH_MAX 16384
@@ -799,57 +711,32 @@ enum {
  * MACRO DEFINES
  *****************************************************************************
  */
-#define memset(x, y, z)         memset((x), (y), (size_t)(z))
-#define memcpy(x, y, z)         memcpy((void *)(x), (const void *)(y), (z))
-#define memmove(x, y, z)        memmove((void *)(x), (const void *)(y), (z))
-#define strcasecmp(x, y)        strcasecmp((x), (y))
-#define strncasecmp(x, y, z)    strncasecmp((x), (y), (z))
-#define strcpy(x, y)            strcpy((char *)(x), (const char *)(y))
-#define strncpy(x, y, z)        strncpy((char *)(x), (const char *)(y), (z))
-#define strcmp(x, y)            strcmp((const char *)(x), (const char *)(y))
-#define strncmp(x, y, z)        strncmp((const char *)(x), (const char *)(y), (z))
-#define strcat(x, y)            strcat((char *)(x), (const char *)(y))
-#define strncat(x, y, z)        strncat((char *)(x), (const char *)(y), (z))
-#define strdup(x)               strdup((const char *)(x))
-#define strlen(x)               strlen((const char *)(x))
-#define strchr(x, y)            strchr((const char *)(x), (int)(y))
-#define strrchr(x, y)           strrchr((const char *)(x), (int)(y))
-
 #define dDisp			Display *disp = display->display
 
 /* convert pixel dimensions to row/column values.  Everything as int32_t */
 #define Pixel2Col(x)            Pixel2Width((int32_t)(x))
 #define Pixel2Row(y)            Pixel2Height((int32_t)(y))
-#define Pixel2Width(x)          ((int32_t)(x) / (int32_t)TermWin.fwidth)
-#define Pixel2Height(y)         ((int32_t)(y) / (int32_t)TermWin.fheight)
+#define Pixel2Width(x)          ((int32_t)(x) / (int32_t)fwidth)
+#define Pixel2Height(y)         ((int32_t)(y) / (int32_t)fheight)
 #define Col2Pixel(col)          ((int32_t)Width2Pixel(col))
 #define Row2Pixel(row)          ((int32_t)Height2Pixel(row))
-#define Width2Pixel(n)          ((int32_t)(n) * (int32_t)TermWin.fwidth)
-#define Height2Pixel(n)         ((int32_t)(n) * (int32_t)TermWin.fheight)
+#define Width2Pixel(n)          ((int32_t)(n) * (int32_t)fwidth)
+#define Height2Pixel(n)         ((int32_t)(n) * (int32_t)fheight)
 
-#define TermWin_TotalWidth()    ((int32_t)TermWin.width)
-#define TermWin_TotalHeight()   ((int32_t)TermWin.height)
+#define OPTION(opt)		(options & (opt))
+#define DEFAULT_OPTIONS		(Opt_scrollBar | Opt_scrollTtyOutput \
+				 | Opt_jumpScroll | Opt_secondaryScreen \
+				 | Opt_pastableTabs | Opt_intensityStyles)
+
+// for m >= -n, ensure remainder lies between 0..n-1
+#define MOD(m,n) (((m) + (n)) % (n))
+
+#define LINENO(n) MOD (term_start + int(n), total_rows)
+#define ROW(n) row_buf [LINENO (n)]
 
 /* how to build & extract colors and attributes */
 #define GET_BASEFG(x)           (((x) & RS_fgMask))
 #define GET_BASEBG(x)           (((x) & RS_bgMask)>>Color_Bits)
-#ifndef NO_BRIGHTCOLOR
-# define GET_FGCOLOR(x)                                         \
-    ((((x) & RS_Bold) == 0                                      \
-      || GET_BASEFG (x) < minCOLOR                               \
-      || GET_BASEFG (x) >= minBrightCOLOR)                       \
-     ? GET_BASEFG (x)                                            \
-     : (GET_BASEFG (x) + (minBrightCOLOR - minCOLOR)))
-# define GET_BGCOLOR(x)                                         \
-    ((((x) & RS_Blink) == 0                                     \
-      || GET_BASEBG (x) < minCOLOR                               \
-      || GET_BASEBG (x) >= minBrightCOLOR)                       \
-     ? GET_BASEBG (x)                                            \
-     : (GET_BASEBG (x) + (minBrightCOLOR - minCOLOR)))
-#else
-# define GET_FGCOLOR(x)         GET_BASEFG(x)
-# define GET_BGCOLOR(x)         GET_BASEBG(x)
-#endif
 
 #define GET_FONT(x)             (((x) & RS_fontMask) >> RS_fontShift)
 #define SET_FONT(x,fid)         (((x) & ~RS_fontMask) | ((fid) << RS_fontShift))
@@ -872,9 +759,9 @@ enum {
 #define ISSET_PIXCOLOR(x)       (pixcolor_set[(x) / NPIXCLR_BITS] &  (1 << ((x) % NPIXCLR_BITS)))
 
 #if ENABLE_STYLES
-# define FONTSET(style) TermWin.fontset[GET_STYLE (style)]
+# define FONTSET(style) fontset[GET_STYLE (style)]
 #else
-# define FONTSET(style) TermWin.fontset[0]
+# define FONTSET(style) fontset[0]
 #endif
 
 #ifdef HAVE_SCROLLBARS
@@ -909,8 +796,8 @@ enum {
 
 #if (MENUBAR_MAX > 1)
 /* rendition style flags */
-# define menuBar_height()       (TermWin.fheight + SHADOW)
-# define menuBar_TotalHeight()  (menuBar_height() + SHADOW + menuBar_margin)
+# define menuBar_height()       (fheight + MENU_SHADOW)
+# define menuBar_TotalHeight()  (menuBar_height() + MENU_SHADOW + menuBar_margin)
 # define isMenuBarWindow(w)     ((w) == menuBar.win)
 #else
 # define menuBar_height()       (0)
@@ -966,6 +853,7 @@ enum {
 extern class rxvt_failure_exception { } rxvt_failure_exception;
 
 typedef callback1<void, const char *> log_callback;
+typedef callback1<int, int> getfd_callback;
 
 extern void rxvt_vlog (const char *fmt, va_list arg_ptr);
 extern void rxvt_log (const char *fmt, ...);
@@ -975,12 +863,11 @@ extern void rxvt_exit_failure () __attribute__ ((noreturn));
 
 #define SET_LOCALE(locale) rxvt_set_locale (locale)
 extern bool rxvt_set_locale (const char *locale);
+extern void rxvt_push_locale (const char *locale);
+extern void rxvt_pop_locale ();
 
-/*
- *****************************************************************************
- * VARIABLES
- *****************************************************************************
- */
+/****************************************************************************/
+
 #ifdef MENUBAR
 # include "menubar.h"
 #endif
@@ -997,6 +884,55 @@ extern bool rxvt_set_locale (const char *locale);
 # define __attribute__(x)
 #endif
 
+/****************************************************************************/
+
+#define LINE_LONGER     0x0001 // line is continued on the next row
+#define LINE_FILTERED   0x0002 // line has been filtered
+#define LINE_COMPRESSED 0x0004 // line has been compressed (NYI)
+
+struct line_t {
+   text_t *t; // terminal the text
+   rend_t *r; // rendition, uses RS_ flags
+   tlen_t_ l; // length of each text line, LINE_CONT == continued on next line
+   uint32_t f; // flags
+
+   bool is_longer ()
+   {
+     return f & LINE_LONGER;
+   }
+
+   void is_longer (int set)
+   {
+     if (set)
+       f |= LINE_LONGER;
+     else
+       f &= ~LINE_LONGER;
+   }
+
+   void clear ()
+   {
+     t = 0;
+     r = 0;
+     l = 0;
+     f = 0;
+   }
+
+   void touch () // call whenever a line is changed/touched/updated
+   {
+#if ENABLE_PERL
+     f &= ~LINE_FILTERED;
+#endif
+   }
+
+   void touch (int col)
+   {
+     max_it (l, col);
+     touch ();
+   }
+};
+
+/****************************************************************************/
+
 // primivite wrapper around mbstate_t to ensure initialisation
 struct mbstate {
   mbstate_t mbs;
@@ -1006,6 +942,8 @@ struct mbstate {
   mbstate () { reset (); }
 };
 
+/****************************************************************************/
+
 #define UNICODE_MASK 0x1fffffUL
 
 #if UNICODE3
@@ -1013,9 +951,14 @@ struct mbstate {
 # define COMPOSE_HI 0x400fffffUL
 # define IS_COMPOSE(n) ((int32_t)(n) >= COMPOSE_LO)
 #else
-# define COMPOSE_LO 0xd800UL
-# define COMPOSE_HI 0xf8ffUL // dfff should be safer, but...
-# define IS_COMPOSE(n) (COMPOSE_LO <= (n) && (n) <= COMPOSE_HI)
+# if ENABLE_PERL
+#  define COMPOSE_LO 0xe000UL // our _own_ routiens don't like (illegal) surrogates
+#  define COMPOSE_HI 0xf8ffUL // in utf-8, so use private use area only
+# else
+#  define COMPOSE_LO 0xd800UL
+#  define COMPOSE_HI 0xf8ffUL
+# endif
+# define IS_COMPOSE(n) IN_RANGE_INC ((n), COMPOSE_LO, COMPOSE_HI)
 #endif
 
 #if ENABLE_COMBINING
@@ -1045,14 +988,18 @@ public:
 extern class rxvt_composite_vec rxvt_composite;
 #endif
 
+/****************************************************************************/
 
 #ifdef KEYSYM_RESOURCE
   class keyboard_manager;
 #endif
 
 struct rxvt_term : zero_initialized, rxvt_vars {
-  log_callback *log_hook;               // log error messages through this hook, if != 0
-
+  log_callback   *log_hook;               // log error messages through this hook, if != 0
+  getfd_callback *getfd_hook;           // convert remote to local fd, if != 0
+#if ENABLE_PERL
+  rxvt_perl_term  perl;
+#endif
   struct mbstate  mbstate;              // current input multibyte state
 
   unsigned char   want_refresh:1,
@@ -1212,12 +1159,6 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   bar_t           BarList;
 # endif                         /* (MENUBAR_MAX > 1) */
 #endif
-#ifdef CURSOR_BLINK
-  struct timeval  lastcursorchange;
-#endif
-#ifdef POINTER_BLANK
-  struct timeval  lastmotion;
-#endif
 
 #if ENABLE_OVERLAY
   int ov_x, ov_y, ov_w, ov_h; // overlay dimensions
@@ -1242,7 +1183,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   char           *env_colorfgbg;
   char           *locale;
   char            charsets[4];
-  unsigned char  *v_buffer;           /* pointer to physical buffer */
+  char           *v_buffer;           /* pointer to physical buffer */
   unsigned int    v_buflen;           /* size of area to write */
   stringvec      *argv, *envv;        /* if != 0, will be freed on destroy time */
 
@@ -1252,8 +1193,8 @@ struct rxvt_term : zero_initialized, rxvt_vars {
 
   const char     *rs[NUM_RESOURCES];
   /* command input buffering */
-  unsigned char  *cmdbuf_ptr, *cmdbuf_endp;
-  unsigned char   cmdbuf_base[CBUFSIZ];
+  char           *cmdbuf_ptr, *cmdbuf_endp;
+  char            cmdbuf_base[CBUFSIZ];
 
   rxvt_salloc    *talloc;             // text line allocator
   rxvt_salloc    *ralloc;             // rend line allocator
@@ -1266,26 +1207,28 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   void commit_iso14755 ();
   int hex_keyval (XKeyEvent &ev);
 # if ISO_14755
-  void iso14755_51 (unicode_t ch, rend_t r = DEFAULT_RSTYLE);
+  void iso14755_51 (unicode_t ch, rend_t r = DEFAULT_RSTYLE, int x = 0, int y = -1);
   void iso14755_54 (int x, int y);
 # endif
 #endif
 
   // modifies first argument(!)
-  void paste (unsigned char *data, unsigned int len);
+  void paste (char *data, unsigned int len);
 
-  void flush ();
+  long vt_emask, vt_emask_perl;
+
+  void vt_select_input ()
+  {
+    XSelectInput (display->display, vt, vt_emask | vt_emask_perl);
+  }
 
 #if TRANSPARENT
   void rootwin_cb (XEvent &xev);
   xevent_watcher rootwin_ev;
 #endif
 
-
-  void sig_term (sig_watcher &w); sig_watcher sw_term, sw_int;
-  void sig_chld (sig_watcher &w); sig_watcher sw_chld;
-
   void x_cb (XEvent &xev);
+  void flush ();
   xevent_watcher termwin_ev;
   xevent_watcher vt_ev;
 #ifdef HAVE_SCROLLBARS
@@ -1327,13 +1270,14 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   void pointer_unblank ();
 
   void tt_printf (const char *fmt,...);
-  void tt_write (const unsigned char *data, unsigned int len);
+  void tt_write (const char *data, unsigned int len);
   void pty_write ();
 
   void tt_winch ();
 
   rxvt_term ();
   ~rxvt_term ();
+  void child_exit (); // child has exited, usually destroys
   void destroy ();
   void emergency_cleanup ();
 
@@ -1344,6 +1288,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
 
   void init_secondary ();
   const char **init_resources (int argc, const char *const *argv);
+  const char *x_resource (const char *name);
   void init_env ();
   void set_locale (const char *locale);
   void init_xlocale ();
@@ -1354,8 +1299,8 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   void color_aliases (int idx);
   void recolour_cursor ();
   void create_windows (int argc, const char *const *argv);
-  void resize_all_windows (unsigned int width, unsigned int height, int ignoreparent);
-  void window_calc (unsigned int width, unsigned int height);
+  void resize_all_windows (unsigned int newwidth, unsigned int newheight, int ignoreparent);
+  void window_calc (unsigned int newwidth, unsigned int newheight);
 
 #if USE_XIM
   rxvt_xim       *input_method;
@@ -1388,12 +1333,12 @@ struct rxvt_term : zero_initialized, rxvt_vars {
 
   // command.C
   void lookup_key (XKeyEvent &ev);
-  unsigned int cmd_write (const unsigned char *str, unsigned int count);
+  unsigned int cmd_write (const char *str, unsigned int count);
 
-  unicode_t next_char ();
-  unicode_t cmd_getc ();
-  unicode_t next_octet ();
-  unicode_t cmd_get8 ();
+  wchar_t next_char ();
+  wchar_t cmd_getc ();
+  uint32_t next_octet ();
+  uint32_t cmd_get8 ();
 
   bool cmd_parse ();
   void mouse_report (XButtonEvent &ev);
@@ -1412,11 +1357,11 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   void process_escape_seq ();
   void process_csi_seq ();
   void process_window_ops (const int *args, unsigned int nargs);
-  unsigned char *get_to_st (unicode_t &ends_how);
+  char *get_to_st (unicode_t &ends_how);
   void process_dcs_seq ();
   void process_osc_seq ();
-  void process_color_seq (int report, int color, const char *str, unsigned char resp);
-  void process_xterm_seq (int op, const char *str, unsigned char resp);
+  void process_color_seq (int report, int color, const char *str, char resp);
+  void process_xterm_seq (int op, const char *str, char resp);
   int privcases (int mode, unsigned long bit);
   void process_terminal_mode (int mode, int priv, unsigned int nargs, const int *arg);
   void process_sgr_mode (unsigned int nargs, const int *arg);
@@ -1437,7 +1382,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   void set_window_color (int idx, const char *color);
   void set_colorfgbg ();
   int rXParseAllocColor (rxvt_color * screen_in_out, const char *colour);
-  void set_widthheight (unsigned int width, unsigned int height);
+  void set_widthheight (unsigned int newwidth, unsigned int newheight);
 
 #ifdef MENUBAR
   // menubar.C
@@ -1473,11 +1418,80 @@ struct rxvt_term : zero_initialized, rxvt_vars {
 #endif
 
   // screen.C
-  void scr_blank_line (text_t *et, rend_t *er, unsigned int width, rend_t efs);
-  void scr_blank_screen_mem (text_t **tp, rend_t **rp, unsigned int row, rend_t efs);
-  int scr_scroll_text (int row1, int row2, int count, int spec);
+
+  void lalloc (line_t &l)
+  {
+    l.t = (text_t *)talloc->alloc ();
+    l.r = (rend_t *)ralloc->alloc ();
+  }
+
+#if 0
+  void lfree (line_t &l)
+  {
+    talloc->free (l.t);
+    ralloc->free (l.r);
+  }
+#endif
+
+  void lresize (line_t &l)
+  {
+    if (!l.t)
+      return;
+
+    l.t = (text_t *)talloc->alloc (l.t, prev_ncol * sizeof (text_t));
+    l.r = (rend_t *)ralloc->alloc (l.r, prev_ncol * sizeof (rend_t));
+
+    l.l = min (l.l, ncol);
+
+    if (ncol > prev_ncol)
+      scr_blank_line (l, prev_ncol, ncol - prev_ncol, DEFAULT_RSTYLE);
+  }
+
+  int fgcolor_of (rend_t r)
+  {
+    int base = GET_BASEFG (r);
+#ifndef NO_BRIGHTCOLOR
+    if (r & RS_Bold
+# if ENABLE_STYLES
+        && OPTION (Opt_intensityStyles)
+# endif
+        && IN_RANGE_INC (base, minCOLOR, minBrightCOLOR))
+      base += minBrightCOLOR - minCOLOR;
+#endif
+    return base;
+  }
+
+  int bgcolor_of (rend_t r)
+  {
+    int base = GET_BASEBG (r);
+#ifndef NO_BRIGHTCOLOR
+    if (r & RS_Blink
+# if ENABLE_STYLES
+        && OPTION (Opt_intensityStyles)
+# endif
+        && IN_RANGE_INC (base, minCOLOR, minBrightCOLOR))
+      base += minBrightCOLOR - minCOLOR;
+#endif
+    return base;
+  }
+
+  bool option (uint32_t opt)
+  {
+    return OPTION (opt);
+  }
+
+  void set_option (uint32_t opt, bool set)
+  {
+    if (set)
+      options |= opt;
+    else
+      options &= ~opt;
+  }
+
+  void scr_blank_line (line_t &l, unsigned int col, unsigned int width, rend_t efs);
+  void scr_blank_screen_mem (line_t &l, rend_t efs);
+  int scr_scroll_text (int row1, int row2, int count);
   void scr_reset ();
-  void scr_reset_realloc ();
   void scr_release ();
   void scr_clear (bool really = false);
   void scr_refresh (unsigned char refresh_type);
@@ -1493,7 +1507,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   rxvt_fontset *scr_find_fontset (rend_t r = DEFAULT_RSTYLE);
   void scr_recolour ();
   void scr_remap_chars ();
-  void scr_remap_chars (text_t *tp, rend_t *rp);
+  void scr_remap_chars (line_t &l);
 
   void scr_poweron ();
   void scr_cursor (int mode);
@@ -1501,7 +1515,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   int scr_change_screen (int scrn);
   void scr_color (unsigned int color, int fgbg);
   void scr_rendition (int set, int style);
-  void scr_add_lines (const unicode_t *str, int nlines, int len);
+  void scr_add_lines (const wchar_t *str, int len, int minlines = 0);
   void scr_backspace ();
   void scr_tab (int count, bool ht = false);
   void scr_gotorc (int row, int col, int relative);
@@ -1526,6 +1540,8 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   int scr_changeview (unsigned int oldviewstart);
   void scr_bell ();
   void scr_printscreen (int fullhist);
+  void scr_xor_rect (int beg_row, int beg_col, int end_row, int end_col, rend_t rstyle1, rend_t rstyle2);
+  void scr_xor_span (int beg_row, int beg_col, int end_row, int end_col, rend_t rstyle);
   void scr_reverse_selection ();
   void scr_dump (int fd);
   void selection_check (int check_more);
@@ -1535,6 +1551,7 @@ struct rxvt_term : zero_initialized, rxvt_vars {
   int selection_request_other (Atom target, int selnum);
   void selection_clear ();
   void selection_make (Time tm);
+  bool selection_grab (Time tm);
   void selection_start_colrow (int col, int row);
   void selection_delimit_word (enum page_dirn dirn, const row_col_t *mark, row_col_t *ret);
   void selection_extend_colrow (int32_t col, int32_t row, int button3, int buttonpress, int clickchange);

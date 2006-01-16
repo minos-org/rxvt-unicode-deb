@@ -73,8 +73,8 @@
 /* Define if you have the on_exit function.  */
 #undef HAVE_ON_EXIT
 
-/* Define if you have the openpty function.  */
-#undef HAVE_OPENPTY
+/* Define if you have the posix_openpt function.  */
+#undef HAVE_POSIX_OPENPT
 
 /* Define if you have the revoke function.  */
 #undef HAVE_REVOKE
@@ -136,6 +136,9 @@
 /* Define if you have the <libc.h> header file.  */
 #undef HAVE_LIBC_H
 
+/* Define if you have the <libutil.h> header file.  */
+#undef HAVE_LIBUTIL_H
+
 /* Define if you have the <pty.h> header file.  */
 #undef HAVE_PTY_H
 
@@ -178,6 +181,9 @@
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
 
+/* Define if you have the <util.h> header file.  */
+#undef HAVE_UTIL_H
+
 /* Define if you have the <utmp.h> header file.  */
 #undef HAVE_UTMP_H
 
@@ -202,6 +208,9 @@
 /* Needed to get declarations for msg_control and msg_controllen on Solaris */
 #undef __EXTENSIONS__
 
+/* Define if you have sched-h and sched_yield */
+#undef HAVE_SCHED_YIELD
+
 /* Build shared library version - specify via configure only */
 #undef LIBRXVT
 
@@ -219,9 +228,6 @@
 
 /* Define if you don't want any resources read */
 #undef NO_RESOURCES
-
-/* Define if you want to use XGetDefault instead of our internal version */
-#undef USE_XGETDEFAULT
 
 /* Fallback resource class */
 #undef RESFALLBACK
@@ -316,11 +322,14 @@
 /* Define if nl_langinfo(CODESET) works */
 #undef HAVE_NL_LANGINFO
 
+/* Define if sys/socket.h defines the necessary macros/functions for file handle passing */
+#undef HAVE_UNIX_FDPASS
+
 /* Define if your XIMCallback specifies XIC as first type. */
 #undef XIMCB_PROTO_BROKEN
 
-/* Define if you have _GNU_SOURCE getpt()  */
-#undef HAVE_GETPT
+/* Define for this pty type */
+#undef PTYS_ARE_POSIX
 
 /* Define for this pty type */
 #undef PTYS_ARE_OPENPTY
@@ -336,9 +345,6 @@
 
 /* Define for this pty type */
 #undef PTYS_ARE__GETPTY
-
-/* Define for this pty type */
-#undef PTYS_ARE_GETPTY
 
 /* Define for this pty type */
 #undef PTYS_ARE_GETPT
@@ -456,6 +462,9 @@
 
 /* Define if you want extended chinese codesets */
 #undef ENCODING_ZH_EXT
+
+/* Define if you can embed a perl interpreter */
+#undef ENABLE_PERL
 
 /* Define if you don't need to use our replacement string functions */
 #undef NO_STRINGS

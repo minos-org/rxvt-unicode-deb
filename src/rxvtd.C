@@ -23,6 +23,7 @@
 #include "../config.h"
 #include "rxvt.h"
 #include "rxvtdaemon.h"
+#include "fdpass.h"
 #include "iom.h"
 
 #include <cstdio>
@@ -43,13 +44,16 @@ extern char **environ;
 
 struct server : rxvt_connection {
   log_callback log_cb;
+  getfd_callback getfd_cb;
 
   void read_cb (io_watcher &w, short revents); io_watcher read_ev;
   void log_msg (const char *msg);
+  int getfd (int remote_fd);
 
   server (int fd)
   : read_ev (this, &server::read_cb),
-    log_cb (this, &server::log_msg)
+    log_cb (this, &server::log_msg),
+    getfd_cb (this, &server::getfd)
   {
     this->fd = fd;
     read_ev.start (fd, EVENT_READ);
@@ -114,6 +118,17 @@ void unix_listener::accept_cb (io_watcher &w, short revents)
     }
 }
 
+int server::getfd (int remote_fd)
+{
+#if ENABLE_FRILLS && HAVE_UNIX_FDPASS
+  send ("GETFD");
+  send (remote_fd);
+  return rxvt_recv_fd (fd);
+#else
+  return -1;
+#endif
+}
+
 void server::log_msg (const char *msg)
 {
   send ("MSG"), send (msg);
@@ -173,12 +188,10 @@ void server::read_cb (io_watcher &w, short revents)
           envv->push_back (0);
 
           {
-            char **old_environ = environ;
-            environ = envv->begin ();
-
             rxvt_term *term = new rxvt_term;
             
             term->log_hook = &log_cb;
+            term->getfd_hook = &getfd_cb;
             term->argv = argv;
             term->envv = envv;
 
@@ -195,7 +208,6 @@ void server::read_cb (io_watcher &w, short revents)
 
             term->log_hook = 0;
 
-            environ = old_environ;
             chdir ("/");
 
             if (!success)

@@ -26,10 +26,137 @@ L<http://cvs.schmorp.de/browse/*checkout*/rxvt-unicode/doc/rxvt.7.html>.
 
 =over 4
 
+=item The new selection selects pieces that are too big, how can I select
+single words?
+
+Yes. For example, if you want to select alphanumeric words, you can use
+the following resource:
+
+   URxvt.selection.pattern-0: ([[:word:]]+)
+
+If you click more than twice, the selection will be extended
+more and more.
+
+To get a selection that is very similar to the old code, try this pattern:
+
+   URxvt.selection.pattern-0: ([^"&'()*,;<=>?@[\\\\]^`{|})]+)
+
+Please also note that the I<LeftClick Shift-LeftClik> combination also
+selects words like the old code.
+
+=item I don't like the new selection/popups/hotkeys/perl, how do I
+change/disable it?
+
+You can disable the perl extension completely by setting the
+B<perl-ext-common> resource to the empty string, which also keeps
+rxvt-unicode from initialising perl, saving memory.
+
+If you only want to disable specific features, you first have to
+identify which perl extension is responsible. For this, read the section
+B<PREPACKAGED EXTENSIONS> in the @@RXVT_NAME@@perl(3) manpage. For
+example, to disable the B<selection-popup> and B<option-popup>, specify
+this B<perl-ext-common> resource:
+
+   URxvt.perl-ext-common: default,-selection-popup,-option-popup
+
+This will keep the default extensions, but disable the two popup
+extensions. Some extensions can also be configured, for example,
+scrollback search mode is triggered by B<M-s>. You can move it to any
+other combination either by setting the B<searchable-scrollback> resource:
+
+   URxvt.searchable-scrollback: CM-s
+
+=item Isn't rxvt supposed to be small? Don't all those features bloat?
+
+I often get asked about this, and I think, no, they didn't cause extra
+bloat. If you compare a minimal rxvt and a minimal urxvt, you can see
+that the urxvt binary is larger (due to some encoding tables always being
+compiled in), but it actually uses less memory (RSS) after startup. Even
+with C<--disable-everything>, this comparison is a bit unfair, as many
+features unique to urxvt (locale, encoding conversion, iso14755 etc.) are
+already in use in this mode.
+
+    text    data     bss     drs     rss filename
+   98398    1664      24   15695    1824 rxvt --disable-everything
+  188985    9048   66616   18222    1788 urxvt --disable-everything
+
+When you C<--enable-everything> (which _is_ unfair, as this involves xft
+and full locale/XIM support which are quite bloaty inside libX11 and my
+libc), the two diverge, but not unreasnobaly so.
+
+    text    data     bss     drs     rss filename
+  163431    2152      24   20123    2060 rxvt --enable-everything
+ 1035683   49680   66648   29096    3680 urxvt --enable-everything
+
+The very large size of the text section is explained by the east-asian
+encoding tables, which, if unused, take up disk space but nothing else
+and can be compiled out unless you rely on X11 core fonts that use those
+encodings. The BSS size comes from the 64k emergency buffer that my c++
+compiler allocates (but of course doesn't use unless you are out of
+memory). Also, using an xft font instead of a core font immediately adds a
+few megabytes of RSS. Xft indeed is responsible for a lot of RSS even when
+not used.
+
+Of course, due to every character using two or four bytes instead of one,
+a large scrollback buffer will ultimately make rxvt-unicode use more
+memory.
+
+Compared to e.g. Eterm (5112k), aterm (3132k) and xterm (4680k), this
+still fares rather well. And compared to some monsters like gnome-terminal
+(21152k + extra 4204k in separate processes) or konsole (22200k + extra
+43180k in daemons that stay around after exit, plus half a minute of
+startup time, including the hundreds of warnings it spits out), it fares
+extremely well *g*.
+
+=item Why C++, isn't that unportable/bloated/uncool?
+
+Is this a question? :) It comes up very often. The simple answer is: I had
+to write it, and C++ allowed me to write and maintain it in a fraction
+of the time and effort (which is a scarce resource for me). Put even
+shorter: It simply wouldn't exist without C++.
+
+My personal stance on this is that C++ is less portable than C, but in
+the case of rxvt-unicode this hardly matters, as its portability limits
+are defined by things like X11, pseudo terminals, locale support and unix
+domain sockets, which are all less portable than C++ itself.
+
+Regarding the bloat, see the above question: It's easy to write programs
+in C that use gobs of memory, an certainly possible to write programs in
+C++ that don't. C++ also often comes with large libraries, but this is
+not necessarily the case with GCC. Here is what rxvt links against on my
+system with a minimal config:
+
+   libX11.so.6 => /usr/X11R6/lib/libX11.so.6 (0x00002aaaaabc3000)
+   libc.so.6 => /lib/libc.so.6 (0x00002aaaaadde000)
+   libdl.so.2 => /lib/libdl.so.2 (0x00002aaaab01d000)
+   /lib64/ld-linux-x86-64.so.2 (0x00002aaaaaaab000)
+
+And here is rxvt-unicode:
+
+   libX11.so.6 => /usr/X11R6/lib/libX11.so.6 (0x00002aaaaabc3000)
+   libgcc_s.so.1 => /lib/libgcc_s.so.1 (0x00002aaaaada2000)
+   libc.so.6 => /lib/libc.so.6 (0x00002aaaaaeb0000)     
+   libdl.so.2 => /lib/libdl.so.2 (0x00002aaaab0ee000)   
+   /lib64/ld-linux-x86-64.so.2 (0x00002aaaaaaab000)     
+
+No large bloated libraries (of course, none were linked in statically),
+except maybe libX11 :)
+
+=item Does it support tabs, can I have a tabbed rxvt-unicode?
+
+rxvt-unicode does not directly support tabs. It will work fine with
+tabbing functionality of many window managers or similar tabbing programs,
+and its embedding-features allow it to be embedded into other programs,
+as witnessed by F<doc/rxvt-tabbed> or the upcoming C<Gtk2::URxvt> perl
+module, which features a tabbed urxvt (murxvt) terminal as an example
+embedding application.
+
 =item How do I know which rxvt-unicode version I'm using?
 
 The version number is displayed with the usage (-h). Also the escape
-sequence C<ESC [ 8 n> sets the window title to the version number.
+sequence C<ESC [ 8 n> sets the window title to the version number. When
+using the @@RXVT_NAME@@c client, the version displayed is that of the
+daemon.
 
 =item I am using Debian GNU/Linux and have a problem...
 
@@ -46,6 +173,45 @@ For other problems that also affect the Debian package, you can and
 probably should use the Debian BTS, too, because, after all, it's also a
 bug in the Debian version and it serves as a reminder for other users that
 might encounter the same issue.
+
+=item I am maintaining rxvt-unicode for distribution/OS XXX, any recommendation?
+
+You should build one binary with the default options. F<configure>
+now enables most useful options, and the trend goes to making them
+runtime-switchable, too, so there is usually no drawback to enbaling them,
+except higher disk and possibly memory usage. The perl interpreter should
+be enabled, as important functionality (menus, selection, likely more in
+the future) depends on it.
+
+You should not overwrite the C<perl-ext-common> snd C<perl-ext> resources
+system-wide (except maybe with C<defaults>). This will result in useful
+behaviour. If your distribution aims at low memory, add an empty
+C<perl-ext-common> resource to the app-defaults file. This will keep the
+perl interpreter disabled until the user enables it.
+
+If you can/want build more binaries, I recommend building a minimal
+one with C<--disable-everything> (very useful) and a maximal one with
+C<--enable-everything> (less useful, it will be very big due to a lot of
+encodings built-in that increase download times and are rarely used).
+
+=item I need to make it setuid/setgid to support utmp/ptys on my OS, is this safe?
+
+Likely not. While I honestly try to make it secure, and am probably not
+bad at it, I think it is simply unreasonable to expect all of freetype
++ fontconfig + xft + xlib + perl + ... + rxvt-unicode itself to all be
+secure. Also, rxvt-unicode disables some options when it detects that it
+runs setuid or setgid, which is not nice. Besides, with the embedded perl
+interpreter the possibility for security problems easily multiplies.
+
+Elevated privileges are only required for utmp and pty operations on some
+systems (for example, GNU/Linux doesn't need any extra privileges for
+ptys, but some need it for utmp support). It is planned to mvoe this into
+a forked handler process, but this is not yet done.
+
+So, while setuid/setgid operation is supported and not a problem on your
+typical single-user-no-other-logins unix desktop, always remember that
+its an awful lot of code, most of which isn't checked for security issues
+regularly.
 
 =item When I log-in to another system it tells me about missing terminfo data?
 
@@ -508,7 +674,7 @@ Make sure that mouse reporting is actually turned off since killing
 some editors prematurely may leave the mouse in mouse report mode. I've
 heard that tcsh may use mouse reporting unless it otherwise specified. A
 quick check is to see if cut/paste works when the Alt or Shift keys are
-depressed. See @@RXVT_NAME@@(7)
+depressed.
 
 =item What's with this bold/blink stuff?
 
@@ -607,7 +773,7 @@ For starting a new rxvt-unicode:
    $ stty erase ^?
    $ @@RXVT_NAME@@
 
-Toggle with C<ESC [ 36 h> / C<ESC [ 36 l> as documented in @@RXVT_NAME@@(7).
+Toggle with C<ESC [ 36 h> / C<ESC [ 36 l>.
 
 For an existing rxvt-unicode:
 
@@ -1448,6 +1614,15 @@ X<Priv66>
 
 =end table
 
+=item B<< C<Ps = 1021> >> (B<rxvt>)
+
+=begin table
+
+	B<< C<h> >>	Bold/italic implies high intensity (see option B<-is>)
+	B<< C<l> >>	Font styles have no effect on intensity (Compile styles)
+
+=end table
+
 =item B<< C<Ps = 1047> >>
 
 =begin table
@@ -1503,8 +1678,8 @@ B<octet> can be escaped by prefixing it with SYN (0x16, ^V).
 	B<< C<Ps = 12> >>	Change colour of text cursor foreground to B<< C<Pt> >>
 	B<< C<Ps = 13> >>	Change colour of mouse foreground to B<< C<Pt> >>
 	B<< C<Ps = 17> >>	Change colour of highlight characters to B<< C<Pt> >>
-	B<< C<Ps = 18> >>	Change colour of bold characters to B<< C<Pt> >>
-	B<< C<Ps = 19> >>	Change colour of underlined characters to B<< C<Pt> >>
+	B<< C<Ps = 18> >>	Change colour of bold characters to B<< C<Pt> >> [deprecated, see 706]
+	B<< C<Ps = 19> >>	Change colour of underlined characters to B<< C<Pt> >> [deprecated, see 707]
 	B<< C<Ps = 20> >>	Change default background to B<< C<Pt> >>
 	B<< C<Ps = 39> >>	Change default foreground colour to B<< C<Pt> >>.
 	B<< C<Ps = 46> >>	Change Log File to B<< C<Pt> >> I<unimplemented>
@@ -1515,12 +1690,15 @@ B<octet> can be escaped by prefixing it with SYN (0x16, ^V).
 	B<< C<Ps = 703> >>	Menubar command B<< C<Pt> >> (Compile menubar).
 	B<< C<Ps = 704> >>	Change colour of italic characters to B<< C<Pt> >>
 	B<< C<Ps = 705> >>	Change background pixmap tint colour to B<< C<Pt> >> (Compile transparency).
+	B<< C<Ps = 706> >>	Change colour of bold characters to B<< C<Pt> >>
+	B<< C<Ps = 707> >>	Change colour of underlined characters to B<< C<Pt> >>
 	B<< C<Ps = 710> >>	Set normal fontset to B<< C<Pt> >>. Same as C<Ps = 50>.
 	B<< C<Ps = 711> >>	Set bold fontset to B<< C<Pt> >>. Similar to C<Ps = 50> (Compile styles).
 	B<< C<Ps = 712> >>	Set italic fontset to B<< C<Pt> >>. Similar to C<Ps = 50> (Compile styles).
 	B<< C<Ps = 713> >>	Set bold-italic fontset to B<< C<Pt> >>. Similar to C<Ps = 50> (Compile styles).
 	B<< C<Ps = 720> >>	Move viewing window up by B<< C<Pt> >> lines, or clear scrollback buffer if C<Pt = 0> (Compile frills).
 	B<< C<Ps = 721> >>	Move viewing window down by B<< C<Pt> >> lines, or clear scrollback buffer if C<Pt = 0> (Compile frills).
+	B<< C<Ps = 777> >>	Call the perl extension with the given string, which should be of the form C<extension:parameters> (Compile perl).
 
 =end table
 
@@ -2311,11 +2489,11 @@ Write user and tty to lastlog file (used by programs like
 F<lastlogin>) at start of rxvt execution.  This option requires
 --enable-utmp to also be specified.
 
-=item --enable-xpm-background (default: off)
+=item --enable-xpm-background (default: on)
 
 Add support for XPM background pixmaps.
 
-=item --enable-transparency (default: off)
+=item --enable-transparency (default: on)
 
 Add support for inheriting parent backgrounds thus giving a fake
 transparency to the term.
@@ -2328,10 +2506,11 @@ Add support for fading the text when focus is lost (requires C<--enable-transpar
 
 Add support for tinting of transparent backgrounds (requires C<--enable-transparency>).
 
-=item --enable-menubar (default: off)
+=item --enable-menubar (default: off) [DEPRECATED]
 
-Add support for our menu bar system (this interacts badly with
-dynamic locale switching currently).
+Add support for our menu bar system (this interacts badly with dynamic
+locale switching currently). This option is DEPRECATED and will be removed
+in the future.
 
 =item --enable-rxvt-scroll (default: on)
 
@@ -2374,16 +2553,6 @@ do it.
 
 Removes any support for resource checking.
 
-=item --enable-xgetdefault
-
-Make resources checking via XGetDefault() instead of our small
-version which only checks ~/.Xdefaults, or if that doesn't exist then
-~/.Xresources.
-
-Please note that nowadays, things like XIM will automatically pull in and
-use the full X resource manager, so the overhead of using it might be very
-small, if nonexistant.
-
 =item --enable-strings (default: off)
 
 Add support for our possibly faster memset() function and other
@@ -2407,17 +2576,21 @@ in combination with other switches) is:
 
   MWM-hints
   EWMH-hints (pid, utf8 names) and protocols (ping)
-  seperate underline colour
-  settable border widths and borderless switch
-  settable extra linespacing
+  seperate underline colour (-underlineColor)
+  settable border widths and borderless switch (-w, -b, -bl)
+  settable extra linespacing /-lsp)
   iso-14755-2 and -3, and visual feedback
   backindex and forwardindex escape sequence
   window op and some xterm/OSC escape sequences
-  tripleclickwords
-  settable insecure mode
+  tripleclickwords (-tcw)
+  settable insecure mode (-insecure)
   keysym remapping support
-  cursor blinking and underline cursor
-  -embed and -pty-fd options
+  cursor blinking and underline cursor (-cb, -uc)
+  XEmbed support (-embed)
+  user-pty (-pty-fd)
+  hold on exit (-hold)
+  skip builtin block graphics (-sbg)
+  sgr modes 90..97 and 100..107
 
 =item --enable-iso14755 (default: on)
 
@@ -2462,13 +2635,21 @@ See L<http://g.oswego.edu/dl/html/malloc.html> for details.
 
 =item --enable-smart-resize (default: on)
 
-Add smart growth/shrink behaviour when changing font size via from hot
-keys. This should keep in a fixed position the rxvt corner which is
-closest to a corner of the screen.
+Add smart growth/shrink behaviour when changing font size via hot
+keys. This should keep the window corner which is closest to a corner of
+the screen in a fixed position.
 
 =item --enable-pointer-blank (default: on)
 
 Add support to have the pointer disappear when typing or inactive.
+
+=item --enable-perl (default: off)
+
+Enable an embedded perl interpreter. See the B<@@RXVT_NAME@@perl(3)>
+manpage (F<doc/rxvtperl.txt>) for more info on this feature, or the files
+in F<src/perl-ext/> for the extensions that are installed by default. The
+perl interpreter that is used can be specified via the C<PERL> environment
+variable when running configure.
 
 =item --with-name=NAME (default: urxvt)
 

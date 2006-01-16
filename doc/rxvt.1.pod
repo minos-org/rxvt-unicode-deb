@@ -174,7 +174,7 @@ resource B<borderColor>.
 =item B<-fn> I<fontlist>
 
 Select the fonts to be used. This is a comma separated list of font names
-that are used in turn when trying to display Unicode characters.  The
+that are checked in order when trying to find glyphs for characters. The
 first font defines the cell size for characters; other fonts might be
 smaller, but not (in general) larger. A (hopefully) reasonable default
 font list is always appended to it. See resource B<font> for more details.
@@ -191,18 +191,25 @@ section of @@RXVT_NAME@@(7).
 
 =item B<-fb> I<fontlist>
 
-Compile font-styles: The bold font list to use when bold characters are to
-be printed. See resource B<boldFont> for details.
+Compile I<font-styles>: The bold font list to use when B<bold> characters
+are to be printed. See resource B<boldFont> for details.
 
 =item B<-fi> I<fontlist>
 
-Compile font-styles: The italic font list to use when bold characters are to
-be printed. See resource B<italicFont> for details.
+Compile I<font-styles>: The italic font list to use when I<italic>
+characters are to be printed. See resource B<italicFont> for details.
 
 =item B<-fbi> I<fontlist>
 
-Compile font-styles: The bold italic font list to use when bold characters are to
-be printed. See resource B<boldItalicFont> for details.
+Compile I<font-styles>: The bold italic font list to use when B<< I<bold
+italic> >> characters are to be printed. See resource B<boldItalicFont>
+for details.
+
+=item B<-is>|B<+is>
+
+Compile I<font-styles>: Bold/Italic font styles imply high intensity
+foreground/background (default). See resource B<intensityStyles> for
+details.
 
 =item B<-name> I<name>
 
@@ -292,6 +299,13 @@ Compile I<frills>: Set MWM hints to request a borderless window, i.e.
 if honoured by the WM, the rxvt-unicode window will not have window
 decorations; resource B<borderLess>.
 
+=item B<-sbg>
+
+Compile I<frills>: Disable the usage of the built-in block graphics/line
+drawing characters and just rely on what the specified fonts provide. Use
+this if you have a good font and want to use its block graphic glyphs;
+resource B<skipBuiltinGlyphs>.
+
 =item B<-lsp> I<number>
 
 Compile I<frills>: Lines (pixel height) to insert between each row of
@@ -314,6 +328,11 @@ given on the command line. If this option is used, it must be the last
 on the command-line. If there is no B<-e> option then the default is to
 run the program specified by the B<SHELL> environment variable or,
 failing that, I<sh(1)>.
+
+Please note that you must specify a program with arguments. If you want to
+run shell commands, you have to specify the shell, like this:
+
+  @@RXVT_NAME@@ -e sh -c "shell commands"
 
 =item B<-title> I<text>
 
@@ -380,6 +399,13 @@ B<secondaryScreen>.
 Turn on/off secondary screen scroll (default enabled); resource
 B<secondaryScroll>.
 
+=item B<-hold>|B<+hold>
+
+Turn on/off hold window after exit support. If enabled, @@RXVT_NAME@@
+will not immediately destroy its window when the program executed within
+it exits. Instead, it will wait till it is being killed or closed by the
+user; resource B<hold>.
+
 =item B<-keysym.>I<sym> I<string>
 
 Remap a key symbol. See resource B<keysym>.
@@ -411,7 +437,7 @@ used (a longer example is in F<doc/embed>):
       system "@@RXVT_NAME@@ -embed $xid &";
    });
 
-=item B<-pty-fd> I<fileno>
+=item B<-pty-fd> I<file descriptor>
 
 Tells @@RXVT_NAME@@ NOT to execute any commands or create a new pty/tty
 pair but instead use the given filehandle as the tty master. This is
@@ -421,6 +447,9 @@ without having to run a program within it.
 If this switch is given, @@RXVT_NAME@@ will not create any utmp/wtmp
 entries and will not tinker with pty/tty permissions - you have to do that
 yourself if you want that.
+
+As an extremely special case, specifying C<-1> will completely suppress
+pty/tty operations.
 
 Here is a example in perl that illustrates how this option can be used (a
 longer example is in F<doc/pty-fd>):
@@ -437,6 +466,11 @@ longer example is in F<doc/pty-fd>):
    my $slave = $pty->slave;
    while (<$slave>) { print $slave "got <$_>\n" }
 
+=item B<-pe> I<string>
+
+Comma-separated list of perl extension scripts to use (or not to use) in
+this terminal instance. See resource B<perl-ext> for details.
+
 =back
 
 =head1 RESOURCES (available also as long-options)
@@ -444,14 +478,10 @@ longer example is in F<doc/pty-fd>):
 Note: `@@RXVT_NAME@@ --help' gives a list of all resources (long
 options) compiled into your version.
 
-There are two different methods that @@RXVT_NAME@@ can use to get the
-Xresource data: using the X libraries (Xrm*-functions) or internal
-Xresources reader (B<~/.Xdefaults>). For the first method (ie.
-B<@@RXVT_NAME@@ -h> lists B<XGetDefaults>), you can set and change the
-resources using X11 tools like B<xrdb>. Many distribution do also load
-settings from the B<~/.Xresources> file when X starts. @@RXVT_NAME@@
-will consult the following files/resources in order, with later settings
-overwriting earlier ones:
+You can set and change the resources using X11 tools like B<xrdb>. Many
+distribution do also load settings from the B<~/.Xresources> file when X
+starts. @@RXVT_NAME@@ will consult the following files/resources in order,
+with later settings overwriting earlier ones:
 
   1. system-wide app-defaults file, either locale-dependent OR global
   2. app-defaults file in $XAPPLRESDIR
@@ -459,20 +489,16 @@ overwriting earlier ones:
   4. SCREEN_RESOURCES for the current screen
   5. $XENVIRONMENT file OR $HOME/.Xdefaults-<nodename>
 
-If compiled with internal Xresources support (i.e. B<@@RXVT_NAME@@ -h>
-lists B<.Xdefaults>) then B<@@RXVT_NAME@@> accepts application defaults
-set in XAPPLOADDIR/URxvt (compile-time defined: usually
-B</usr/lib/X11/app-defaults/URxvt>) and resources set in
-B<~/.Xdefaults>, or B<~/.Xresources> if B<~/.Xdefaults> does not exist.
-Note that when reading X resources, B<@@RXVT_NAME@@> recognizes two
-class names: B<XTerm> and B<URxvt>. The class name B<Rxvt> allows
-resources common to both B<@@RXVT_NAME@@> and the original I<rxvt> to be
-easily configured, while the class name B<URxvt> allows resources
-unique to B<@@RXVT_NAME@@>, notably colours and key-handling, to be
-shared between different B<@@RXVT_NAME@@> configurations. If no
-resources are specified, suitable defaults will be used. Command-line
-arguments can be used to override resource settings. The following
-resources are allowed:
+Note that when reading X resources, B<@@RXVT_NAME@@> recognizes two class
+names: B<Rxvt> and B<URxvt>. The class name B<Rxvt> allows resources
+common to both B<@@RXVT_NAME@@> and the original I<rxvt> to be easily
+configured, while the class name B<URxvt> allows resources unique to
+B<@@RXVT_NAME@@>, to be shared between different B<@@RXVT_NAME@@>
+configurations. If no resources are specified, suitable defaults will
+be used. Command-line arguments can be used to override resource
+settings. The following resources are supported (you might want to
+check the @@RXVT_NAME@@perl(3) manpage for additional settings by perl
+extensions not documented here):
 
 =over 4
 
@@ -617,11 +643,11 @@ B<PATH> environment variables.
 
 =item B<font:> I<fontlist>
 
-Select the fonts to be used. This is a comma separated list of font
-names that are used in turn when trying to display Unicode characters.
-The first font defines the cell size for characters; other fonts might
-be smaller, but not larger. A reasonable default font list is always
-appended to it. option B<-fn>.
+Select the fonts to be used. This is a comma separated list of font names
+that are checked in order when trying to find glyphs for characters. The
+first font defines the cell size for characters; other fonts might be
+smaller, but not (in general) larger. A (hopefully) reasonable default
+font list is always appended to it; option B<-fn>.
 
 Each font can either be a standard X11 core font (XLFD) name, with
 optional prefix C<x:> or a Xft font (Compile I<xft>), prefixed with C<xft:>.
@@ -676,6 +702,14 @@ not possible, replacement fonts of the desired shape will be tried.
 
 If set, but empty, then this specific style is disabled and the normal
 text font will being used for the given style.
+
+=item B<intensityStyles:> I<boolean>
+
+When font styles are not enabled, or this option is enabled (B<True>,
+option B<-is>, the default), bold and italic font styles imply high
+intensity foreground/backround colours. Disabling this option (B<False>,
+option B<+is>) disables this behaviour, the high intensity colours are not
+reachable.
 
 =item B<selectstyle:> I<mode>
 
@@ -796,6 +830,13 @@ option B<-w>, B<-bw>, B<-borderwidth>.
 Set MWM hints to request a borderless window, i.e. if honoured by the
 WM, the rxvt-unicode window will not have window decorations; option B<-bl>.
 
+=item B<skipBuiltinGlyphs:> I<boolean>
+
+Compile I<frills>: Disable the usage of the built-in block graphics/line
+drawing characters and just rely on what the specified fonts provide. Use
+this if you have a good font and want to use its block graphic glyphs;
+option B<-sbg>.
+
 =item B<termName:> I<termname>
 
 Specifies the terminal type name to be set in the B<TERM> environment
@@ -878,7 +919,7 @@ I<name> of inputMethod to use; option B<-im>.
 The locale to use for opening the IM. You can use an C<LC_CTYPE> of e.g.
 C<de_DE.UTF-8> for normal text processing but C<ja_JP.EUC-JP> for the
 input extension to be able to input japanese characters while staying in
-another locale. option B<-imlocale>.
+another locale; option B<-imlocale>.
 
 =item B<imFont:> I<fontset>
 
@@ -893,20 +934,22 @@ option B<-imfont>.
 
 Change the meaning of triple-click selection with the left mouse
 button. Instead of selecting a full line it will extend the selection to
-the end of the logical line only. option B<-tcw>.
+the end of the logical line only; option B<-tcw>.
 
 =item B<insecure:> I<boolean>
 
 Enables "insecure" mode. Rxvt-unicode offers some escape sequences that
 echo arbitrary strings like the icon name or the locale. This could be
 abused if somebody gets 8-bit-clean access to your display, whether
-throuh a mail client displaying mail bodies unfiltered or though
-write(1). Therefore, these sequences are disabled by default. (Note
-that other terminals, including xterm, have these sequences
-enabled by default). You can enable them by setting this boolean
-resource or specifying B<-insecure> as an option. At the moment, this
-enabled display-answer, locale, findfont, icon label and window title
-requests as well as dynamic menubar dispatch.
+through a mail client displaying mail bodies unfiltered or through
+write(1) or any other means. Therefore, these sequences are disabled by
+default. (Note that many other terminals, including xterm, have these
+sequences enabled by default, which doesn't make it safer, though).
+
+You can enable them by setting this boolean resource or specifying
+B<-insecure> as an option. At the moment, this enables display-answer,
+locale, findfont, icon label and window title requests as well as dynamic
+menubar dispatch.
 
 =item B<modifier:> I<modifier>
 
@@ -930,6 +973,13 @@ Turn on/off secondary screen scroll (default enabled). If the this
 option is enabled, scrolls on the secondary screen will change the
 scrollback buffer and switching to/from the secondary screen will
 instead scroll the screen up.
+
+=item B<hold>: I<bool>
+
+Turn on/off hold window after exit support. If enabled, @@RXVT_NAME@@
+will not immediately destroy its window when the program executed within
+it exits. Instead, it will wait till it is being killed or closed by the
+user.
 
 =item B<keysym.>I<sym>: I<string>
 
@@ -959,10 +1009,10 @@ C<\000>: octal number) or verbatim control characters (C<^?>: delete,
 C<^@>: null, C<^A> ...) and may be enclosed with double quotes so that it
 can start or end with whitespace.
 
-Please note that you need to double the C<\> when using
-C<--enable-xgetdefault>, as X itself does it's own de-escaping (you can
-use C<\033> instead of C<\e> (and so on), which will work with both Xt and
-@@RXVT_NAME@@'s own processing).
+Please note that you need to double the C<\> in resource files, as
+Xlib itself does it's own de-escaping (you can use C<\033> instead of
+C<\e> (and so on), which will work with both Xt and @@RXVT_NAME@@'s own
+processing).
 
 You can define a range of keysyms in one shot by providing a I<string>
 with pattern B<list/PREFIX/MIDDLE/SUFFIX>, where the delimeter `/'
@@ -984,6 +1034,13 @@ example the following means "change the current locale to C<zh_CN.GBK>
 when Control-Meta-c is being pressed":
 
   URxvt.keysym.M-C-c: command:\033]701;zh_CN.GBK\007
+
+If I<string> takes the form C<perl:STRING>, then the specified B<STRING>
+is passed to the C<on_keyboard_command> perl handler. See the @@RXVT_NAME@@perl(3)
+manpage. For example, the F<selection> extension (activated via
+C<@@RXVT_NAME@@ -pe selection>) listens for C<selection:rot13> events:
+
+  URxvt.keysym.M-C-c: perl:selection:rot13
 
 Due the the large number of modifier combinations, a defined key mapping
 will match if at I<at least> the specified identifiers are being set, and
@@ -1016,6 +1073,73 @@ info):
 
   URxvt.keysym.M-C-3: command:\033[8;25;80t
   URxvt.keysym.M-C-4: command:\033[8;48;110t
+
+=item B<perl-ext-common>: I<string>
+
+=item B<perl-ext>: I<string>
+
+Comma-separated list(s) of perl extension scripts (default: C<default>) to
+use in this terminal instance; option B<-pe>.
+
+Extension names can be prefixed with a C<-> sign to prohibit using
+them. This can be useful to selectively disable some extensions loaded
+by default, or specified via the C<perl-ext-common> resource. For
+example, C<default,-selection> will use all the default extension except
+C<selection>.
+
+Extension names can also be followed by an argument in angle brackets
+(e.g.  C<< searchable-scrollback<M-s> >>, which binds the hotkey for
+searchable scorllback to Alt/Meta-s). Mentioning the same extension
+multiple times with different arguments will pass multiple arguments to
+the extension.
+
+Each extension is looked up in the library directories, loaded if
+necessary, and bound to the current terminal instance.
+
+If both of these resources are the empty string, then the perl
+interpreter will not be initialized. The idea behind two options is that
+B<perl-ext-common> will be used for extensions that should be available to
+all instances, while B<perl-ext> is used for specific instances.
+
+=item B<perl-eval>: I<string>
+
+Perl code to be evaluated when all extensions have been registered. See
+the @@RXVT_NAME@@perl(3) manpage. Due to security reasons, this resource
+will be ignored when running setuid/setgid.
+
+=item B<perl-lib>: I<path>
+
+Colon-separated list of additional directories that hold extension
+scripts. When looking for extensions specified by the C<perl> resource,
+@@RXVT_NAME@@ will first look in these directories and then in
+F<@@RXVT_LIBDIR@@/urxvt/perl/>. Due to security reasons, this resource
+will be ignored when running setuid/setgid.
+
+See the @@RXVT_NAME@@perl(3) manpage.
+
+=item B<< selection.pattern-I<idx> >>: I<perl-regex>
+
+Additional selection patterns, see the @@RXVT_NAME@@perl(3) manpage for
+details.
+
+=item B<< selection-autotransform.I<idx> >>: I<perl-transform>
+
+Selection auto-transform patterns, see the @@RXVT_NAME@@perl(3) manpage
+for details.
+
+=item B<searchable-scrollback:> I<keysym>
+
+Sets the hotkey that starts the incremental scrollback buffer search
+(default: C<M-s>).
+
+=item B<urlLauncher>: I<string>
+
+Specifies the program to be started with a URL argument. Used by the
+C<selection-popup> and C<mark-urls> perl extensions.
+
+=item B<transient-for>: I<windowid>
+
+Sets the WM_TRANSIENT_FOR property to the given window iw.
 
 =back
 
@@ -1060,8 +1184,10 @@ to select a word; Left triple-click to select the entire logical line
 B<tripleclickwords>.
 
 Starting a selection while pressing the B<Meta> key (or B<Meta+Ctrl> keys)
-(Compile: I<frills>) will create a rectangular selection instead of a normal
-one.
+(Compile: I<frills>) will create a rectangular selection instead of a
+normal one. In this mode, every selected row becomes its own line in the
+selection, and trailing whitespace is visually underlined and removed from
+the selection.
 
 =item B<Insertion>:
 
@@ -1079,7 +1205,7 @@ supported in rxvt-unicode. Bug me if you need this.
 You can, however, switch fonts at runtime using escape sequences (and
 therefore using the menubar), e.g.:
 
-   printf '\e]701;%s\007' "9x15bold,xft:Kochi Gothic"
+   printf '\e]710;%s\007' "9x15bold,xft:Kochi Gothic"
 
 rxvt-unicode will automatically re-apply these fonts to the output so far.
 

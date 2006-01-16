@@ -79,24 +79,51 @@ typedef uint32_t text_t;
 typedef uint16_t text_t; // saves lots of memory
 #endif
 typedef uint32_t rend_t;
+typedef  int32_t tlen_t;  // was int16_t, but this results in smaller code and memory use
+typedef  int32_t tlen_t_; // specifically for use in the line_t structure
+
+struct line_t;
 
 /*
- * TermWin elements limits
- *  width     : 1 <= width
- *  height    : 1 <= height
- *  ncol      : 1 <= ncol       <= MAX(int16_t)
- *  nrow      : 1 <= nrow       <= MAX(int16_t)
- *  saveLines : 0 <= saveLines  <= MAX(int16_t)
- *  nscrolled : 0 <= nscrolled  <= saveLines
- *  view_start: 0 <= view_start <= nscrolled
+ * terminal limits:
+ *
+ *  width      : 1 <= width
+ *  height     : 1 <= height
+ *  ncol       : 1 <= ncol       <= MAX(tlen_t)
+ *  nrow       : 1 <= nrow       <= MAX(int)
+ *  saveLines  : 0 <= saveLines  <= MAX(int)
+ *  total_rows : nrow + saveLines
+ *  nsaved     : 0 <= nsaved     <= saveLines
+ *  term_start : 0 <= term_start < saveLines
+ *  view_start : 0 <= view_start < saveLines
+ *
+ *          | most coordinates are stored relative to term_start,
+ *  ROW_BUF | which is the first line of the terminal screen
+ *  |························= row_buf[0]
+ *  |························= row_buf[1]
+ *  |························= row_buf[2] etc.
+ *  |
+ *  +------------+···········= term_start - nsaved
+ *  | scrollback |                                      
+ *  | scrollback +---------+·= term_start - view_start
+ *  | scrollback | display |
+ *  | scrollback | display |
+ *  +------------+·display·+·= term_start
+ *  |  terminal  | display |
+ *  |  terminal  +---------+
+ *  |  terminal  |
+ *  |  terminal  |
+ *  +------------+···········= term_stat + nrow - 1
+ *  |
+ *  |
+ *  END······················= total_rows
  */
 
-typedef struct {
+struct TermWin_t {
   int            width;         /* window width                    [pixels] */
   int            height;        /* window height                   [pixels] */
   int            fwidth;        /* font width                      [pixels] */
   int            fheight;       /* font height                     [pixels] */
-  int            fweight, fslant;
   int            fbase;         /* font ascent (baseline)          [pixels] */
   int            ncol;          /* window columns              [characters] */
   int            nrow;          /* window rows                 [characters] */
@@ -106,7 +133,9 @@ typedef struct {
   int            ext_bwidth;    /* external border width                    */
   int            lineSpace;     /* number of extra pixels between rows      */
   int            saveLines;     /* number of lines that fit in scrollback   */
-  int            nscrolled;     /* number of line actually scrolled         */
+  int            total_rows;    /* total number of rows in this terminal    */
+  int            nsaved;        /* number of rows saved to scrollback       */
+  int            term_start;    /* term lines start here                    */
   int            view_start;    /* scrollback view starts here              */
   Window         parent[6];     /* parent identifiers - we're parent[0]     */
   Window         vt;            /* vt100 window                             */
@@ -114,21 +143,15 @@ typedef struct {
   Pixmap         pixmap;
   rxvt_drawable *drawable;
   rxvt_fontset  *fontset[4];
-} TermWin_t;
+};
 
 /*
  * screen accounting:
  * screen_t elements
- *   text:      Contains all text information including the scrollback buffer.
- *              Each line is length TermWin.ncol
- *   tlen:      The length of the line or -1 for wrapped lines.
- *   rend:      Contains rendition information: font, bold, colour, etc.
- * * Note: Each line for both text and rend are only allocated on demand, and
- *         text[x] is allocated <=> rend[x] is allocated  for all x.
- *   row:       Cursor row position                   : 0 <= row < TermWin.nrow
- *   col:       Cursor column position                : 0 <= col < TermWin.ncol
- *   tscroll:   Scrolling region top row inclusive    : 0 <= row < TermWin.nrow
- *   bscroll:   Scrolling region bottom row inclusive : 0 <= row < TermWin.nrow
+ *   row:       Cursor row position                   : 0 <= row < nrow
+ *   col:       Cursor column position                : 0 <= col < ncol
+ *   tscroll:   Scrolling region top row inclusive    : 0 <= row < nrow
+ *   bscroll:   Scrolling region bottom row inclusive : 0 <= row < nrow
  *
  * selection_t elements
  *   clicks:    1, 2 or 3 clicks - 4 indicates a special condition of 1 where
@@ -136,22 +159,14 @@ typedef struct {
  *   beg:       row/column of beginning of selection  : never past mark
  *   mark:      row/column of initial click           : never past end
  *   end:       row/column of one character past end of selection
- * * Note: -TermWin.nscrolled <= beg.row <= mark.row <= end.row < TermWin.nrow
+ * * Note: -nsaved <= beg.row <= mark.row <= end.row < nrow
  * * Note: col == -1 ==> we're left of screen
  *
- * Layout of text/rend information in the screen_t text/rend structures:
- *   Rows [0] ... [TermWin.saveLines - 1]
- *     scrollback region : we're only here if TermWin.view_start != 0
- *   Rows [TermWin.saveLines] ... [TermWin.saveLines + TermWin.nrow - 1]
- *     normal `unscrolled' screen region
  */
 typedef struct {
-  int16_t        *tlen; /* length of each text line                  */
-  text_t        **text; /* _all_ the text                            */
-  rend_t        **rend; /* rendition, uses RS_ flags                 */
-  row_col_t       cur;  /* cursor position on the screen             */
-  unsigned int    tscroll;      /* top of settable scroll region             */
-  unsigned int    bscroll;      /* bottom of settable scroll region          */
+  row_col_t       cur;          /* cursor position on the screen             */
+  int             tscroll;      /* top of settable scroll region             */
+  int             bscroll;      /* bottom of settable scroll region          */
   unsigned int    charset;      /* character set number [0..3]               */
   unsigned int    flags;        /* see below                                 */
   row_col_t       s_cur;        /* saved cursor position                     */
@@ -191,44 +206,13 @@ typedef struct {
 #define Screen_DefaultFlags      (Screen_VisibleCursor | Screen_Autowrap)
 
 /* rxvt_vars.options */
-#define Opt_console              (1UL<<0)
-#define Opt_loginShell           (1UL<<1)
-#define Opt_iconic               (1UL<<2)
-#define Opt_visualBell           (1UL<<3)
-#define Opt_mapAlert             (1UL<<4)
-#define Opt_reverseVideo         (1UL<<5)
-#define Opt_utmpInhibit          (1UL<<6)
-#define Opt_scrollBar            (1UL<<7)
-#define Opt_scrollBar_right      (1UL<<8)
-#define Opt_scrollBar_floating   (1UL<<9)
-#define Opt_meta8                (1UL<<10)
-#define Opt_scrollTtyOutput      (1UL<<11)
-#define Opt_scrollTtyKeypress    (1UL<<12)
-#define Opt_transparent          (1UL<<13)
-#define Opt_tripleclickwords     (1UL<<14)
-#define Opt_scrollWithBuffer     (1UL<<15)
-#define Opt_jumpScroll           (1UL<<16)
-#define Opt_mouseWheelScrollPage (1UL<<17)
-#define Opt_pointerBlank         (1UL<<18)
-#define Opt_cursorBlink          (1UL<<19)
-#define Opt_secondaryScreen      (1UL<<20)
-#define Opt_secondaryScroll      (1UL<<21)
-#define Opt_pastableTabs         (1UL<<22)
-#define Opt_cursorUnderline      (1UL<<23)
-#if ENABLE_FRILLS
-# define Opt_insecure		 (1UL<<24) // insecure esc sequences
-# define Opt_borderLess		 (1UL<<25) // mem borderless hints
-#else
-# define Opt_insecure		 0
-# define Opt_borderLess		 0
-#endif
-/* place holder used for parsing command-line options */
-#define Opt_Reverse              (1UL<<30)
-#define Opt_Boolean              (1UL<<31)
-
-#define DEFAULT_OPTIONS          (Opt_scrollBar | Opt_scrollTtyOutput \
-                                  | Opt_jumpScroll | Opt_secondaryScreen \
-                                  | Opt_pastableTabs)
+enum {
+# define def(name,idx) Opt_ ## name = 1UL << (idx),
+# define nodef(name)   Opt_ ## name = 0,
+# include "optinc.h"
+# undef nodef
+# undef def
+};
 
 /* ------------------------------------------------------------------------- */
 
@@ -256,11 +240,10 @@ typedef struct {
   void setDn()     { state = 'D'; }
 } scrollBar_t;
 
-struct rxvt_vars {
-  TermWin_t       TermWin;
+struct rxvt_vars : TermWin_t {
   scrollBar_t     scrollBar;
   menuBar_t       menuBar;
-  unsigned long   options;
+  uint32_t        options;
   XSizeHints      szHint;
   rxvt_display   *display;
   rxvt_color     *pix_colors;
@@ -273,10 +256,9 @@ struct rxvt_vars {
   int             sb_shadow;    /* scrollbar shadow width                    */
   rxvt_ptytty     pty;
   int             numlock_state;
-  text_t        **drawn_text;   /* text drawn on screen (characters)         */
-  rend_t        **drawn_rend;   /* text drawn on screen (rendition)          */
-  text_t        **buf_text;
-  rend_t        **buf_rend;
+  line_t         *row_buf;      // all lines, scrollback + terminal, circular, followed by temp_buf
+  line_t         *drawn_buf;    // text on screen
+  line_t         *swap_buf;     // lines for swap buffer
   char           *tabs;         /* per location: 1 == tab-stop               */
   screen_t        screen;
   screen_t        swap;
@@ -284,6 +266,7 @@ struct rxvt_vars {
 };
 
 void rxvt_init ();
+bool rxvt_tainted ();
 
 #endif                          /* _RXVTLIB_H_ */
 

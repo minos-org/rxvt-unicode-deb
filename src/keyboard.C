@@ -5,6 +5,7 @@
 
 #include <cstring>
 
+#include "rxvtperl.h"
 #include "keyboard.h"
 #include "command.h"
 
@@ -47,22 +48,22 @@
 keysym_t keyboard_manager::stock_keymap[] = {
   /* examples */
   /*        keysym,                state, range,               handler,              str */
-//{XK_ISO_Left_Tab,                    0,     1,      keysym_t::NORMAL,           "\033[Z"},
+//{XK_ISO_Left_Tab,                    0,     1,      keysym_t::STRING,           "\033[Z"},
 //{            'a',                    0,    26, keysym_t::RANGE_META8,           "a" "%c"},
 //{            'a',          ControlMask,    26, keysym_t::RANGE_META8,          "" "%c"},
 //{        XK_Left,                    0,     4,        keysym_t::LIST,     ".\033[.DACB."},
 //{        XK_Left,            ShiftMask,     4,        keysym_t::LIST,     ".\033[.dacb."},
 //{        XK_Left,          ControlMask,     4,        keysym_t::LIST,     ".\033O.dacb."},
-//{         XK_Tab,          ControlMask,     1,      keysym_t::NORMAL,      "\033<C-Tab>"},
-//{  XK_apostrophe,          ControlMask,     1,      keysym_t::NORMAL,        "\033<C-'>"},
-//{       XK_slash,          ControlMask,     1,      keysym_t::NORMAL,        "\033<C-/>"},
-//{   XK_semicolon,          ControlMask,     1,      keysym_t::NORMAL,        "\033<C-;>"},
-//{       XK_grave,          ControlMask,     1,      keysym_t::NORMAL,        "\033<C-`>"},
-//{       XK_comma,          ControlMask,     1,      keysym_t::NORMAL,     "\033<C-\054>"},
-//{      XK_Return,          ControlMask,     1,      keysym_t::NORMAL,   "\033<C-Return>"},
-//{      XK_Return,            ShiftMask,     1,      keysym_t::NORMAL,   "\033<S-Return>"},
-//{            ' ',            ShiftMask,     1,      keysym_t::NORMAL,    "\033<S-Space>"},
-//{            '.',          ControlMask,     1,      keysym_t::NORMAL,        "\033<C-.>"},
+//{         XK_Tab,          ControlMask,     1,      keysym_t::STRING,      "\033<C-Tab>"},
+//{  XK_apostrophe,          ControlMask,     1,      keysym_t::STRING,        "\033<C-'>"},
+//{       XK_slash,          ControlMask,     1,      keysym_t::STRING,        "\033<C-/>"},
+//{   XK_semicolon,          ControlMask,     1,      keysym_t::STRING,        "\033<C-;>"},
+//{       XK_grave,          ControlMask,     1,      keysym_t::STRING,        "\033<C-`>"},
+//{       XK_comma,          ControlMask,     1,      keysym_t::STRING,     "\033<C-\054>"},
+//{      XK_Return,          ControlMask,     1,      keysym_t::STRING,   "\033<C-Return>"},
+//{      XK_Return,            ShiftMask,     1,      keysym_t::STRING,   "\033<S-Return>"},
+//{            ' ',            ShiftMask,     1,      keysym_t::STRING,    "\033<S-Space>"},
+//{            '.',          ControlMask,     1,      keysym_t::STRING,        "\033<C-.>"},
 //{            '0',          ControlMask,    10,       keysym_t::RANGE,   "0" "\033<C-%c>"},
 //{            '0', MetaMask|ControlMask,    10,       keysym_t::RANGE, "0" "\033<M-C-%c>"},
 //{            'a', MetaMask|ControlMask,    26,       keysym_t::RANGE, "a" "\033<M-C-%c>"},
@@ -73,9 +74,11 @@ static void
 output_string (rxvt_term *rt, const char *str)
 {
   if (strncmp (str, "command:", 8) == 0)
-    rt->cmd_write ((unsigned char *)str + 8, strlen (str) - 8);
+    rt->cmd_write (str + 8, strlen (str) - 8);
+  else if (strncmp (str, "perl:", 5) == 0)
+    HOOK_INVOKE((rt, HOOK_KEYBOARD_COMMAND, DT_STR, str + 5, DT_END));
   else
-    rt->tt_write ((unsigned char *)str, strlen (str));
+    rt->tt_write (str, strlen (str));
 }
 
 static void
@@ -92,12 +95,12 @@ output_string_meta8 (rxvt_term *rt, unsigned int state, char *buf, int buflen)
       else if (rt->meta_char == C0_ESC)	/* escape prefix */
 #endif
         {
-          const unsigned char ch = C0_ESC;
+          const char ch = C0_ESC;
           rt->tt_write (&ch, 1);
         }
     }
 
-  rt->tt_write ((unsigned char *) buf, buflen);
+  rt->tt_write (buf, buflen);
 }
 
 static int
@@ -117,7 +120,7 @@ format_keyrange_string (const char *str, int keysym_offset, char *buf, int bufsi
 ////////////////////////////////////////////////////////////////////////////////
 // return: #bits of '1'
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ > 3)
-# define bitcount(n) (__extension__ ({ uint32_t n__ = (n); __builtin_popcount (n); }))
+# define bitcount(n) (__extension__ ({ uint32_t n__ = (n); __builtin_popcount (n__); }))
 #else
 static int
 bitcount (uint16_t n)
@@ -191,7 +194,7 @@ keyboard_manager::register_user_translation (KeySym keysym, unsigned int state, 
 {
   keysym_t *key = new keysym_t;
   wchar_t *wc = rxvt_mbstowcs (trans);
-  const char *translation = rxvt_wcstoutf8 (wc);
+  char *translation = rxvt_wcstoutf8 (wc);
   free (wc);
 
   if (key && translation)
@@ -200,7 +203,7 @@ keyboard_manager::register_user_translation (KeySym keysym, unsigned int state, 
       key->state  = state;
       key->range  = 1;
       key->str    = translation;
-      key->type   = keysym_t::NORMAL;
+      key->type   = keysym_t::STRING;
 
       if (strncmp (translation, "list", 4) == 0 && translation [4])
         {
@@ -290,7 +293,7 @@ keyboard_manager::dispatch (rxvt_term *term, KeySym keysym, unsigned int state)
 
           switch (key.type)
             {
-              case keysym_t::NORMAL:
+              case keysym_t::STRING:
                 output_string (term, str);
                 break;
 

@@ -1,7 +1,132 @@
 FREQUENTLY ASKED QUESTIONS
+    The new selection selects pieces that are too big, how can I select
+    single words?
+        Yes. For example, if you want to select alphanumeric words, you can
+        use the following resource:
+
+           URxvt.selection.pattern-0: ([[:word:]]+)
+
+        If you click more than twice, the selection will be extended more
+        and more.
+
+        To get a selection that is very similar to the old code, try this
+        pattern:
+
+           URxvt.selection.pattern-0: ([^"&'()*,;<=>?@[\\\\]^`{|})]+)
+
+        Please also note that the *LeftClick Shift-LeftClik* combination
+        also selects words like the old code.
+
+    I don't like the new selection/popups/hotkeys/perl, how do I
+    change/disable it?
+        You can disable the perl extension completely by setting the
+        perl-ext-common resource to the empty string, which also keeps
+        rxvt-unicode from initialising perl, saving memory.
+
+        If you only want to disable specific features, you first have to
+        identify which perl extension is responsible. For this, read the
+        section PREPACKAGED EXTENSIONS in the urxvtperl(3) manpage. For
+        example, to disable the selection-popup and option-popup, specify
+        this perl-ext-common resource:
+
+           URxvt.perl-ext-common: default,-selection-popup,-option-popup
+
+        This will keep the default extensions, but disable the two popup
+        extensions. Some extensions can also be configured, for example,
+        scrollback search mode is triggered by M-s. You can move it to any
+        other combination either by setting the searchable-scrollback
+        resource:
+
+           URxvt.searchable-scrollback: CM-s
+
+    Isn't rxvt supposed to be small? Don't all those features bloat?
+        I often get asked about this, and I think, no, they didn't cause
+        extra bloat. If you compare a minimal rxvt and a minimal urxvt, you
+        can see that the urxvt binary is larger (due to some encoding tables
+        always being compiled in), but it actually uses less memory (RSS)
+        after startup. Even with "--disable-everything", this comparison is
+        a bit unfair, as many features unique to urxvt (locale, encoding
+        conversion, iso14755 etc.) are already in use in this mode.
+
+            text    data     bss     drs     rss filename
+           98398    1664      24   15695    1824 rxvt --disable-everything
+          188985    9048   66616   18222    1788 urxvt --disable-everything
+
+        When you "--enable-everything" (which _is_ unfair, as this involves
+        xft and full locale/XIM support which are quite bloaty inside libX11
+        and my libc), the two diverge, but not unreasnobaly so.
+
+            text    data     bss     drs     rss filename
+          163431    2152      24   20123    2060 rxvt --enable-everything
+         1035683   49680   66648   29096    3680 urxvt --enable-everything
+
+        The very large size of the text section is explained by the
+        east-asian encoding tables, which, if unused, take up disk space but
+        nothing else and can be compiled out unless you rely on X11 core
+        fonts that use those encodings. The BSS size comes from the 64k
+        emergency buffer that my c++ compiler allocates (but of course
+        doesn't use unless you are out of memory). Also, using an xft font
+        instead of a core font immediately adds a few megabytes of RSS. Xft
+        indeed is responsible for a lot of RSS even when not used.
+
+        Of course, due to every character using two or four bytes instead of
+        one, a large scrollback buffer will ultimately make rxvt-unicode use
+        more memory.
+
+        Compared to e.g. Eterm (5112k), aterm (3132k) and xterm (4680k),
+        this still fares rather well. And compared to some monsters like
+        gnome-terminal (21152k + extra 4204k in separate processes) or
+        konsole (22200k + extra 43180k in daemons that stay around after
+        exit, plus half a minute of startup time, including the hundreds of
+        warnings it spits out), it fares extremely well *g*.
+
+    Why C++, isn't that unportable/bloated/uncool?
+        Is this a question? :) It comes up very often. The simple answer is:
+        I had to write it, and C++ allowed me to write and maintain it in a
+        fraction of the time and effort (which is a scarce resource for me).
+        Put even shorter: It simply wouldn't exist without C++.
+
+        My personal stance on this is that C++ is less portable than C, but
+        in the case of rxvt-unicode this hardly matters, as its portability
+        limits are defined by things like X11, pseudo terminals, locale
+        support and unix domain sockets, which are all less portable than
+        C++ itself.
+
+        Regarding the bloat, see the above question: It's easy to write
+        programs in C that use gobs of memory, an certainly possible to
+        write programs in C++ that don't. C++ also often comes with large
+        libraries, but this is not necessarily the case with GCC. Here is
+        what rxvt links against on my system with a minimal config:
+
+           libX11.so.6 => /usr/X11R6/lib/libX11.so.6 (0x00002aaaaabc3000)
+           libc.so.6 => /lib/libc.so.6 (0x00002aaaaadde000)
+           libdl.so.2 => /lib/libdl.so.2 (0x00002aaaab01d000)
+           /lib64/ld-linux-x86-64.so.2 (0x00002aaaaaaab000)
+
+        And here is rxvt-unicode:
+
+           libX11.so.6 => /usr/X11R6/lib/libX11.so.6 (0x00002aaaaabc3000)
+           libgcc_s.so.1 => /lib/libgcc_s.so.1 (0x00002aaaaada2000)
+           libc.so.6 => /lib/libc.so.6 (0x00002aaaaaeb0000)     
+           libdl.so.2 => /lib/libdl.so.2 (0x00002aaaab0ee000)   
+           /lib64/ld-linux-x86-64.so.2 (0x00002aaaaaaab000)     
+
+        No large bloated libraries (of course, none were linked in
+        statically), except maybe libX11 :)
+
+    Does it support tabs, can I have a tabbed rxvt-unicode?
+        rxvt-unicode does not directly support tabs. It will work fine with
+        tabbing functionality of many window managers or similar tabbing
+        programs, and its embedding-features allow it to be embedded into
+        other programs, as witnessed by doc/rxvt-tabbed or the upcoming
+        "Gtk2::URxvt" perl module, which features a tabbed urxvt (murxvt)
+        terminal as an example embedding application.
+
     How do I know which rxvt-unicode version I'm using?
         The version number is displayed with the usage (-h). Also the escape
         sequence "ESC [ 8 n" sets the window title to the version number.
+        When using the urxvtc client, the version displayed is that of the
+        daemon.
 
     I am using Debian GNU/Linux and have a problem...
         The Debian GNU/Linux package of rxvt-unicode in sarge contains large
@@ -17,6 +142,49 @@ FREQUENTLY ASKED QUESTIONS
         probably should use the Debian BTS, too, because, after all, it's
         also a bug in the Debian version and it serves as a reminder for
         other users that might encounter the same issue.
+
+    I am maintaining rxvt-unicode for distribution/OS XXX, any
+    recommendation?
+        You should build one binary with the default options. configure now
+        enables most useful options, and the trend goes to making them
+        runtime-switchable, too, so there is usually no drawback to enbaling
+        them, except higher disk and possibly memory usage. The perl
+        interpreter should be enabled, as important functionality (menus,
+        selection, likely more in the future) depends on it.
+
+        You should not overwrite the "perl-ext-common" snd "perl-ext"
+        resources system-wide (except maybe with "defaults"). This will
+        result in useful behaviour. If your distribution aims at low memory,
+        add an empty "perl-ext-common" resource to the app-defaults file.
+        This will keep the perl interpreter disabled until the user enables
+        it.
+
+        If you can/want build more binaries, I recommend building a minimal
+        one with "--disable-everything" (very useful) and a maximal one with
+        "--enable-everything" (less useful, it will be very big due to a lot
+        of encodings built-in that increase download times and are rarely
+        used).
+
+    I need to make it setuid/setgid to support utmp/ptys on my OS, is this
+    safe?
+        Likely not. While I honestly try to make it secure, and am probably
+        not bad at it, I think it is simply unreasonable to expect all of
+        freetype + fontconfig + xft + xlib + perl + ... + rxvt-unicode
+        itself to all be secure. Also, rxvt-unicode disables some options
+        when it detects that it runs setuid or setgid, which is not nice.
+        Besides, with the embedded perl interpreter the possibility for
+        security problems easily multiplies.
+
+        Elevated privileges are only required for utmp and pty operations on
+        some systems (for example, GNU/Linux doesn't need any extra
+        privileges for ptys, but some need it for utmp support). It is
+        planned to mvoe this into a forked handler process, but this is not
+        yet done.
+
+        So, while setuid/setgid operation is supported and not a problem on
+        your typical single-user-no-other-logins unix desktop, always
+        remember that its an awful lot of code, most of which isn't checked
+        for security issues regularly.
 
     When I log-in to another system it tells me about missing terminfo data?
         The terminal description used by rxvt-unicode is not as widely
@@ -51,7 +219,7 @@ FREQUENTLY ASKED QUESTIONS
         Most likely it's the empty definition for "enacs=". Just replace it
         by "enacs=\E[0@" and try again.
 
-    "bash"'s readline does not work correctly under rxvt.
+    "bash"'s readline does not work correctly under urxvt.
     I need a termcap file entry.
         One reason you might want this is that some distributions or
         operating systems still compile some programs using the
@@ -172,7 +340,7 @@ FREQUENTLY ASKED QUESTIONS
         In that case, select a font of your taste and add it to the font
         list, e.g.:
 
-           rxvt -fn basefont,font2,font3...
+           urxvt -fn basefont,font2,font3...
 
         When rxvt-unicode sees a character, it will first look at the base
         font. If the base font does not contain the character, it will go to
@@ -467,7 +635,7 @@ FREQUENTLY ASKED QUESTIONS
         some editors prematurely may leave the mouse in mouse report mode.
         I've heard that tcsh may use mouse reporting unless it otherwise
         specified. A quick check is to see if cut/paste works when the Alt
-        or Shift keys are depressed. See rxvt(7)
+        or Shift keys are depressed.
 
     What's with this bold/blink stuff?
         If no bold colour is set via "colorBD:", bold will invert text using
@@ -532,9 +700,9 @@ FREQUENTLY ASKED QUESTIONS
            URxvt.color7:       #e1dddd
            URxvt.color15:      #e1dddd
 
-    How can I start rxvtd in a race-free way?
-        Try "rxvtd -f -o", which tells rxvtd to open the display, create the
-        listening socket and then fork.
+    How can I start urxvtd in a race-free way?
+        Try "urxvtd -f -o", which tells urxvtd to open the display, create
+        the listening socket and then fork.
 
     What's with the strange Backspace/Delete key behaviour?
         Assuming that the physical Backspace key corresponds to the
@@ -557,13 +725,13 @@ FREQUENTLY ASKED QUESTIONS
 
            # use Backspace = ^H
            $ stty erase ^H
-           $ rxvt
+           $ urxvt
 
            # use Backspace = ^?
            $ stty erase ^?
-           $ rxvt
+           $ urxvt
 
-        Toggle with "ESC [ 36 h" / "ESC [ 36 l" as documented in rxvt(7).
+        Toggle with "ESC [ 36 h" / "ESC [ 36 l".
 
         For an existing rxvt-unicode:
 
@@ -599,7 +767,7 @@ FREQUENTLY ASKED QUESTIONS
         option you can use the `keysym' resource to alter the keystrings
         associated with keysyms.
 
-        Here's an example for a URxvt session started using "rxvt -name
+        Here's an example for a URxvt session started using "urxvt -name
         URxvt"
 
            URxvt.keysym.Home:          \033[1~

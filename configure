@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os VERSION DATE LSMDATE LIBVERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA AWK LINKER CXXCPP EGREP INSTALL_LIBRXVT RXVTNAME MV RM CP LN SED ECHO CMP TBL TIC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS XPM_CPPFLAGS XPM_CFLAGS XPM_LIBS rxvt_int16_typedef rxvt_uint16_typedef rxvt_int32_typedef rxvt_uint32_typedef rxvt_intp_define rxvt_u_intp_define DEBUG DINCLUDE DLIB include_stdint_h include_stdarg_h include_stdlib_h include_unistd_h include_string_h include_fcntl_h include_util_h include_assert_h include_sys_ioctl_h include_sys_select_h include_sys_strredir_h include_sys_time_h include_time_h LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os VERSION DATE LSMDATE LIBVERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA AWK LINKER CXXCPP EGREP INSTALL_LIBRXVT RXVTNAME MV RM CP LN SED ECHO CMP TBL TIC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS XPM_CPPFLAGS XPM_CFLAGS XPM_LIBS rxvt_int16_typedef rxvt_uint16_typedef rxvt_int32_typedef rxvt_uint32_typedef rxvt_intp_define rxvt_u_intp_define PERL PERLLIB PERLFLAGS PERLPRIVLIBEXP IF_PERL PERL_O DEBUG DINCLUDE DLIB include_stdint_h include_stdarg_h include_stdlib_h include_unistd_h include_string_h include_fcntl_h include_util_h include_assert_h include_sys_ioctl_h include_sys_select_h include_sys_strredir_h include_sys_time_h include_time_h LIBOBJS LTLIBOBJS'
 ac_subst_files='MCOMMON'
 
 # Initialize some variables set by options.
@@ -883,6 +883,7 @@ Optional Features:
   --enable-rxvt-scroll    enable rxvt style scrollbar
   --enable-next-scroll    enable NeXT style scrollbar
   --enable-xterm-scroll   enable Xterm style scrollbar
+  --enable-perl           enable embedded perl interpreter
   --enable-plain-scroll   enable plain style scrollbar
   --enable-half-shadow    use half width/height shadow on rxvt scrollbar
   --enable-xim            XIM (X Input Method) protocol support
@@ -890,7 +891,6 @@ Optional Features:
   --disable-backspace-key disable handling of the backspace key
   --disable-delete-key    disable handling of the delete key
   --disable-resources     disable all resource checking
-  --enable-xgetdefault    enable resources via X instead of our small version
   --enable-8bitctrls      enable 8 bit control sequences (not recommended)
   --enable-fallback(=CLASS) fall back on CLASS resources in addition to URxvt ones (default: Rxvt)
   --enable-strings        enable some replacement system functions
@@ -3614,7 +3614,99 @@ if test "$ac_cv_search_strerror" != no; then
 fi
 
 
-echo "$as_me:$LINENO: checking for setlocale in -lxpg4" >&5
+echo "$as_me:$LINENO: checking for setlocale" >&5
+echo $ECHO_N "checking for setlocale... $ECHO_C" >&6
+if test "${ac_cv_func_setlocale+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define setlocale to an innocuous variant, in case <limits.h> declares setlocale.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define setlocale innocuous_setlocale
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char setlocale (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef setlocale
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char setlocale ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_setlocale) || defined (__stub___setlocale)
+choke me
+#else
+char (*f) () = setlocale;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != setlocale;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_setlocale=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_setlocale=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_setlocale" >&5
+echo "${ECHO_T}$ac_cv_func_setlocale" >&6
+if test $ac_cv_func_setlocale = yes; then
+  :
+else
+  echo "$as_me:$LINENO: checking for setlocale in -lxpg4" >&5
 echo $ECHO_N "checking for setlocale in -lxpg4... $ECHO_C" >&6
 if test "${ac_cv_lib_xpg4_setlocale+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -3681,8 +3773,102 @@ if test $ac_cv_lib_xpg4_setlocale = yes; then
   LIBS="$LIBS -lxpg4"
 fi
 
+fi
 
-echo "$as_me:$LINENO: checking for gethostbyname in -lnsl" >&5
+
+echo "$as_me:$LINENO: checking for gethostbyname" >&5
+echo $ECHO_N "checking for gethostbyname... $ECHO_C" >&6
+if test "${ac_cv_func_gethostbyname+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define gethostbyname to an innocuous variant, in case <limits.h> declares gethostbyname.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define gethostbyname innocuous_gethostbyname
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char gethostbyname (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef gethostbyname
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char gethostbyname ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_gethostbyname) || defined (__stub___gethostbyname)
+choke me
+#else
+char (*f) () = gethostbyname;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != gethostbyname;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_gethostbyname=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_gethostbyname=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_gethostbyname" >&5
+echo "${ECHO_T}$ac_cv_func_gethostbyname" >&6
+if test $ac_cv_func_gethostbyname = yes; then
+  :
+else
+  echo "$as_me:$LINENO: checking for gethostbyname in -lnsl" >&5
 echo $ECHO_N "checking for gethostbyname in -lnsl... $ECHO_C" >&6
 if test "${ac_cv_lib_nsl_gethostbyname+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -3749,7 +3935,101 @@ if test $ac_cv_lib_nsl_gethostbyname = yes; then
   LIBS="$LIBS -lnsl"
 fi
 
-echo "$as_me:$LINENO: checking for socket in -lsocket" >&5
+fi
+
+echo "$as_me:$LINENO: checking for socket" >&5
+echo $ECHO_N "checking for socket... $ECHO_C" >&6
+if test "${ac_cv_func_socket+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define socket to an innocuous variant, in case <limits.h> declares socket.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define socket innocuous_socket
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char socket (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef socket
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char socket ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_socket) || defined (__stub___socket)
+choke me
+#else
+char (*f) () = socket;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != socket;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_socket=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_socket=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_socket" >&5
+echo "${ECHO_T}$ac_cv_func_socket" >&6
+if test $ac_cv_func_socket = yes; then
+  :
+else
+  echo "$as_me:$LINENO: checking for socket in -lsocket" >&5
 echo $ECHO_N "checking for socket in -lsocket... $ECHO_C" >&6
 if test "${ac_cv_lib_socket_socket+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -3816,13 +4096,232 @@ if test $ac_cv_lib_socket_socket = yes; then
   LIBS="$LIBS -lsocket"
 fi
 
+fi
+
+
+echo "$as_me:$LINENO: checking for sched_yield" >&5
+echo $ECHO_N "checking for sched_yield... $ECHO_C" >&6
+if test "${ac_cv_func_sched_yield+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define sched_yield to an innocuous variant, in case <limits.h> declares sched_yield.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define sched_yield innocuous_sched_yield
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char sched_yield (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef sched_yield
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char sched_yield ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_sched_yield) || defined (__stub___sched_yield)
+choke me
+#else
+char (*f) () = sched_yield;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
+int
+main ()
+{
+return f != sched_yield;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_func_sched_yield=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_func_sched_yield=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_func_sched_yield" >&5
+echo "${ECHO_T}$ac_cv_func_sched_yield" >&6
+if test $ac_cv_func_sched_yield = yes; then
+  :
+else
+  echo "$as_me:$LINENO: checking for sched_yield in -lrt" >&5
+echo $ECHO_N "checking for sched_yield in -lrt... $ECHO_C" >&6
+if test "${ac_cv_lib_rt_sched_yield+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrt  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char sched_yield ();
+int
+main ()
+{
+sched_yield ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_rt_sched_yield=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_rt_sched_yield=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_rt_sched_yield" >&5
+echo "${ECHO_T}$ac_cv_lib_rt_sched_yield" >&6
+if test $ac_cv_lib_rt_sched_yield = yes; then
+  LIBS="$LIBS -lrt"
+fi
+
+fi
+
+
+echo "$as_me:$LINENO: checking for sched_yield support" >&5
+echo $ECHO_N "checking for sched_yield support... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sched.h>
+int
+main ()
+{
+sched_yield ()
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SCHED_YIELD 1
+_ACEOF
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
 
 
 MALLOC_TYPE=S
 
 support_addstrings=no
 support_frills=yes
-support_inheritpixmap=no
+support_inheritpixmap=yes
 support_tinting=yes
 support_fading=yes
 support_keepscrolling=yes
@@ -3840,13 +4339,14 @@ support_scroll_next=yes
 support_scroll_xterm=yes
 support_scroll_plain=yes
 support_xim=yes
-support_xpm=no
+support_xpm=yes
 support_xft=yes
 support_unicode3=no
 support_combining=yes
 support_8bitctrls=no
 support_iso14755=yes
 support_styles=yes
+support_perl=yes
 codesets=all
 
 
@@ -3892,6 +4392,7 @@ if test "${enable_everything+set}" = set; then
        support_8bitctrls=no
        support_iso14755=no
        support_styles=no
+       support_perl=no
        codesets=
     fi
     if test x$enableval = xyes; then
@@ -3922,6 +4423,7 @@ if test "${enable_everything+set}" = set; then
        #support_8bitctrls=yes
        support_iso14755=yes
        support_styles=yes
+       support_perl=yes
        codesets=all
     fi
 
@@ -4047,6 +4549,14 @@ if test "${enable_xterm_scroll+set}" = set; then
   fi
 fi;
 
+# Check whether --enable-perl or --disable-perl was given.
+if test "${enable_perl+set}" = set; then
+  enableval="$enable_perl"
+  if test x$enableval = xyes -o x$enableval = xno; then
+    support_perl=$enableval
+  fi
+fi;
+
 # Check whether --enable-plain-scroll or --disable-plain-scroll was given.
 if test "${enable_plain_scroll+set}" = set; then
   enableval="$enable_plain_scroll"
@@ -4125,18 +4635,6 @@ if test "${enable_resources+set}" = set; then
 
 cat >>confdefs.h <<\_ACEOF
 #define NO_RESOURCES 1
-_ACEOF
-
-  fi
-fi;
-
-# Check whether --enable-xgetdefault or --disable-xgetdefault was given.
-if test "${enable_xgetdefault+set}" = set; then
-  enableval="$enable_xgetdefault"
-  if test x$enableval = xyes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define USE_XGETDEFAULT 1
 _ACEOF
 
   fi
@@ -6799,6 +7297,8 @@ done
 
 
 
+
+
 for ac_header in \
 	assert.h \
 	fcntl.h \
@@ -6821,6 +7321,8 @@ for ac_header in \
 	utmpx.h \
         stdint.h \
         pty.h \
+        util.h \
+        libutil.h \
         wchar.h \
         cwchar \
         clocale \
@@ -9694,8 +10196,8 @@ for ac_func in \
 	setsid \
 	setpgrp \
 	setpgid \
-	openpty \
 	_getpty \
+	posix_openpt \
 	grantpt \
 	unlockpt \
 	isastream \
@@ -11340,6 +11842,94 @@ _ACEOF
 
 fi
 
+echo "$as_me:$LINENO: checking for unix-compliant filehandle passing ability" >&5
+echo $ECHO_N "checking for unix-compliant filehandle passing ability... $ECHO_C" >&6
+if test "${rxvt_can_pass_fds+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int
+main ()
+{
+
+{
+  msghdr msg;
+  iovec iov;
+  char buf [100];
+  char data = 0;
+
+  iov.iov_base = &data;
+  iov.iov_len  = 1;
+
+  msg.msg_iov        = &iov;
+  msg.msg_iovlen     = 1;
+  msg.msg_control    = buf;
+  msg.msg_controllen = sizeof buf;
+
+  cmsghdr *cmsg = CMSG_FIRSTHDR (&msg);
+  cmsg->cmsg_level = SOL_SOCKET;
+  cmsg->cmsg_type  = SCM_RIGHTS;
+  cmsg->cmsg_len   = 100;
+
+  *(int *)CMSG_DATA (cmsg) = 5;
+
+  return sendmsg (3, &msg, 0);
+}
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  rxvt_can_pass_fds=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+rxvt_can_pass_fds=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $rxvt_can_pass_fds" >&5
+echo "${ECHO_T}$rxvt_can_pass_fds" >&6
+if test x$rxvt_can_pass_fds = xyes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_UNIX_FDPASS 1
+_ACEOF
+
+fi
+
 echo "$as_me:$LINENO: checking for broken XIM callback" >&5
 echo $ECHO_N "checking for broken XIM callback... $ECHO_C" >&6
 if test "${rxvt_broken_ximcb+set}" = set; then
@@ -11398,9 +11988,10 @@ _ACEOF
 
 fi
 
-echo "$as_me:$LINENO: checking for getpt" >&5
-echo $ECHO_N "checking for getpt... $ECHO_C" >&6
-if test "${rxvt_cv_func_getpt+set}" = set; then
+if test x$rxvt_cv_func_posix_openpt = xno; then
+  echo "$as_me:$LINENO: checking for openpty" >&5
+echo $ECHO_N "checking for openpty... $ECHO_C" >&6
+if test "${ac_cv_func_openpty+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -11409,14 +12000,47 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#define _GNU_SOURCE
-#ifdef HAVE_STDLIB_H
-# include <cstdlib>
+/* Define openpty to an innocuous variant, in case <limits.h> declares openpty.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define openpty innocuous_openpty
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char openpty (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
 #endif
+
+#undef openpty
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char openpty ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_openpty) || defined (__stub___openpty)
+choke me
+#else
+char (*f) () = openpty;
+#endif
+#ifdef __cplusplus
+}
+#endif
+
 int
 main ()
 {
-(void)getpt();
+return f != openpty;
   ;
   return 0;
 }
@@ -11442,23 +12066,89 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  rxvt_cv_func_getpt=yes
+  ac_cv_func_openpty=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-rxvt_cv_func_getpt=no
+ac_cv_func_openpty=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 fi
-echo "$as_me:$LINENO: result: $rxvt_cv_func_getpt" >&5
-echo "${ECHO_T}$rxvt_cv_func_getpt" >&6
-if test x$rxvt_cv_func_getpt = xyes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GETPT 1
+echo "$as_me:$LINENO: result: $ac_cv_func_openpty" >&5
+echo "${ECHO_T}$ac_cv_func_openpty" >&6
+if test $ac_cv_func_openpty = yes; then
+  :
+else
+  echo "$as_me:$LINENO: checking for openpty in -lutil" >&5
+echo $ECHO_N "checking for openpty in -lutil... $ECHO_C" >&6
+if test "${ac_cv_lib_util_openpty+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lutil  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
 _ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char openpty ();
+int
+main ()
+{
+openpty ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_util_openpty=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_util_openpty=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_util_openpty" >&5
+echo "${ECHO_T}$ac_cv_lib_util_openpty" >&6
+if test $ac_cv_lib_util_openpty = yes; then
+  LIBS="$LIBS -lutil"
+fi
+
+fi
 
 fi
 
@@ -11467,16 +12157,16 @@ echo $ECHO_N "checking for pty/tty type... $ECHO_C" >&6
 if test "${rxvt_cv_ptys+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test x$ac_cv_func_openpty = xyes; then
+  if test x$ac_cv_func_openpty = xyes -o x$ac_cv_lib_util_openpty = xyes; then
     rxvt_cv_ptys=OPENPTY
+ else if test x$ac_cv_func_posix_openpt = xyes; then
+    rxvt_cv_ptys=POSIX
  else if test x$ac_cv_func__getpty = xyes; then
     rxvt_cv_ptys=SGI4
  else if test -c /dev/ttyp20; then
     rxvt_cv_ptys=SCO
  else if test -c /dev/ptym/clone; then
     rxvt_cv_ptys=HPUX
- else if test x$rxvt_cv_func_getpt = xyes; then
-    rxvt_cv_ptys=GLIBC
  else if test -c /dev/ptc -a -c /dev/pts; then
     rxvt_cv_ptys=PTC
  else if test -c /dev/ptc -a -d /dev/pts; then
@@ -11501,6 +12191,13 @@ fi
 echo "$as_me:$LINENO: result: $rxvt_cv_ptys" >&5
 echo "${ECHO_T}$rxvt_cv_ptys" >&6
 
+if test x$rxvt_cv_ptys = xPOSIX; then
+
+cat >>confdefs.h <<\_ACEOF
+#define PTYS_ARE_POSIX 1
+_ACEOF
+
+fi
 if test x$rxvt_cv_ptys = xOPENPTY; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -11533,13 +12230,6 @@ if test x$rxvt_cv_ptys = xSGI4; then
 
 cat >>confdefs.h <<\_ACEOF
 #define PTYS_ARE__GETPTY 1
-_ACEOF
-
-fi
-if test x$rxvt_cv_ptys = xCONVEX; then
-
-cat >>confdefs.h <<\_ACEOF
-#define PTYS_ARE_GETPTY 1
 _ACEOF
 
 fi
@@ -11588,7 +12278,6 @@ fi
 
 if test x$support_xft = xyes; then
   LIBS="$LIBS `pkg-config xft --libs`"
-  CFLAGS="$CFLAGS `pkg-config xft --cflags`"
   CPPFLAGS="$CPPFLAGS `pkg-config xft --cflags`"
 
 
@@ -12056,6 +12745,185 @@ _ACEOF
  ;;
   esac
 done
+
+IF_PERL=\#
+if test x$support_perl = xyes; then
+  # Extract the first word of "perl5", so it can be a program name with args.
+set dummy perl5; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_PERL+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PERL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PERL="$PERL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PERL="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+PERL=$ac_cv_path_PERL
+
+if test -n "$PERL"; then
+  echo "$as_me:$LINENO: result: $PERL" >&5
+echo "${ECHO_T}$PERL" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  # Extract the first word of "perl", so it can be a program name with args.
+set dummy perl; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_PERL+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PERL in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PERL="$PERL" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PERL="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+PERL=$ac_cv_path_PERL
+
+if test -n "$PERL"; then
+  echo "$as_me:$LINENO: result: $PERL" >&5
+echo "${ECHO_T}$PERL" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+  echo "$as_me:$LINENO: checking for $PERL suitability" >&5
+echo $ECHO_N "checking for $PERL suitability... $ECHO_C" >&6
+  if $PERL -MExtUtils::Embed -e "use v5.8" >/dev/null 2>/dev/null; then
+
+     save_CXXFLAGS="$CXXFLAGS"
+     save_LIBS="$LIBS"
+     CXXFLAGS="$CXXFLAGS `$PERL -MExtUtils::Embed -e ccopts`"
+     LIBS="$LIBS `$PERL -MExtUtils::Embed -e ldopts`"
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <EXTERN.h>
+#include <perl.h>
+#include <XSUB.h>
+
+int
+main ()
+{
+
+     PerlInterpreter *perl = perl_alloc ();
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  rxvt_perl_link=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+rxvt_perl_link=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+     CXXFLAGS="$save_CXXFLAGS"
+     LIBS="$save_LIBS"
+
+     if test x$rxvt_perl_link = xyes; then
+        echo "$as_me:$LINENO: result: ok" >&5
+echo "${ECHO_T}ok" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_PERL 1
+_ACEOF
+
+        IF_PERL=
+        PERL_O=rxvtperl.o
+        PERLFLAGS="`$PERL -MExtUtils::Embed -e ccopts`"
+        PERLLIB="`$PERL -MExtUtils::Embed -e ldopts`"
+        PERLPRIVLIBEXP="`$PERL -MConfig -e 'print $Config{privlibexp}'`"
+     else
+        support_perl=no
+        echo "$as_me:$LINENO: result: no, unable to link" >&5
+echo "${ECHO_T}no, unable to link" >&6
+     fi
+  else
+     { { echo "$as_me:$LINENO: error: no working perl found" >&5
+echo "$as_me: error: no working perl found" >&2;}
+   { (exit or perl not version >= 5.8); exit or perl not version >= 5.8; }; }
+     support_perl=no
+  fi
+fi
+
+
+
+
+
+
+
+if test x$support_perl = xyes; then
+   support_frills=yes
+fi
 
 
 CFLAGS=${CFLAGS--O}
@@ -12846,6 +13714,12 @@ s,@rxvt_int32_typedef@,$rxvt_int32_typedef,;t t
 s,@rxvt_uint32_typedef@,$rxvt_uint32_typedef,;t t
 s,@rxvt_intp_define@,$rxvt_intp_define,;t t
 s,@rxvt_u_intp_define@,$rxvt_u_intp_define,;t t
+s,@PERL@,$PERL,;t t
+s,@PERLLIB@,$PERLLIB,;t t
+s,@PERLFLAGS@,$PERLFLAGS,;t t
+s,@PERLPRIVLIBEXP@,$PERLPRIVLIBEXP,;t t
+s,@IF_PERL@,$IF_PERL,;t t
+s,@PERL_O@,$PERL_O,;t t
 s,@DEBUG@,$DEBUG,;t t
 s,@DINCLUDE@,$DINCLUDE,;t t
 s,@DLIB@,$DLIB,;t t
@@ -13396,7 +14270,8 @@ else
   wtmp file:                  $rxvt_cv_path_wtmp
   wtmpx file:                 $rxvt_cv_path_wtmpx
   lastlog file:               $rxvt_cv_path_lastlog
-  ttys/ttytab file:           $rxvt_cv_path_ttytab"
+  ttys/ttytab file:           $rxvt_cv_path_ttytab
+  embedded perl:              $support_perl"
   echo
 fi
 if test x$term != x; then

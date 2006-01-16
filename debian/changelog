@@ -1,3 +1,34 @@
+rxvt-unicode (7.0-1) unstable; urgency=low
+
+  * New upstream release
+    + autodetection of (incorrect) Latin1 in pure UTF-8 environment works
+      again (closes: #347718)
+  * removed the font name preset, automatic selection works acceptably well
+
+ -- Eduard Bloch <blade@debian.org>  Mon, 16 Jan 2006 16:51:28 +0100
+
+rxvt-unicode (6.3-1) unstable; urgency=low
+
+  * New upstream release
+    + From upstream changelog: - SECURITY FIX: on systems using openpty,
+      permissions were not correctly updated on the tty device and were left as
+      world-readable and world-writable (likely in original rxvt, too), and were
+      not restored properly. Affected are only systems where non-unix ptys were
+      used (such as most BSDs, not GNU/Linux). (found, patched and debugged by
+      Ryan Beasley).
+    + From upstream changelog: - meta8 support was forcefully enabled in most
+      configurations.  restored configurability of this (useless) feature
+      (reported by Mikachu). (closes: #346150, reopen if it doesn't)
+    
+ -- Eduard Bloch <blade@debian.org>  Fri,  6 Jan 2006 01:11:00 +0100
+
+rxvt-unicode (6.2-1) unstable; urgency=low
+
+  * New upstream release
+  * --enable-xpm-background in !-lite flavors (closes: #337088)
+
+ -- Eduard Bloch <blade@debian.org>  Mon,  2 Jan 2006 23:04:19 +0100
+
 rxvt-unicode (5.8-1) unstable; urgency=low
 
   * New upstream release
