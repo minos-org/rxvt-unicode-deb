@@ -1,3 +1,26 @@
+/*----------------------------------------------------------------------*
+ * File:	keyboard.C
+ *----------------------------------------------------------------------*
+ *
+ * All portions of code are copyright by their respective author/s.
+ * Copyright (c) 2005      WU Fengguang
+ * Copyright (c) 2005-2006 Marc Lehmann <pcg@goof.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *----------------------------------------------------------------------*/
+
 #include "../config.h"
 #include "rxvt.h"
 
@@ -76,7 +99,7 @@ output_string (rxvt_term *rt, const char *str)
   if (strncmp (str, "command:", 8) == 0)
     rt->cmd_write (str + 8, strlen (str) - 8);
   else if (strncmp (str, "perl:", 5) == 0)
-    HOOK_INVOKE((rt, HOOK_KEYBOARD_COMMAND, DT_STR, str + 5, DT_END));
+    HOOK_INVOKE((rt, HOOK_USER_COMMAND, DT_STR, str + 5, DT_END));
   else
     rt->tt_write (str, strlen (str));
 }
@@ -422,7 +445,7 @@ keyboard_manager::setup_hash ()
 
   keymap.swap (sorted_keymap);
 
-#if defined (DEBUG_STRICT) || defined (DEBUG_KEYBOARD)
+#ifdef DEBUG_STRICT
   // check for invariants
   for (i = 0; i < KEYSYM_HASH_BUDGETS; ++i)
     {

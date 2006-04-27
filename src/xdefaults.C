@@ -1,4 +1,4 @@
-/*--------------------------------*-C-*---------------------------------*
+/*----------------------------------------------------------------------*
  * File:	xdefaults.C
  *----------------------------------------------------------------------*
  *
@@ -23,12 +23,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *----------------------------------------------------------------------*/
 
-#include "../config.h"		/* NECESSARY */
-#include "rxvt.h"		/* NECESSARY */
+#include "../config.h"
+#include "rxvt.h"
 #include "version.h"
 
 #ifdef KEYSYM_RESOURCE
-#include "keyboard.h"
+# include "keyboard.h"
 #endif
 
 /* place holders used for parsing command-line options */
@@ -36,9 +36,7 @@
 #define Optflag_Boolean              0x80000000UL
 #define Optflag_mask                 0x3fffffffUL
 
-/* #define DEBUG_RESOURCES */
-
-/*{{{ monolithic option/resource structure: */
+/* monolithic option/resource structure: */
 /*
  * `string' options MUST have a usage argument
  * `switch' and `boolean' options have no argument
@@ -189,14 +187,9 @@ optList[] = {
               STRG (Rs_color + Color_pointer_fg, "pointerColor", "pr", "color", "pointer color"),
               STRG (Rs_color + Color_pointer_bg, "pointerColor2", "pr2", "color", "pointer bg color"),
               STRG (Rs_color + Color_border, "borderColor", "bd", "color", "border color"),
-#if defined (XPM_BACKGROUND) || (MENUBAR_MAX)
-              RSTRG (Rs_path, "path", "search path"),
-#endif				/* defined (XPM_BACKGROUND) || (MENUBAR_MAX) */
 #ifdef XPM_BACKGROUND
+              RSTRG (Rs_path, "path", "search path"),
               STRG (Rs_backgroundPixmap, "backgroundPixmap", "pixmap", "file[;geom]", "background pixmap"),
-#endif				/* XPM_BACKGROUND */
-#if (MENUBAR_MAX)
-              RSTRG (Rs_menu, "menu", "name[;tag]"),
 #endif
               /* fonts: command-line option = resource name */
               STRG (Rs_font, "font", "fn", "fontname", "normal text font"),
@@ -220,8 +213,12 @@ optList[] = {
 #if ENABLE_XEMBED
               STRG (Rs_embed, NULL, "embed", "windowid", "window id to embed terminal in"),
 #endif
+#if XFT
+              STRG (Rs_depth, "depth", "depth", "number", "depth of visual to request"),
+#endif
 #if ENABLE_FRILLS
               RSTRG (Rs_transient_for, "transient-for", "windowid"),
+              BOOL (Rs_override_redirect, "override-redirect", "override-redirect", Opt_override_redirect, "set override-redirect on the terminal window"),
               STRG (Rs_pty_fd, NULL, "pty-fd", "fileno", "file descriptor of pty to use"),
               BOOL (Rs_hold, "hold", "hold", Opt_hold, "retain window after shell exit"),
               STRG (Rs_ext_bwidth, "externalBorder", "w", "number", "external border in pixels"),
@@ -271,7 +268,6 @@ optList[] = {
 #undef RSTRG
 #undef SWCH
 #undef BOOL
-/*}}} */
 
 static const char releasestring[] = "rxvt-unicode (" RXVTNAME ") v" VERSION " - released: " DATE "\n";
 static const char optionsstring[] = "options: "
@@ -325,14 +321,41 @@ static const char optionsstring[] = "options: "
 #if TINTING
                                     "tint,"
 #endif
-#if defined(UTMP_SUPPORT)
-                                    "utmp,"
-#endif
-#if defined(MENUBAR)
-                                    "menubar,"
-#endif
 #if defined(USE_XIM)
                                     "XIM,"
+#endif
+#if defined(NO_BACKSPACE_KEY)
+                                    "no_backspace,"
+#endif
+#if defined(NO_DELETE_KEY)
+                                    "no_delete,"
+#endif
+#if EIGHT_BIT_CONTROLS
+                                    "8bitctrls,"
+#endif
+#if defined(ENABLE_FRILLS)
+                                    "frills,"
+#endif
+#if defined(SELECTION_SCROLLING)
+                                    "selectionscrolling,"
+#endif
+#if MOUSE_WHEEL
+                                    "wheel,"
+#endif
+#if MOUSE_SLIP_WHEELING
+                                    "slipwheel,"
+#endif
+#if defined(SMART_RESIZE)
+                                    "smart-resize,"
+#endif
+#if defined(CURSOR_BLINK)
+                                    "cursorBlink,"
+#endif
+#if defined(POINTER_BLANK)
+                                    "pointerBlank,"
+#endif
+#if defined(NO_RESOURCES)
+                                    "NoResources,"
 #endif
                                     "scrollbars="
 #if !defined(HAVE_SCROLLBARS)
@@ -360,49 +383,13 @@ static const char optionsstring[] = "options: "
                                     "xterm"
 # endif
 #endif
-                                    ","
-#if defined(NO_BACKSPACE_KEY)
-                                    "no_backspace,"
-#endif
-#if defined(NO_DELETE_KEY)
-                                    "no_delete,"
-#endif
-#if EIGHT_BIT_CONTROLS
-                                    "8bitctrls,"
-#endif
-#if !defined(NO_STRINGS)
-                                    "strings,"
-#endif
-#if defined(ENABLE_FRILLS)
-                                    "frills,"
-#endif
-#if defined(PREFER_24BIT)
-                                    "24bit,"
-#endif
-#if defined(SELECTION_SCROLLING)
-                                    "selectionscrolling,"
-#endif
-#if MOUSE_WHEEL
-                                    "wheel,"
-#endif
-#if MOUSE_SLIP_WHEELING
-                                    "slipwheel,"
-#endif
-#if defined(SMART_RESIZE)
-                                    "smart-resize,"
-#endif
-#if defined(CURSOR_BLINK)
-                                    "cursorBlink,"
-#endif
-#if defined(POINTER_BLANK)
-                                    "pointerBlank,"
-#endif
-#if defined(NO_RESOURCES)
-                                    "NoResources"
-#endif
                                     "\nUsage: ";		/* Usage */
 
 #define INDENT 18
+
+const char rxvt_term::resval_undef [] = "<undef>";
+const char rxvt_term::resval_on []    = "on";
+const char rxvt_term::resval_off []   = "off";
 
 /*{{{ usage: */
 /*----------------------------------------------------------------------*/
@@ -421,7 +408,7 @@ rxvt_usage (int type)
         for (col = 1, i = 0; i < optList_size; i++)
           if (optList[i].desc != NULL)
             {
-              int             len = 0;
+              int len = 0;
 
               if (!optList_isBool (i))
                 {
@@ -498,8 +485,7 @@ rxvt_usage (int type)
 void
 rxvt_term::get_options (int argc, const char *const *argv)
 {
-  int             i, bad_option = 0;
-  static const char On[3] = "ON", Off[4] = "OFF";
+  int i, bad_option = 0;
 
   for (i = 1; i < argc; i++)
     {
@@ -507,18 +493,18 @@ rxvt_term::get_options (int argc, const char *const *argv)
       const char *flag, *opt;
 
       opt = argv[i];
-#ifdef DEBUG_RESOURCES
-      fprintf (stderr, "argv[%d] = %s: ", i, opt);
-#endif
+
       if (*opt == '-')
         {
-          flag = On;
+          flag = resval_on;
+
           if (*++opt == '-')
             longopt = *opt++;	/* long option */
         }
       else if (*opt == '+')
         {
-          flag = Off;
+          flag = resval_off;
+
           if (*++opt == '+')
             longopt = *opt++;	/* long option */
         }
@@ -531,6 +517,7 @@ rxvt_term::get_options (int argc, const char *const *argv)
 
       if (!strcmp (opt, "help"))
         rxvt_usage (longopt ? 2 : 1);
+
       if (!strcmp (opt, "h"))
         rxvt_usage (0);
 
@@ -544,7 +531,7 @@ rxvt_term::get_options (int argc, const char *const *argv)
       if (entry < optList_size)
         {
           if (optList_isReverse (entry))
-            flag = flag == On ? Off : On;
+            flag = flag == resval_on ? resval_off : resval_on;
 
           if (optList_strlen (entry))
             {
@@ -555,16 +542,16 @@ rxvt_term::get_options (int argc, const char *const *argv)
                */
 
               if (optList[entry].doff != -1)
-                rs[optList[entry].doff] = flag == On && argv[i+1]
-                                          ? argv[++i] : 0;
+                {
+                  if (flag == resval_on && !argv [i+1])
+                    rxvt_fatal ("option '%s' needs an argument, aborting.\n", argv [i]);
+
+                  rs[optList[entry].doff] = flag == resval_on ? argv[++i] : resval_undef;
+                }
             }
           else
             {		/* boolean value */
-#ifdef DEBUG_RESOURCES
-              fprintf (stderr, "boolean (%s,%s) = %s\n",
-                      optList[entry].opt, optList[entry].kw, flag);
-#endif
-              set_option (optList[entry].flag & Optflag_mask, flag == On);
+              set_option (optList[entry].flag & Optflag_mask, flag == resval_on);
 
               if (optList[entry].doff != -1)
                 rs[optList[entry].doff] = flag;
@@ -606,12 +593,12 @@ rxvt_term::get_options (int argc, const char *const *argv)
  */
 /* ARGSUSED */
 int
-rxvt_define_key (XrmDatabase *database __attribute__((unused)),
-                 XrmBindingList bindings __attribute__((unused)),
+rxvt_define_key (XrmDatabase *database UNUSED,
+                 XrmBindingList bindings UNUSED,
                  XrmQuarkList quarks,
-                 XrmRepresentation *type __attribute__((unused)),
+                 XrmRepresentation *type UNUSED,
                  XrmValue *value,
-                 XPointer closure __attribute__((unused)))
+                 XPointer closure UNUSED)
 {
   int last;
 
@@ -789,7 +776,7 @@ get_res (XrmDatabase database, const char *program, const char *option)
 const char *
 rxvt_term::x_resource (const char *name)
 {
-  XrmDatabase database = XrmGetDatabase (display->display);
+  XrmDatabase database = XrmGetDatabase (dpy);
 
   const char *p = get_res (database, rs[Rs_name], name);
   const char *p0 = get_res (database, "!INVALIDPROGRAMMENAMEDONTMATCH!", name);
@@ -851,7 +838,7 @@ rxvt_term::extract_resources ()
    * [R5 or later]: enumerate the resource database
    */
 #  ifdef KEYSYM_RESOURCE
-  XrmDatabase database = XrmGetDatabase (display->display);
+  XrmDatabase database = XrmGetDatabase (dpy);
   XrmName name_prefix[3];
   XrmClass class_prefix[3];
 

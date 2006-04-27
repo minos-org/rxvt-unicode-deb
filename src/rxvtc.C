@@ -1,9 +1,9 @@
-/*--------------------------------*-C-*---------------------------------*
+/*----------------------------------------------------------------------*
  * File:	rxvtc.C
  *----------------------------------------------------------------------*
  *
  * All portions of code are copyright by their respective author/s.
- * Copyright (c) 2003-2004 Marc Lehmann <pcg@goof.com>
+ * Copyright (c) 2003-2006 Marc Lehmann <pcg@goof.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,6 @@
  *----------------------------------------------------------------------*/
 
 #include "../config.h"
-#include "rxvtdaemon.h"
-#include "fdpass.h"
-
-#include "rxvt.h"
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -35,16 +30,25 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "rxvtdaemon.h"
+#include "libptytty.h"
+
+#include "rxvt.h"
+
+#define STATUS_SUCCESS           0
+#define STATUS_FAILURE           1
+#define STATUS_CONNECTION_FAILED 2
+
 struct client : rxvt_connection {
   client ();
 };
 
 client::client ()
 {
-  if ((fd = socket (PF_UNIX, SOCK_STREAM, 0)) < 0)
+  if ((fd = socket (AF_UNIX, SOCK_STREAM, 0)) < 0)
     {
       perror ("unable to create communications socket");
-      exit (EXIT_FAILURE);
+      exit (STATUS_FAILURE);
     }
 
   char *sockname = rxvt_connection::unix_sockname ();
@@ -56,7 +60,7 @@ client::client ()
   if (connect (fd, (sockaddr *)&sa, sizeof (sa)))
     {
       perror ("unable to connect to the rxvt-unicode daemon");
-      exit (EXIT_FAILURE);
+      exit (STATUS_CONNECTION_FAILED);
     }
 }
 
@@ -82,7 +86,7 @@ main (int argc, const char *const *argv)
   if (!getcwd (cwd, sizeof (cwd)))
     {
       perror ("unable to determine current working directory");
-      exit (EXIT_FAILURE);
+      exit (STATUS_FAILURE);
     }
 
   c.send ("CWD"), c.send (cwd);
@@ -110,22 +114,20 @@ main (int argc, const char *const *argv)
       }
     else if (!strcmp (tok, "MSG") && c.recv (tok))
       fprintf (stderr, "%s", (const char *)tok);
-#if ENABLE_FRILLS && HAVE_UNIX_FDPASS
     else if (!strcmp (tok, "GETFD") && c.recv (cint))
       {
-        if (rxvt_send_fd (c.fd, cint) < 0)
+        if (!ptytty::send_fd (c.fd, cint))
           {
             fprintf (stderr, "unable to send fd %d: ", cint); perror (0);
-            exit (EXIT_FAILURE);
+            exit (STATUS_FAILURE);
           }
       }
-#endif
     else if (!strcmp (tok, "END"))
       {
         int success;
 
         if (c.recv (success))
-          exit (success ? EXIT_SUCCESS : EXIT_FAILURE);
+          exit (success ? STATUS_SUCCESS : STATUS_FAILURE);
       }
     else
       {
@@ -133,6 +135,6 @@ main (int argc, const char *const *argv)
         break;
       }
 
-  return EXIT_FAILURE;
+  return STATUS_FAILURE;
 }
 

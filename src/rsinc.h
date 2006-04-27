@@ -1,4 +1,4 @@
-// all resource indices, used by rxvt.h anf rxvtperl.xs
+// all resource indices, used by rxvt.h and rxvtperl.xs
 
   def (display_name)
   def (term_name)
@@ -6,7 +6,7 @@
   def (geometry)
   def (reverseVideo)
   def (color)
-  reserve (color, NRS_COLORS)
+  reserve (color, TOTAL_COLORS)
   def (font)
 #if ENABLE_STYLES
   def (boldFont)
@@ -16,14 +16,9 @@
 #endif
   def (name)
   def (title)
-#if defined (XPM_BACKGROUND) || (MENUBAR_MAX)
-  def (path)
-#endif
 #ifdef XPM_BACKGROUND
+  def (path)
   def (backgroundPixmap)
-#endif
-#if (MENUBAR_MAX)
-  def (menu)
 #endif
   def (loginShell)
   def (jumpScroll)
@@ -68,8 +63,12 @@
   def (transparent)
   def (transparent_all)
 #endif
+#if XFT
+  def (depth)
+#endif
 #if ENABLE_FRILLS
   def (transient_for)
+  def (override_redirect)
   def (pty_fd)
   def (hold)
   def (ext_bwidth)
