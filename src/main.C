@@ -58,10 +58,15 @@ static char curlocale[128], savelocale[128];
 bool
 rxvt_set_locale (const char *locale) NOTHROW
 {
-  if (!locale || !strncmp (locale, curlocale, 128))
+  int size = strlen (locale) + 1;
+
+  if (size > sizeof (curlocale))
+    rxvt_fatal ("locale string too long, aborting.\n");
+
+  if (!locale || !memcmp (locale, curlocale, size))
     return false;
 
-  strncpy (curlocale, locale, 128);
+  memcpy (curlocale, locale, size);
   setlocale (LC_CTYPE, curlocale);
   return true;
 }
@@ -70,13 +75,13 @@ void
 rxvt_push_locale (const char *locale) NOTHROW
 {
   strcpy (savelocale, curlocale);
-  rxvt_set_locale (locale);
+  rxvt_set_locale (curlocale);
 }
 
 void
 rxvt_pop_locale () NOTHROW
 {
-  rxvt_set_locale (savelocale);
+  rxvt_set_locale (curlocale);
 }
 
 #if ENABLE_COMBINING
@@ -145,7 +150,7 @@ int rxvt_composite_vec::expand (unicode_t c, wchar_t *r)
 
 rxvt_term::rxvt_term ()
     :
-#if TRANSPARENT
+#if TRANSPARENT || ENABLE_PERL
     rootwin_ev (this, &rxvt_term::rootwin_cb),
 #endif
 #ifdef HAVE_SCROLLBARS
@@ -328,7 +333,7 @@ rxvt_term::destroy ()
 #if HAVE_SCROLLBARS
       scrollbar_ev.stop (display);
 #endif
-#if TRANSPARENT
+#if TRANSPARENT || ENABLE_PERL
       rootwin_ev.stop (display);
 #endif
       incr_ev.stop ();
@@ -505,6 +510,9 @@ rxvt_term::init (int argc, const char *const *argv, stringvec *envv)
       check_our_parents ();
       rootwin_ev.start (display, display->root);
     }
+#endif
+#if ENABLE_PERL
+  rootwin_ev.start (display, display->root);
 #endif
 
   set_colorfgbg ();
@@ -938,18 +946,9 @@ rxvt_term::set_window_color (int idx, const char *color)
   /* XSetWindowAttributes attr; */
   /* Cursor cursor; */
 done:
-
-#if OFF_FOCUS_FADING
-  if (rs[Rs_fade])
-    {
-      rgba c;
-      pix_colors [Color_fade].get (c);
-      pix_colors_focused [idx].fade (this, atoi (rs[Rs_fade]), pix_colors_unfocused [idx], c);
-    }
-#endif
-
   /*TODO: handle Color_BD, scrollbar background, etc. */
 
+  update_fade_color (idx);
   recolour_cursor ();
   scr_recolour ();
 }

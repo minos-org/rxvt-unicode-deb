@@ -12,9 +12,10 @@ DESCRIPTION
 
 OPTIONS
     All options that are valid for rxvt are valid for rxvtc, too. Please
-    note that all options are currently interpreted in the context of the
-    daemon process, which makes a difference for options that specify a file
-    descriptor (such as -pty-fd).
+    note that options are interpreted in the context of the daemon process.
+    However, as current working directory, process environment and any file
+    descriptor (e.g. for "-pty-fd") are preserved, this rarely makes a
+    difference.
 
 EXIT STATUS
     If everything went well, rxvtc returns with an exit status of 0. If
@@ -23,7 +24,14 @@ EXIT STATUS
 
     This can be used to implement auto-starting behaviour, by checking for
     an exit status of 2, running "rxvtd -f -q" and retrying the call to
-    rxvtc.
+    rxvtc, like this:
+
+       #!/bin/sh
+       rxvtc "$@"
+       if [ $? -eq 2 ]; then
+          rxvtd -q -o -f
+          rxvtc "$@"
+       fi
 
 ENVIRONMENT
     All environment variables of the current process will be made available

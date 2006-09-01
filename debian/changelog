@@ -1,3 +1,40 @@
+rxvt-unicode (7.9-2) unstable; urgency=low
+
+  * Edit the comments in the app-defaults file, and disable all settings by
+    default. If font autoselection fails, I would prefer to open a new bug
+    specifically for that. (Closes: #385481)
+  * Reorganize and edit README.Debian, pushing as much as possible into FAQ
+    format (with resource setting issues first).
+
+ -- Decklin Foster <decklin@red-bean.com>  Fri,  1 Sep 2006 14:44:58 -0400
+
+rxvt-unicode (7.9-1) unstable; urgency=low
+
+  * New upstream release
+    - Fixes environment-corruption bug (Closes: #380348)
+
+ -- Decklin Foster <decklin@red-bean.com>  Sun, 27 Aug 2006 12:57:01 -0400
+
+rxvt-unicode (7.8-2) unstable; urgency=low
+
+  * Added select-quoted.patch, to set default cutchars for the Perl selection
+    extension and fix double-click selection of words. (Closes: #377194)
+  * Don't generate intermediate .pod file in doc/Makefile, since we would have
+    to explicitly clean it before generating the .diff.gz anyway.
+
+ -- Decklin Foster <decklin@red-bean.com>  Fri, 28 Jul 2006 02:35:21 -0400
+
+rxvt-unicode (7.8-1) unstable; urgency=low
+
+  * New upstream release. Updated patches:
+    - Merged upstream: grammar.patch, faq-section.patch
+    - Updated: generate-docs.patch
+    - Obsolete: make-docs.patch, man-title.patch
+  * Check for exit status of 2 in urxvtcd, and use -q (Closes: #379201)
+  * Update Standards-Version to 3.7.2.
+
+ -- Decklin Foster <decklin@red-bean.com>  Sun, 23 Jul 2006 11:21:09 -0400
+
 rxvt-unicode (7.7-4) unstable; urgency=low
 
   * Changed several uses of "it's" to "its" in man pages. (Closes: #365036)

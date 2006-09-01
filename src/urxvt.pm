@@ -19,7 +19,7 @@
 
 =head1 DESCRIPTION
 
-Everytime a terminal object gets created, extension scripts specified via
+Every time a terminal object gets created, extension scripts specified via
 the C<perl> resource are loaded and associated with it.
 
 Scripts are compiled in a 'use strict' and 'use utf8' environment, and
@@ -64,7 +64,7 @@ specifying resources of the form:
 
 The index number (0, 1...) must not have any holes, and each regex must
 contain at least one pair of capturing parentheses, which will be used for
-the match. For example, the followign adds a regex that matches everything
+the match. For example, the following adds a regex that matches everything
 between two vertical bars:
 
    URxvt.selection.pattern-0: \\|([^|]+)\\|
@@ -124,7 +124,7 @@ onto C<@{ $term->{selection_popup_hook} }>, which gets called whenever the
 popup is being displayed.
 
 It's sole argument is the popup menu, which can be modified. The selection
-is in C<$_>, which can be used to decide wether to add something or not.
+is in C<$_>, which can be used to decide whether to add something or not.
 It should either return nothing or a string and a code reference. The
 string will be used as button text and the code reference will be called
 when the button gets activated and should transform C<$_>.
@@ -152,6 +152,12 @@ bottom. C<Escape> leaves search mode and returns to the point where search
 was started, while C<Enter> or C<Return> stay at the current position and
 additionally stores the first match in the current line into the primary
 selection.
+
+The regex defaults to "(?i)", resulting in a case-insensitive search. To
+get a case-sensitive search you can delete this prefix using C<BackSpace>
+or simply use an uppercase character which removes the "(?i)" prefix.
+
+See L<perlre> for more info about perl regular expression syntax.
 
 =item readline (enabled by default)
 
@@ -216,7 +222,7 @@ the message into vi commands to load the file.
 =item tabbed
 
 This transforms the terminal into a tabbar with additional terminals, that
-is, it implements what is commonly refered to as "tabbed terminal". The topmost line
+is, it implements what is commonly referred to as "tabbed terminal". The topmost line
 displays a "[NEW]" button, which, when clicked, will add a new tab, followed by one
 button per tab.
 
@@ -255,17 +261,37 @@ C<OnTheSpot>, i.e.:
 
    @@RXVT_NAME@@ -pt OnTheSpot -pe xim-onthespot
 
+=item kuake<hotkey>
+
+A very primitive quake-console-like extension. It was inspired by a
+description of how the programs C<kuake> and C<yakuake> work: Whenever the
+user presses a global accelerator key (by default C<F10>), the terminal
+will show or hide itself. Another press of the accelerator key will hide
+or show it again.
+
+Initially, the window will not be shown when using this extension.
+
+This is useful if you need a single terminal thats not using any desktop
+space most of the time but is quickly available at the press of a key.
+
+The accelerator key is grabbed regardless of any modifiers, so this
+extension will actually grab a physical key just for this function.
+
+If you want a quake-like animation, tell your window manager to do so
+(fvwm can do it).
+
 =item automove-background
 
-This is basically a one-line extension that dynamically changes the background pixmap offset
-to the window position, in effect creating the same effect as pseudo transparency with
-a custom pixmap. No scaling is supported in this mode. Exmaple:
+This is basically a very small extension that dynamically changes the
+background pixmap offset to the window position, in effect creating the
+same effect as pseudo transparency with a custom pixmap. No scaling is
+supported in this mode. Example:
 
    @@RXVT_NAME@@ -pixmap background.xpm -pe automove-background
 
 =item block-graphics-to-ascii
 
-A not very useful example of filtering all text output to the terminal,
+A not very useful example of filtering all text output to the terminal
 by replacing all line-drawing characters (U+2500 .. U+259F) by a
 similar-looking ascii character.
 
@@ -370,7 +396,7 @@ locale-specific way.
 
 =head2 Extension Objects
 
-Very perl extension is a perl class. A separate perl object is created
+Every perl extension is a perl class. A separate perl object is created
 for each terminal and each extension and passed as the first parameter to
 hooks. So extensions can use their C<$self> object without having to think
 about other extensions, with the exception of methods and members that
@@ -406,7 +432,7 @@ Dynamically disable the given hooks.
 The following subroutines can be declared in extension files, and will be
 called whenever the relevant event happens.
 
-The first argument passed to them is an extension oject as described in
+The first argument passed to them is an extension object as described in
 the in the C<Extension Objects> section.
 
 B<All> of these hooks must return a boolean value. If any of the called
@@ -429,7 +455,7 @@ place.
 =item on_start $term
 
 Called at the very end of initialisation of a new terminal, just before
-trying to map (display) the toplevel and returning to the mainloop.
+trying to map (display) the toplevel and returning to the main loop.
 
 =item on_destroy $term
 
@@ -466,13 +492,13 @@ Called whenever a selection has been copied, but before the selection is
 requested from the server.  The selection text can be queried and changed
 by calling C<< $term->selection >>.
 
-Returning a true value aborts selection grabbing. It will still be hilighted.
+Returning a true value aborts selection grabbing. It will still be highlighted.
 
 =item on_sel_extend $term
 
 Called whenever the user tries to extend the selection (e.g. with a double
 click) and is either supposed to return false (normal operation), or
-should extend the selection itelf and return true to suppress the built-in
+should extend the selection itself and return true to suppress the built-in
 processing. This can happen multiple times, as long as the callback
 returns true, it will be called on every further click by the user and is
 supposed to enlarge the selection more and more, if possible.
@@ -481,7 +507,7 @@ See the F<selection> example extension.
 
 =item on_view_change $term, $offset
 
-Called whenever the view offset changes, i..e the user or program
+Called whenever the view offset changes, i.e. the user or program
 scrolls. Offset C<0> means display the normal terminal, positive values
 show this many lines of scrollback.
 
@@ -495,7 +521,17 @@ It is called before lines are scrolled out (so rows 0 .. min ($lines - 1,
 $nrow - 1) represent the lines to be scrolled out). C<$saved> is the total
 number of lines that will be in the scrollback buffer.
 
-=item on_osc_seq $term, $string
+=item on_osc_seq $term, $op, $args
+
+Called on every OSC sequence and can be used to suppress it or modify its
+behaviour.  The default should be to return an empty list. A true value
+suppresses execution of the request completely. Make sure you don't get
+confused by recursive invocations when you output an osc sequence within
+this callback.
+
+C<on_osc_seq_perl> should be used for new behaviour.
+
+=item on_osc_seq_perl $term, $string
 
 Called whenever the B<ESC ] 777 ; string ST> command sequence (OSC =
 operating system command) is processed. Cursor position and other state
@@ -505,7 +541,7 @@ it from commands for other extensions, and this might be enforced in the
 future.
 
 Be careful not ever to trust (in a security sense) the data you receive,
-as its source can not easily be controleld (e-mail content, messages from
+as its source can not easily be controlled (e-mail content, messages from
 other users on the same system etc.).
 
 =item on_add_lines $term, $string
@@ -548,7 +584,7 @@ Called just after the screen gets redrawn. See C<on_refresh_begin>.
 
 =item on_user_command $term, $string
 
-Called whenever the a user-configured event is being activated (e.g. via
+Called whenever a user-configured event is being activated (e.g. via
 a C<perl:string> action bound to a key, see description of the B<keysym>
 resource in the @@RXVT_NAME@@(1) manpage).
 
@@ -557,7 +593,7 @@ slightly in the future.
 
 =item on_resize_all_windows $tern, $new_width, $new_height
 
-Called just after the new window size has been calculcated, but before
+Called just after the new window size has been calculated, but before
 windows are actually being resized or hints are being set. If this hook
 returns TRUE, setting of the window hints is being skipped.
 
@@ -567,6 +603,10 @@ Called on every X event received on the vt window (and possibly other
 windows). Should only be used as a last resort. Most event structure
 members are not passed.
 
+=item on_root_event $term, $event
+
+Like C<on_x_event>, but is called for events on the root window.
+
 =item on_focus_in $term
 
 Called whenever the window gets the keyboard focus, before rxvt-unicode
@@ -574,7 +614,7 @@ does focus in processing.
 
 =item on_focus_out $term
 
-Called wheneever the window loses keyboard focus, before rxvt-unicode does
+Called whenever the window loses keyboard focus, before rxvt-unicode does
 focus out processing.
 
 =item on_configure_notify $term, $event
@@ -667,12 +707,12 @@ object, whenever a callback/hook is executing.
 
 =item @urxvt::TERM_INIT
 
-All coderefs in this array will be called as methods of the next newly
+All code references in this array will be called as methods of the next newly
 created C<urxvt::term> object (during the C<on_init> phase). The array
-gets cleared before the codereferences that were in it are being executed,
-so coderefs can push themselves onto it again if they so desire.
+gets cleared before the code references that were in it are being executed,
+so references can push themselves onto it again if they so desire.
 
-This complements to the perl-eval commandline option, but gets executed
+This complements to the perl-eval command line option, but gets executed
 first.
 
 =item @urxvt::TERM_EXT
@@ -707,7 +747,7 @@ Messages have a size limit of 1023 bytes currently.
 =item @terms = urxvt::termlist
 
 Returns all urxvt::term objects that exist in this process, regardless of
-wether they are started, being destroyed etc., so be careful. Only term
+whether they are started, being destroyed etc., so be careful. Only term
 objects that have perl extensions attached will be returned (because there
 is no urxvt::term objet associated with others).
 
@@ -899,10 +939,8 @@ sub invoke {
       verbose 10, "$HOOKNAME[$htype] (" . (join ", ", $TERM, @_) . ")"
          if $verbosity >= 10;
 
-      keys %$cb;
-
-      while (my ($pkg, $cb) = each %$cb) {
-         my $retval_ = eval { $cb->($TERM->{_pkg}{$pkg}, @_) };
+      for my $pkg (keys %$cb) {
+         my $retval_ = eval { $cb->{$pkg}->($TERM->{_pkg}{$pkg}, @_) };
          $retval ||= $retval_;
 
          if ($@) {
@@ -1157,7 +1195,7 @@ Returns true if the option specified by C<$optval> is enabled, and
 optionally change it. All option values are stored by name in the hash
 C<%urxvt::OPTION>. Options not enabled in this binary are not in the hash.
 
-Here is a a likely non-exhaustive list of option names, please see the
+Here is a likely non-exhaustive list of option names, please see the
 source file F</src/optinc.h> to see the actual list:
 
  borderLess console cursorBlink cursorUnderline hold iconic insecure
@@ -1184,7 +1222,7 @@ likely change).
 Please note that resource strings will currently only be freed when the
 terminal is destroyed, so changing options frequently will eat memory.
 
-Here is a a likely non-exhaustive list of resource names, not all of which
+Here is a likely non-exhaustive list of resource names, not all of which
 are supported in every build, please see the source file F</src/rsinc.h>
 to see the actual list:
 
@@ -1506,7 +1544,7 @@ Returns the currently displayed screen (0 primary, 1 secondary).
 
 =item $cursor_is_hidden = $term->hidden_cursor
 
-Returns wether the cursor is currently hidden or not.
+Returns whether the cursor is currently hidden or not.
 
 =item $view_start = $term->view_start ([$newvalue])
 
@@ -1693,7 +1731,7 @@ C<< $term->ROW_t >> for details.
 
 =item $string = $term->special_decode $text
 
-Converts rxvt-unicodes text reprsentation into a perl string. See
+Converts rxvt-unicodes text representation into a perl string. See
 C<< $term->ROW_t >> for details.
 
 =item $success = $term->grab_button ($button, $modifiermask[, $window = $term->vt])
@@ -1706,7 +1744,7 @@ manpage.
 =item $success = $term->grab ($eventtime[, $sync])
 
 Calls XGrabPointer and XGrabKeyboard in asynchronous (default) or
-synchronous (C<$sync> is true). Also remembers the grab timestampe.
+synchronous (C<$sync> is true). Also remembers the grab timestamp.
 
 =item $term->allow_events_async
 
@@ -1983,7 +2021,7 @@ is a bitset as described in the C<events> method.
 
 =item $iow = $iow->fd ($fd)
 
-Set the filedescriptor (not handle) to watch.
+Set the file descriptor (not handle) to watch.
 
 =item $iow = $iow->events ($eventmask)
 
@@ -1997,7 +2035,7 @@ Start watching for requested events on the given handle.
 
 =item $iow = $iow->stop
 
-Stop watching for events on the given filehandle.
+Stop watching for events on the given file handle.
 
 =back
 
@@ -2054,7 +2092,7 @@ Set the callback to be called when the timer triggers.
 
 =item $pw = $timer->start ($pid)
 
-Tells the wqtcher to start watching for process C<$pid>.
+Tells the watcher to start watching for process C<$pid>.
 
 =item $pw = $pw->stop
 
@@ -2077,7 +2115,7 @@ numbers indicate more verbose output.
 
 =item >=10 - all called hooks
 
-=item >=11 - hook reutrn values
+=item >=11 - hook return values
 
 =back
 

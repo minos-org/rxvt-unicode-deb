@@ -92,7 +92,7 @@ meaning it couldn't connect to the daemon, it will start the daemon and
 re-run the command. Subsequent invocations of the script will re-use the
 existing daemon.
 
-=head3 How do I distinguish wether I'm running rxvt-unicode or a regular xterm? I need this to decide about setting colors etc.
+=head3 How do I distinguish whether I'm running rxvt-unicode or a regular xterm? I need this to decide about setting colors etc.
 
 The original rxvt and rxvt-unicode always export the variable "COLORTERM",
 so you can check and see if that is set. Note that several programs, JED,
@@ -146,7 +146,7 @@ already in use in this mode.
 
 When you C<--enable-everything> (which I<is> unfair, as this involves xft
 and full locale/XIM support which are quite bloaty inside libX11 and my
-libc), the two diverge, but not unreasnobaly so.
+libc), the two diverge, but not unreasonably so.
 
     text    data     bss     drs     rss filename
   163431    2152      24   20123    2060 rxvt --enable-everything
@@ -243,7 +243,7 @@ are unable to read.
 
 This requires XFT support, and the support of your X-server. If that
 doesn't work for you, blame Xorg and Keith Packard. ARGB visuals aren't
-there yet, no matter what they claim. Rxvt-Unicode contains the neccessary
+there yet, no matter what they claim. Rxvt-Unicode contains the necessary
 bugfixes and workarounds for Xft and Xlib to make it work, but that
 doesn't mean that your WM has the required kludges in place.
 
@@ -270,7 +270,7 @@ box, and rxvt-unicode has no way of detecting this (the correct way is to
 ask for the character bounding box, which unfortunately is wrong in these
 cases).
 
-It's not clear (to me at least), wether this is a bug in Xft, freetype,
+It's not clear (to me at least), whether this is a bug in Xft, freetype,
 or the respective font. If you encounter this problem you might try using
 the C<-lsp> option to give the font more height. If that doesn't work, you
 might be forced to use a different font.
@@ -304,7 +304,7 @@ fix colours but keep you from using other rxvt-unicode features.
 Yes, using an escape sequence. Try something like this, which has the same
 effect as using the C<-fn> switch, and takes effect immediately:
 
-   printf '\e]50;%s\007' "9x15bold,xft:Kochi Gothic"
+   printf '\33]50;%s\007' "9x15bold,xft:Kochi Gothic"
 
 This is useful if you e.g. work primarily with japanese (and prefer a
 japanese font), but you have to switch to chinese temporarily, where
@@ -316,7 +316,7 @@ You can think of this as a kind of manual ISO-2022 switching.
 
 Many fonts have difficulties with italic characters and hinting. For
 example, the otherwise very nicely hinted font C<xft:Bitstream Vera Sans
-Mono> completely fails in it's italic face. A workaround might be to
+Mono> completely fails in its italic face. A workaround might be to
 enable freetype autohinting, i.e. like this:
 
    URxvt.italicFont:        xft:Bitstream Vera Sans Mono:italic:autohint=true
@@ -332,7 +332,7 @@ memory and also speeds up rendering considerably.
 =head3 Rxvt-unicode doesn't seem to anti-alias its fonts, what is wrong?
 
 Rxvt-unicode will use whatever you specify as a font. If it needs to
-fall back to it's default font search list it will prefer X11 core
+fall back to its default font search list it will prefer X11 core
 fonts, because they are small and fast, and then use Xft fonts. It has
 antialiasing disabled for most of them, because the author thinks they
 look best that way.
@@ -514,7 +514,7 @@ line that contains it. It tries hard not to do this at the wrong moment,
 but when running a program that doesn't parse cursor movements or in some
 cases during rlogin sessions, it fails to detect this properly.
 
-You can permamently switch this feature off by disabling the C<readline>
+You can permanently switch this feature off by disabling the C<readline>
 extension:
 
    URxvt.perl-ext-common: default,-readline
@@ -523,7 +523,7 @@ extension:
 
 Some Debian GNUL/Linux users seem to have this problem, although no
 specific details were reported so far. It is possible that this is caused
-by the wrong C<TERM> setting, although the details of wether and how
+by the wrong C<TERM> setting, although the details of whether and how
 this can happen are unknown, as C<TERM=rxvt> should offer a compatible
 keymap. See the answer to the previous question, and please report if that
 helped.
@@ -559,7 +559,7 @@ depressed.
 =head3 What's with the strange Backspace/Delete key behaviour?
 
 Assuming that the physical Backspace key corresponds to the
-BackSpace keysym (not likely for Linux ... see the following
+Backspace keysym (not likely for Linux ... see the following
 question) there are two standard values that can be used for
 Backspace: C<^H> and C<^?>.
 
@@ -696,15 +696,15 @@ develop for myself mostly, so I actually use most of the extensions I
 write.
 
 The selection stuff mainly makes the selection perl-error-message aware
-and tells it to convert pelr error mssages into vi-commands to load the
+and tells it to convert perl error messages into vi-commands to load the
 relevant file and go tot he error line number.
 
    URxvt.scrollstyle:      plain
    URxvt.secondaryScroll:  true
 
 As the documentation says: plain is the preferred scrollbar for the
-author. The C<secondaryScroll> confgiures urxvt to scroll in full-screen
-apps, like screen, so lines scorlled out of screen end up in urxvt's
+author. The C<secondaryScroll> configures urxvt to scroll in full-screen
+apps, like screen, so lines scrolled out of screen end up in urxvt's
 scrollback buffer.
 
    URxvt.background:       #000000
@@ -765,12 +765,12 @@ I once thought this is a great idea.
    urxvt.boldItalicFont:   xft:Bitstream Vera Sans Mono:bold:italic:autohint=true
 
 I wrote rxvt-unicode to be able to specify fonts exactly. So don't be
-overwhelmed. A special note: the C<9x15bold> mentioend above is actually
+overwhelmed. A special note: the C<9x15bold> mentioned above is actually
 the version from XFree-3.3, as XFree-4 replaced it by a totally different
 font (different glyphs for C<;> and many other harmless characters),
 while the second font is actually the C<9x15bold> from XFree4/XOrg. The
 bold version has less chars than the medium version, so I use it for rare
-characters, too. Whene ditign sources with vim, I use italic for comments
+characters, too. When editing sources with vim, I use italic for comments
 and other stuff, which looks quite good with Bitstream Vera anti-aliased.
 
 Terminus is a quite bad font (many very wrong glyphs), but for most of my
@@ -831,7 +831,7 @@ Also consider the form resources have to use:
   URxvt.resource: value
 
 If you want to use another form (there are lots of different ways of
-specifying resources), make sure you understand wether and why it
+specifying resources), make sure you understand whether and why it
 works. If unsure, use the form above.
 
 =head3 When I log-in to another system it tells me about missing terminfo data?
@@ -878,7 +878,7 @@ systems still compile some programs using the long-obsoleted termcap
 library (Fedora Core's bash is one example) and rely on a termcap entry
 for C<rxvt-unicode>.
 
-You could use rxvt's termcap entry with resonable results in many cases.
+You could use rxvt's termcap entry with reasonable results in many cases.
 You can also create a termcap entry by using terminfo's infocmp program
 like this:
 
@@ -910,8 +910,8 @@ Or you could use this termcap entry, generated by the command above:
 =head3 Why does C<ls> no longer have coloured output?
 
 The C<ls> in the GNU coreutils unfortunately doesn't use terminfo to
-decide wether a terminal has colour, but uses it's own configuration
-file. Needless to say, C<rxvt-unicode> is not in it's default file (among
+decide whether a terminal has colour, but uses its own configuration
+file. Needless to say, C<rxvt-unicode> is not in its default file (among
 with most other terminals supporting colour). Either add:
 
    TERM rxvt-unicode
@@ -962,7 +962,7 @@ something else, e.g. C<en_GB.UTF-8>. Needless to say, this is not going to work.
 The best thing is to fix your startup environment, as you will likely run
 into other problems. If nothing works you can try this in your .profile.
 
-  printf '\e]701;%s\007' "$LC_CTYPE"
+  printf '\33]701;%s\007' "$LC_CTYPE"
 
 If this doesn't work, then maybe you use a C<LC_CTYPE> specification not
 supported on your systems. Some systems have a C<locale> command which
@@ -993,7 +993,7 @@ the encoding, doing I/O and (most important) communicating this to all
 applications so everybody agrees on character properties such as width
 and code number. This mechanism is the I<locale>. Applications not using
 that info will have problems (for example, C<xterm> gets the width of
-characters wrong as it uses it's own, locale-independent table under all
+characters wrong as it uses its own, locale-independent table under all
 locales).
 
 Rxvt-unicode uses the C<LC_CTYPE> locale category to select encoding. All
@@ -1022,7 +1022,7 @@ rxvt-unicode with the correct C<LC_CTYPE> category.
 Yes, using an escape sequence. Try something like this, which sets
 rxvt-unicode's idea of C<LC_CTYPE>.
 
-  printf '\e]701;%s\007' ja_JP.SJIS
+  printf '\33]701;%s\007' ja_JP.SJIS
 
 See also the previous answer.
 
@@ -1031,9 +1031,9 @@ one locale (e.g. C<de_DE.UTF-8>) but some programs don't support it
 (e.g. UTF-8). For example, I use this script to start C<xjdic>, which
 first switches to a locale supported by xjdic and back later:
 
-   printf '\e]701;%s\007' ja_JP.SJIS
+   printf '\33]701;%s\007' ja_JP.SJIS
    xjdic -js
-   printf '\e]701;%s\007' de_DE.UTF-8
+   printf '\33]701;%s\007' de_DE.UTF-8
 
 You can also use xterm's C<luit> program, which usually works fine, except
 for some locales where character width differs between program- and
@@ -1061,7 +1061,7 @@ C<ja_JP.EUC-JP> or equivalent.
 =item - Make sure the C<XMODIFIERS> environment variable is set correctly when I<starting> rxvt-unicode.
 
 When you want to use e.g. B<kinput2>, it must be set to
-C<@im=kinput2>. For B<scim>, use C<@im=SCIM>. Youc an see what input
+C<@im=kinput2>. For B<scim>, use C<@im=SCIM>. You can see what input
 method servers are running with this command:
 
    xprop -root XIM_SERVERS
@@ -1116,7 +1116,7 @@ might encounter the same issue.
 
 You should build one binary with the default options. F<configure>
 now enables most useful options, and the trend goes to making them
-runtime-switchable, too, so there is usually no drawback to enbaling them,
+runtime-switchable, too, so there is usually no drawback to enabling them,
 except higher disk and possibly memory usage. The perl interpreter should
 be enabled, as important functionality (menus, selection, likely more in
 the future) depends on it.
@@ -1161,11 +1161,11 @@ following ugly workaround to get non-double-wide-characters working:
 
 Rxvt-unicode requires the symbol C<__STDC_ISO_10646__> to be defined
 in your compile environment, or an implementation that implements it,
-wether it defines the symbol or not. C<__STDC_ISO_10646__> requires that
+whether it defines the symbol or not. C<__STDC_ISO_10646__> requires that
 B<wchar_t> is represented as unicode.
 
-As you might have guessed, FreeBSD does neither define this symobl nor
-does it support it. Instead, it uses it's own internal representation of
+As you might have guessed, FreeBSD does neither define this symbol nor
+does it support it. Instead, it uses its own internal representation of
 B<wchar_t>. This is, of course, completely fine with respect to standards.
 
 However, that means rxvt-unicode only works in C<POSIX>, C<ISO-8859-1> and
@@ -1709,7 +1709,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =over 4
 
-=item B<< C<Ps = 1> >> (DECCKM)
+=item B<< C<Pm = 1> >> (DECCKM)
 
 =begin table
 
@@ -1718,7 +1718,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 2> >> (ANSI/VT52 mode)
+=item B<< C<Pm = 2> >> (ANSI/VT52 mode)
 
 =begin table
 
@@ -1727,7 +1727,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 3> >>
+=item B<< C<Pm = 3> >>
 
 =begin table
 
@@ -1736,7 +1736,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 4> >>
+=item B<< C<Pm = 4> >>
 
 =begin table
 
@@ -1745,7 +1745,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 5> >>
+=item B<< C<Pm = 5> >>
 
 =begin table
 
@@ -1754,7 +1754,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 6> >>
+=item B<< C<Pm = 6> >>
 
 =begin table
 
@@ -1763,7 +1763,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 7> >>
+=item B<< C<Pm = 7> >>
 
 =begin table
 
@@ -1772,7 +1772,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 8> >> I<unimplemented>
+=item B<< C<Pm = 8> >> I<unimplemented>
 
 =begin table
 
@@ -1781,7 +1781,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 9> >> X10 XTerm
+=item B<< C<Pm = 9> >> X10 XTerm
 
 =begin table
 
@@ -1790,7 +1790,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 25> >>
+=item B<< C<Pm = 25> >>
 
 =begin table
 
@@ -1799,7 +1799,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 30> >>
+=item B<< C<Pm = 30> >>
 
 =begin table
 
@@ -1808,7 +1808,7 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 35> >> (B<rxvt>)
+=item B<< C<Pm = 35> >> (B<rxvt>)
 
 =begin table
 
@@ -1817,11 +1817,11 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =end table
 
-=item B<< C<Ps = 38> >> I<unimplemented>
+=item B<< C<Pm = 38> >> I<unimplemented>
 
 Enter Tektronix Mode (DECTEK)
 
-=item B<< C<Ps = 40> >>
+=item B<< C<Pm = 40> >>
 
 =begin table
 
@@ -1830,7 +1830,7 @@ Enter Tektronix Mode (DECTEK)
 
 =end table
 
-=item B<< C<Ps = 44> >> I<unimplemented>
+=item B<< C<Pm = 44> >> I<unimplemented>
 
 =begin table
 
@@ -1839,7 +1839,7 @@ Enter Tektronix Mode (DECTEK)
 
 =end table
 
-=item B<< C<Ps = 45> >> I<unimplemented>
+=item B<< C<Pm = 45> >> I<unimplemented>
 
 =begin table
 
@@ -1848,9 +1848,9 @@ Enter Tektronix Mode (DECTEK)
 
 =end table
 
-=item B<< C<Ps = 46> >> I<unimplemented>
+=item B<< C<Pm = 46> >> I<unimplemented>
 
-=item B<< C<Ps = 47> >>
+=item B<< C<Pm = 47> >>
 
 =begin table
 
@@ -1861,7 +1861,7 @@ Enter Tektronix Mode (DECTEK)
 
 X<Priv66>
 
-=item B<< C<Ps = 66> >>
+=item B<< C<Pm = 66> >>
 
 =begin table
 
@@ -1870,7 +1870,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 67> >>
+=item B<< C<Pm = 67> >>
 
 =begin table
 
@@ -1879,7 +1879,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1000> >> (X11 XTerm)
+=item B<< C<Pm = 1000> >> (X11 XTerm)
 
 =begin table
 
@@ -1888,7 +1888,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1001> >> (X11 XTerm) I<unimplemented>
+=item B<< C<Pm = 1001> >> (X11 XTerm) I<unimplemented>
 
 =begin table
 
@@ -1897,7 +1897,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1010> >> (B<rxvt>)
+=item B<< C<Pm = 1010> >> (B<rxvt>)
 
 =begin table
 
@@ -1906,7 +1906,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1011> >> (B<rxvt>)
+=item B<< C<Pm = 1011> >> (B<rxvt>)
 
 =begin table
 
@@ -1915,7 +1915,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1021> >> (B<rxvt>)
+=item B<< C<Pm = 1021> >> (B<rxvt>)
 
 =begin table
 
@@ -1924,7 +1924,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1047> >>
+=item B<< C<Pm = 1047> >>
 
 =begin table
 
@@ -1933,7 +1933,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1048> >>
+=item B<< C<Pm = 1048> >>
 
 =begin table
 
@@ -1942,7 +1942,7 @@ X<Priv66>
 
 =end table
 
-=item B<< C<Ps = 1049> >>
+=item B<< C<Pm = 1049> >>
 
 =begin table
 
@@ -2405,8 +2405,9 @@ in combination with other switches) is:
   user-pty (-pty-fd)
   hold on exit (-hold)
   skip builtin block graphics (-sbg)
+  separate highlightcolor support (-hc)
 
-It also enabled some non-essential features otherwise disabled, such as:
+It also enables some non-essential features otherwise disabled, such as:
 
   some round-trip time optimisations
   nearest color allocation on pseudocolor screens

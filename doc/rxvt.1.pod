@@ -30,38 +30,38 @@ especially cursive scripts such as arabic, vertically written scripts
 like mongolian or scripts requiring extremely complex combining rules,
 like tibetan or devenagari. Don't expect pretty output when using these
 scripts. Most other scripts, latin, cyrillic, kanji, thai etc. should work
-fine, though. A somewhat difficult case are left-to-right scripts, such
+fine, though. A somewhat difficult case are right-to-left scripts, such
 as hebrew: B<rxvt-unicode> adopts the view that bidirectional algorithms
 belong into the application, not the terminal emulator (too many things --
 such as cursor-movement while editing -- break otherwise), but that might
 change.
 
 If you are looking for a terminal that supports more exotic scripts, let
-me recommend C<mlterm>, which is a very userfriendly, lean and clean
+me recommend C<mlterm>, which is a very user friendly, lean and clean
 terminal emulator. In fact, the reason rxvt-unicode was born was solely
 because the author couldn't get C<mlterm> to use one font for latin1 and
 another for japanese.
 
 Therefore another design rationale was the use of multiple fonts to
 display characters: The idea of a single unicode font which many other
-programs force onto it's users never made sense to me: You should be able
+programs force onto its users never made sense to me: You should be able
 to choose any font for any script freely.
 
 Apart from that, rxvt-unicode is also much better internationalised than
-it's predecessor, supports things such as XFT and ISO 14755 that are handy
-in i18n-environments, is faster, and has a lot less bugs than the original
+its predecessor, supports things such as XFT and ISO 14755 that are handy
+in i18n-environments, is faster, and has a lot bugs less than the original
 rxvt. This all in addition to dozens of other small improvements.
 
 It is still faithfully following the original rxvt idea of being lean
 and nice on resources: for example, you can still configure rxvt-unicode
-without most of it's features to get a lean binary. It also comes with
+without most of its features to get a lean binary. It also comes with
 a client/daemon pair that lets you open any number of terminal windows
 from within a single process, which makes startup time very fast and
 drastically reduces memory usage. See @@RXVT_NAME@@d(1) (daemon) and
 @@RXVT_NAME@@c(1) (client).
 
 It also makes technical information about escape sequences (which have
-been extended) easier accessible: see @@RXVT_NAME@@(7) for technical
+been extended) more accessible: see @@RXVT_NAME@@(7) for technical
 reference documentation (escape sequences etc.).
 
 =head1 OPTIONS
@@ -118,7 +118,8 @@ Turn on/off inheriting parent window's pixmap. Alternative form is
 B<-tr>; resource B<inheritPixmap>.
 
 I<Please note that transparency of any kind if completely unsupported by
-the author. Don't bug him with installation questions!>
+the author. Don't bug him with installation questions! Read the FAQ (man 7
+@@RXVT_NAME@@)!>
 
 =item B<-fade> I<number>
 
@@ -187,7 +188,7 @@ first font defines the cell size for characters; other fonts might be
 smaller, but not (in general) larger. A (hopefully) reasonable default
 font list is always appended to it. See resource B<font> for more details.
 
-In short, to specify an X11 core font, just specify it's name or prefix it
+In short, to specify an X11 core font, just specify its name or prefix it
 with C<x:>. To specify an XFT-font, you need to prefix it with C<xft:>,
 e.g.:
 
@@ -425,7 +426,7 @@ Remap a key symbol. See resource B<keysym>.
 
 =item B<-embed> I<windowid>
 
-Tells @@RXVT_NAME@@ to embed it's windows into an already-existing window,
+Tells @@RXVT_NAME@@ to embed its windows into an already-existing window,
 which enables applications to easily embed a terminal.
 
 Right now, @@RXVT_NAME@@ will first unmap/map the specified window, so it
@@ -438,7 +439,7 @@ The window will not be destroyed when @@RXVT_NAME@@ exits.
 It might be useful to know that @@RXVT_NAME@@ will not close file
 descriptors passed to it (except for stdin/out/err, of course), so you
 can use file descriptors to communicate with the programs within the
-terminal. This works regardless of wether the C<-embed> option was used or
+terminal. This works regardless of whether the C<-embed> option was used or
 not.
 
 Here is a short Gtk2-perl snippet that illustrates how this option can be
@@ -453,7 +454,7 @@ used (a longer example is in F<doc/embed>):
 =item B<-pty-fd> I<file descriptor>
 
 Tells @@RXVT_NAME@@ NOT to execute any commands or create a new pty/tty
-pair but instead use the given filehandle as the tty master. This is
+pair but instead use the given file descriptor as the tty master. This is
 useful if you want to drive @@RXVT_NAME@@ as a generic terminal emulator
 without having to run a program within it.
 
@@ -720,7 +721,7 @@ text font will being used for the given style.
 
 When font styles are not enabled, or this option is enabled (B<True>,
 option B<-is>, the default), bold and italic font styles imply high
-intensity foreground/backround colours. Disabling this option (B<False>,
+intensity foreground/background colours. Disabling this option (B<False>,
 option B<+is>) disables this behaviour, the high intensity colours are not
 reachable.
 
@@ -782,7 +783,7 @@ Example:
    URxvt.print-pipe: cat > $(TMPDIR=$HOME mktemp urxvt.XXXXXX)
 
 This creates a new file in your home directory with the screen contents
-everytime you hit C<Print>.
+every time you hit C<Print>.
 
 =item B<scrollBar:> I<boolean>
 
@@ -814,7 +815,7 @@ B<+si>.
 
 B<True>: scroll with scrollback buffer when tty receives new lines (and
 B<scrollTtyOutput> is False); option B<-sw>. B<False>: do not scroll
-with scrollback buffer when tty recieves new lines; option B<+sw>.
+with scrollback buffer when tty receives new lines; option B<+sw>.
 
 =item B<scrollTtyKeypress:> I<boolean>
 
@@ -1030,12 +1031,12 @@ C<^@>: null, C<^A> ...) and may be enclosed with double quotes so that it
 can start or end with whitespace.
 
 Please note that you need to double the C<\> in resource files, as
-Xlib itself does it's own de-escaping (you can use C<\033> instead of
+Xlib itself does its own de-escaping (you can use C<\033> instead of
 C<\e> (and so on), which will work with both Xt and @@RXVT_NAME@@'s own
 processing).
 
 You can define a range of keysyms in one shot by providing a I<string>
-with pattern B<list/PREFIX/MIDDLE/SUFFIX>, where the delimeter `/'
+with pattern B<list/PREFIX/MIDDLE/SUFFIX>, where the delimiter `/'
 should be a character not used by the strings.
 
 Its usage can be demonstrated by an example:
@@ -1109,7 +1110,7 @@ C<selection>.
 
 Extension names can also be followed by an argument in angle brackets
 (e.g.  C<< searchable-scrollback<M-s> >>, which binds the hotkey for
-searchable scorllback to Alt/Meta-s). Mentioning the same extension
+searchable scrollback to Alt/Meta-s). Mentioning the same extension
 multiple times with different arguments will pass multiple arguments to
 the extension.
 
@@ -1275,7 +1276,7 @@ your keyboard, if representable in the current locale encoding.
 
 Start by pressing C<Control> and C<Shift> together, then releasing
 them. The next special key (cursor keys, home etc.) you enter will not
-invoke it's usual function but instead will insert the corresponding
+invoke its usual function but instead will insert the corresponding
 keycap symbol. The symbol will only be entered when the key has been
 released, otherwise pressing e.g. C<Shift> would enter the symbol for
 C<ISO Level 2 Switch>, although your intention might have been to enter a
@@ -1402,11 +1403,11 @@ B<@@RXVT_NAME@@> sets and/or uses the following environment variables:
 =item B<TERM>
 
 Normally set to C<rxvt-unicode>, unless overwritten at configure time, via
-resources or on the commandline.
+resources or on the command line.
 
 =item B<COLORTERM>
 
-Either C<rxvt>, C<rxvt-xpm>, depending on wether @@RXVT_NAME@@ was
+Either C<rxvt>, C<rxvt-xpm>, depending on whether @@RXVT_NAME@@ was
 compiled with XPM support, and optionally with the added extension
 C<-mono> to indicate that rxvt-unicode runs on a monochrome screen.
 
@@ -1434,7 +1435,7 @@ C<--with-terminfo=PATH>.
 =item B<DISPLAY>
 
 Used by @@RXVT_NAME@@ to connect to the display and set to the correct
-display in it's child processes.
+display in its child processes.
 
 =item B<SHELL>
 
@@ -1486,7 +1487,7 @@ Color names.
 
 Marc A. Lehmann L<< <rxvt-unicode@schmorp.de> >>
 
-L<http://software.schmorp.de/#rxvt-unicode>
+L<http://software.schmorp.de/pkg/rxvt-unicode.html>
 
 =back
 
