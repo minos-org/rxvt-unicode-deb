@@ -70,7 +70,7 @@
 
 keysym_t keyboard_manager::stock_keymap[] = {
   /* examples */
-  /*        keysym,                state, range,               handler,              str */
+  /*        keysym,                state, range,                  type,              str */
 //{XK_ISO_Left_Tab,                    0,     1,      keysym_t::STRING,           "\033[Z"},
 //{            'a',                    0,    26, keysym_t::RANGE_META8,           "a" "%c"},
 //{            'a',          ControlMask,    26, keysym_t::RANGE_META8,          "" "%c"},
@@ -215,7 +215,7 @@ keyboard_manager::register_user_translation (KeySym keysym, unsigned int state, 
         {
           char *middle = strchr  (translation + 5, translation [4]);
           char *suffix = strrchr (translation + 5, translation [4]);
-          
+
           if (suffix && middle && suffix > middle + 1)
             {
               key->type  = keysym_t::LIST;
@@ -454,8 +454,9 @@ keyboard_manager::setup_hash ()
 
           assert (index >= 0);
           keysym_t *b = keymap [index];
-          assert (i == (signed) index ||	// the normally expected result
-            (a->keysym + j) >= b->keysym && (a->keysym + j) <= (b->keysym + b->range) && compare_priority (a, b) <= 0);	// is effectively the same or a closer match
+          assert (i == index	// the normally expected result
+                  || IN_RANGE_INC (a->keysym + j, b->keysym, b->keysym + b->range)
+                  && compare_priority (a, b) <= 0);	// is effectively the same or a closer match
         }
     }
 #endif
@@ -467,7 +468,7 @@ keyboard_manager::find_keysym (KeySym keysym, unsigned int state)
   int hashkey = keysym & KEYSYM_HASH_MASK;
   unsigned int index = hash [hashkey];
   unsigned int end = hashkey < KEYSYM_HASH_BUDGETS - 1
-                     ? hash [hashkey + 1] 
+                     ? hash [hashkey + 1]
                      : keymap.size ();
 
   for (; index < end; ++index)

@@ -7,6 +7,7 @@
  *				- original version
  * Copyright (c) 1997,1998 mj olesen <olesen@me.queensu.ca>
  * Copyright (c) 2003-2006 Marc Lehmann <pcg@goof.com>
+ * Copyright (c) 2007      Emanuele Giaquinta <e.giaquinta@glauco.it>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,8 +65,8 @@
     { (option), (Optflag_Switch | (flag)), -1, NULL, (opt), NULL, (desc)}
 
 /* convenient macros */
-#define optList_strlen(i)						\
-    (optList[i].flag ? 0 : (optList[i].arg ? strlen (optList[i].arg) : 1))
+#define optList_isString(i)						\
+    (optList[i].flag == 0)
 #define optList_isBool(i)						\
     (optList[i].flag & Optflag_Boolean)
 #define optList_isReverse(i)						\
@@ -97,14 +98,12 @@ optList[] = {
               BOOL (Rs_jumpScroll, "jumpScroll", "j", Opt_jumpScroll, 0, "jump scrolling"),
               BOOL (Rs_skipScroll, "skipScroll", "ss", Opt_skipScroll, 0, "skip scrolling"),
               BOOL (Rs_pastableTabs, "pastableTabs", "ptab", Opt_pastableTabs, 0, "tab characters are pastable"),
-#if HAVE_SCROLLBARS
               RSTRG (Rs_scrollstyle, "scrollstyle", "mode"),
               BOOL (Rs_scrollBar, "scrollBar", "sb", Opt_scrollBar, 0, "scrollbar"),
               BOOL (Rs_scrollBar_right, "scrollBar_right", "sr", Opt_scrollBar_right, 0, "scrollbar right"),
               BOOL (Rs_scrollBar_floating, "scrollBar_floating", "st", Opt_scrollBar_floating, 0, "scrollbar without a trough"),
               RSTRG (Rs_scrollBar_align, "scrollBar_align", "mode"),
               STRG (Rs_scrollBar_thickness, "thickness", "sbt", "number", "scrollbar thickness/width in pixels"),
-#endif
               BOOL (Rs_scrollTtyOutput, "scrollTtyOutput", NULL, Opt_scrollTtyOutput, 0, NULL),
               BOOL (Rs_scrollTtyOutput, NULL, "si",  Opt_scrollTtyOutput, Optflag_Reverse, "scroll-on-tty-output inhibit"),
               BOOL (Rs_scrollTtyKeypress, "scrollTtyKeypress", "sk", Opt_scrollTtyKeypress, 0, "scroll-on-keypress"),
@@ -113,10 +112,10 @@ optList[] = {
               BOOL (Rs_transparent, "inheritPixmap", "ip", Opt_transparent, 0, "inherit parent pixmap"),
               BOOL (Rs_transparent, "transparent", "tr", Opt_transparent, 0, "inherit parent pixmap"),
               STRG (Rs_color + Color_tint, "tintColor", "tint", "color", "tint color"),
-              STRG (Rs_shade, "shading", "sh", "%", "shade background by x %."),
+              STRG (Rs_shade, "shading", "sh", "number", "shade background by number %."),
 #endif
 #if OFF_FOCUS_FADING
-              STRG (Rs_fade, "fading", "fade", "%", "fade colors x% percent when rxvt-unicode is losing focus"),
+              STRG (Rs_fade, "fading", "fade", "number", "fade colors by number % when losing focus"),
               STRG (Rs_color + Color_fade, "fadeColor", "fadecolor", "color", "target color for off-focus fading"),
 #endif
               BOOL (Rs_utmpInhibit, "utmpInhibit", "ut", Opt_utmpInhibit, 0, "utmp inhibit"),
@@ -169,14 +168,14 @@ optList[] = {
               RSTRG (Rs_color + Color_IT, "colorIT", "color"),
               RSTRG (Rs_color + Color_UL, "colorUL", "color"),
               RSTRG (Rs_color + Color_RV, "colorRV", "color"),
-#endif				/* ! NO_BOLD_UNDERLINE_REVERSE */
+#endif /* ! NO_BOLD_UNDERLINE_REVERSE */
 #if ENABLE_FRILLS
               RSTRG (Rs_color + Color_underline, "underlineColor", "color"),
 #endif
-#ifdef KEEP_SCROLLCOLOR
               RSTRG (Rs_color + Color_scroll, "scrollColor", "color"),
+#ifdef RXVT_SCROLLBAR
               RSTRG (Rs_color + Color_trough, "troughColor", "color"),
-#endif				/* KEEP_SCROLLCOLOR */
+#endif
 #ifdef OPTION_HC
               STRG (Rs_color + Color_HC, "highlightColor", "hc", "color", "highlight color"),
 #endif
@@ -184,7 +183,7 @@ optList[] = {
               STRG (Rs_color + Color_cursor, "cursorColor", "cr", "color", "cursor color"),
               /* command-line option = resource name */
               RSTRG (Rs_color + Color_cursor2, "cursorColor2", "color"),
-#endif				/* NO_CURSORCOLOR */
+#endif /* NO_CURSORCOLOR */
               STRG (Rs_color + Color_pointer_fg, "pointerColor", "pr", "color", "pointer color"),
               STRG (Rs_color + Color_pointer_bg, "pointerColor2", "pr2", "color", "pointer bg color"),
               STRG (Rs_color + Color_border, "borderColor", "bd", "color", "border color"),
@@ -205,7 +204,7 @@ optList[] = {
               STRG (Rs_preeditType, "preeditType", "pt", "style", "input style: style = OverTheSpot|OffTheSpot|Root"),
               STRG (Rs_imLocale, "imLocale", "imlocale", "string", "locale to use for input method"),
               STRG (Rs_imFont, "imFont", "imfont", "fontname", "fontset for styles OverTheSpot and OffTheSpot"),
-#endif				/* USE_XIM */
+#endif /* USE_XIM */
               STRG (Rs_name, NULL, "name", "string", "client instance, icon, and title strings"),
               STRG (Rs_title, "title", "title", "string", "title name for window"),
               STRG (Rs_title, NULL, "T", NULL, NULL),	/* short form */
@@ -216,6 +215,7 @@ optList[] = {
 #endif
 #if XFT
               STRG (Rs_depth, "depth", "depth", "number", "depth of visual to request"),
+              BOOL (Rs_buffered, "buffered", NULL, Opt_buffered, 0, NULL),
 #endif
 #if ENABLE_FRILLS
               RSTRG (Rs_transient_for, "transient-for", "windowid"),
@@ -227,8 +227,10 @@ optList[] = {
               STRG (Rs_ext_bwidth, NULL, "borderwidth", NULL, NULL),
               STRG (Rs_int_bwidth, "internalBorder", "b", "number", "internal border in pixels"),
               BOOL (Rs_borderLess, "borderLess", "bl", Opt_borderLess, 0, "borderless window"),
-              BOOL (Rs_skipBuiltinGlyphs, "skipBuiltinGlyphs", "sbg", Opt_skipBuiltinGlyphs, 0, "do not use internal glyphs"),
               STRG (Rs_lineSpace, "lineSpace", "lsp", "number", "number of extra pixels between rows"),
+#endif
+#ifdef BUILTIN_GLYPHS
+              BOOL (Rs_skipBuiltinGlyphs, "skipBuiltinGlyphs", "sbg", Opt_skipBuiltinGlyphs, 0, "do not use internal glyphs"),
 #endif
 #ifdef POINTER_BLANK
               RSTRG (Rs_pointerBlankDelay, "pointerBlankDelay", "number"),
@@ -239,14 +241,13 @@ optList[] = {
 #ifndef NO_DELETE_KEY
               RSTRG (Rs_delete_key, "deletekey", "string"),
 #endif
-              RSTRG (Rs_selectstyle, "selectstyle", "mode"),
 #ifdef PRINTPIPE
               RSTRG (Rs_print_pipe, "print-pipe", "string"),
 #endif
               STRG (Rs_modifier, "modifier", "mod", "modifier", "meta modifier = alt|meta|hyper|super|mod1|...|mod5"),
 #ifdef CUTCHAR_RESOURCE
               RSTRG (Rs_cutchars, "cutchars", "string"),
-#endif				/* CUTCHAR_RESOURCE */
+#endif /* CUTCHAR_RESOURCE */
               RSTRG (Rs_answerbackstring, "answerbackString", "string"),
 #ifndef NO_SECONDARY_SCREEN
               BOOL (Rs_secondaryScreen, "secondaryScreen", "ssc", Opt_secondaryScreen, 0, "enable secondary screen"),
@@ -264,9 +265,6 @@ optList[] = {
 #ifdef HAVE_AFTERIMAGE
               STRG (Rs_blendtype, "blendType", "blt", "string", "background image blending type - alpha, tint, etc..."),
               STRG (Rs_blurradius, "blurRadius", "blr", "HxV", "Gaussian Blur radii to apply to the root background"),
-#endif
-#ifndef NO_RESOURCES
-              INFO ("xrm", "string", "X resource"),
 #endif
               INFO ("e", "command arg ...", "command to execute")
             };
@@ -363,31 +361,15 @@ static const char optionsstring[] = "options: "
 #if defined(NO_RESOURCES)
                                     "NoResources,"
 #endif
-                                    "scrollbars="
-#if !defined(HAVE_SCROLLBARS)
-                                    "NONE"
-#else
-# if defined(PLAIN_SCROLLBAR)
-                                    "plain"
-#  if defined(RXVT_SCROLLBAR) || defined(NEXT_SCROLLBAR) || defined(XTERM_SCROLLBAR)
-                                    "+"
-#  endif
-# endif
-# if defined(RXVT_SCROLLBAR)
-                                    "rxvt"
-#  if defined(NEXT_SCROLLBAR) || defined(XTERM_SCROLLBAR)
-                                    "+"
-#  endif
-# endif
-# if defined(NEXT_SCROLLBAR)
-                                    "NeXT"
-#  if defined(XTERM_SCROLLBAR)
-                                    "+"
-#  endif
-# endif
-# if defined(XTERM_SCROLLBAR)
-                                    "xterm"
-# endif
+                                    "scrollbars=plain"
+#if defined(RXVT_SCROLLBAR)
+                                    "+rxvt"
+#endif
+#if defined(NEXT_SCROLLBAR)
+                                    "+NeXT"
+#endif
+#if defined(XTERM_SCROLLBAR)
+                                    "+xterm"
 #endif
                                     "\nUsage: ";		/* Usage */
 
@@ -416,25 +398,22 @@ rxvt_usage (int type)
             {
               int len = 0;
 
-              if (!optList_isBool (i))
-                {
-                  len = optList_strlen (i);
-                  if (len > 0)
-                    len++;	/* account for space */
-                }
+              if (optList[i].arg)
+                len = strlen (optList[i].arg) + 1;
 #ifdef DEBUG_STRICT
               assert (optList[i].opt != NULL);
 #endif
               len += 4 + strlen (optList[i].opt) + (optList_isBool (i) ? 2: 0);
               col += len;
               if (col > 79)
-                {	/* assume regular width */
+                {
+                  /* assume regular width */
                   rxvt_log ("\n");
                   col = 1 + len;
                 }
 
               rxvt_log (" [-%s%s", (optList_isBool (i) ? "/+" : ""), optList[i].opt);
-              if (optList_strlen (i))
+              if (optList[i].arg)
                 rxvt_log (" %s]", optList[i].arg);
               else
                 rxvt_log ("]");
@@ -496,20 +475,21 @@ rxvt_term::get_options (int argc, const char *const *argv)
   for (i = 1; i < argc; i++)
     {
       unsigned int entry, longopt = 0;
-      const char *flag, *opt;
+      const char *opt;
+      int flag;
 
       opt = argv[i];
 
       if (*opt == '-')
         {
-          flag = resval_on;
+          flag = 1;
 
           if (*++opt == '-')
             longopt = *opt++;	/* long option */
         }
       else if (*opt == '+')
         {
-          flag = resval_off;
+          flag = 0;
 
           if (*++opt == '+')
             longopt = *opt++;	/* long option */
@@ -537,9 +517,9 @@ rxvt_term::get_options (int argc, const char *const *argv)
       if (entry < optList_size)
         {
           if (optList_isReverse (entry))
-            flag = flag == resval_on ? resval_off : resval_on;
+            flag = !flag;
 
-          if (optList_strlen (entry))
+          if (optList_isString (entry))
             {
               /*
                * special cases are handled in main.c:main () to allow
@@ -549,33 +529,45 @@ rxvt_term::get_options (int argc, const char *const *argv)
 
               if (optList[entry].doff != -1)
                 {
-                  if (flag == resval_on && i+1 == argc)
-                    rxvt_fatal ("option '%s' needs an argument, aborting.\n", argv [i]);
+                  if (flag && i+1 == argc)
+                    rxvt_fatal ("option '%s' requires an argument, aborting.\n", argv [i]);
 
-                  rs[optList[entry].doff] = flag == resval_on ? argv[++i] : resval_undef;
+                  rs[optList[entry].doff] = flag ? argv[++i] : resval_undef;
                 }
             }
           else
-            {		/* boolean value */
-              set_option (optList[entry].index, flag == resval_on);
+            {
+              /* boolean value */
+              set_option (optList[entry].index, flag);
 
               if (optList[entry].doff != -1)
-                rs[optList[entry].doff] = flag;
+                rs[optList[entry].doff] = flag ? resval_on : resval_off;
             }
         }
-      else
-#ifdef KEYSYM_RESOURCE
-        if (!strncmp (opt, "keysym.", sizeof ("keysym.") - 1))
-          {
-            if (i+1 < argc)
-              parse_keysym (opt + sizeof ("keysym.") - 1, argv[++i]);
-          }
-        else
+#ifndef NO_RESOURCES
+      else if (!strcmp (opt, "xrm"))
+        {
+          if (i+1 < argc)
+            XrmPutLineResource (&option_db, argv[++i]);
+        }
 #endif
-          {
-            bad_option = 1;
-            rxvt_warn ("\"%s\": unknown or malformed option.\n", opt);
-          }
+#ifdef KEYSYM_RESOURCE
+      else if (!strncmp (opt, "keysym.", sizeof ("keysym.") - 1))
+        {
+          if (i+1 < argc)
+            {
+              char *res = (char *)malloc (strlen (opt) + strlen (argv[++i]) + 6);
+              sprintf (res, "*.%s: %s\n", opt, argv[i]);
+              XrmPutLineResource (&option_db, res);
+              free (res);
+            }
+        }
+#endif
+      else
+        {
+          bad_option = 1;
+          rxvt_warn ("\"%s\": unknown or malformed option.\n", opt);
+        }
     }
 
   if (bad_option)
@@ -616,12 +608,7 @@ rxvt_define_key (XrmDatabase *database UNUSED,
 /*
  * look for something like this (XK_Delete)
  * rxvt*keysym.0xFFFF: "\177"
- *
- * arg will be
- *      NULL for ~/.Xdefaults and
- *      non-NULL for command-line options (need to allocate)
  */
-#define NEWARGLIM	500	/* `reasonable' size */
 
 struct keysym_vocabulary_t
 {
@@ -629,7 +616,7 @@ struct keysym_vocabulary_t
   unsigned short len;
   unsigned short value;
 };
-keysym_vocabulary_t keysym_vocabulary[] =
+static const keysym_vocabulary_t keysym_vocabulary[] =
 {
   { "ISOLevel3", 9, Level3Mask    },
   { "AppKeypad", 9, AppKeypadMask },
@@ -661,30 +648,21 @@ keysym_vocabulary_t keysym_vocabulary[] =
 int
 rxvt_term::parse_keysym (const char *str, const char *arg)
 {
-  int n, sym;
+  int sym;
   unsigned int state = 0;
-  const char *pmodend = NULL;
-  char *newarg = NULL;
-  char newargstr[NEWARGLIM];
+  const char *key = strrchr (str, '-');
 
-  if (arg == NULL)
-    {
-      n = sizeof ("keysym.") - 1;
-      if (strncmp (str, "keysym.", n))
-        return 0;
-
-      str += n;		/* skip `keysym.' */
-      if (!(pmodend = strchr (str, ':')))
-        return -1;
-    }
+  if (!key)
+    key = str;
   else
-    pmodend = str + strlen(str);
+    key++;
 
-  for (--pmodend; str < pmodend; --pmodend)
-    if (*pmodend == '-')
-      break;
+  // string or key is empty
+  if (*arg == '\0' || *key == '\0')
+    return -1;
 
-  while (str < pmodend)
+  // parse modifiers
+  while (str < key)
     {
       unsigned int i;
 
@@ -705,63 +683,22 @@ rxvt_term::parse_keysym (const char *str, const char *arg)
         ++str;
     }
 
-  /* some scanf () have trouble with a 0x prefix */
-  if (str[0] == '0' && toupper (str[1]) == 'X')
+  // convert keysym name to keysym number
+  if ((sym = XStringToKeysym (str)) == None)
     {
-      str += 2;
-
-      if (arg)
-        {
-          if (sscanf (str, (strchr (str, ':') ? "%x:" : "%x"), &sym) != 1)
-            return -1;
-        }
-      else
-        {
-          if (sscanf (str, "%x:", &sym) != 1)
-            return -1;
-
-          /* cue to ':', it's there since sscanf () worked */
-          strncpy (newargstr, strchr (str, ':') + 1, NEWARGLIM - 1);
-          newargstr[NEWARGLIM - 1] = '\0';
-          newarg = newargstr;
-        }
-    }
-  else
-    {
-      /*
-       * convert keysym name to keysym number
-       */
-      strncpy (newargstr, str, NEWARGLIM - 1);
-      newargstr[NEWARGLIM - 1] = '\0';
-
-      if (arg == NULL)
-        {
-          if ((newarg = strchr (newargstr, ':')) == NULL)
-            return -1;
-
-          *newarg++ = '\0';	/* terminate keysym name */
-        }
-
-      if ((sym = XStringToKeysym (newargstr)) == None)
+      // fallback on hexadecimal parsing
+      char *end;
+      sym = strtol (str, &end, 16);
+      if (*end)
         return -1;
-    }
+    }  
 
-  if (newarg == NULL)
-    {
-      strncpy (newargstr, arg, NEWARGLIM - 1);
-      newargstr[NEWARGLIM - 1] = '\0';
-      newarg = newargstr;
-    }
-
-  if (*newarg == '\0')
-    return -1;
-
-  keyboard->register_user_translation (sym, state, newarg);
+  keyboard->register_user_translation (sym, state, arg);
   return 1;
 }
 
-# endif				/* KEYSYM_RESOURCE */
-#endif				/* NO_RESOURCES */
+# endif /* KEYSYM_RESOURCE */
+#endif /* NO_RESOURCES */
 
 static char *
 get_res (XrmDatabase database, const char *program, const char *option)
@@ -803,6 +740,9 @@ void
 rxvt_term::extract_resources ()
 {
 #ifndef NO_RESOURCES
+  XrmDatabase database = XrmGetDatabase (dpy);
+  XrmMergeDatabases (option_db, &database);
+  option_db = NULL;
   /*
    * Query resources for options that affect us
    */
@@ -841,7 +781,6 @@ rxvt_term::extract_resources ()
    * [R5 or later]: enumerate the resource database
    */
 #  ifdef KEYSYM_RESOURCE
-  XrmDatabase database = XrmGetDatabase (dpy);
   XrmName name_prefix[3];
   XrmClass class_prefix[3];
 
@@ -865,7 +804,7 @@ rxvt_term::extract_resources ()
 #   endif
 #  endif
 
-#endif				/* NO_RESOURCES */
+#endif /* NO_RESOURCES */
 }
 
 /*----------------------- end-of-file (C source) -----------------------*/

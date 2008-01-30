@@ -22,8 +22,8 @@ sub htmlfcodes {
       L => "i",    # broken
       F => "tt",
       S => "nobr", # non-std
-      X => "span", # brokwn
-      Z => "span", # brokwn
+      X => "span", # broken
+      Z => "span", # broken
    );
    # strip formatting codes, dumb version
    map {
@@ -44,7 +44,7 @@ sub command {
       shift;
       return $self->SUPER::command (@_);
    }
-}  
+}
 
 sub verbatim {
    my ($self, $para) = @_;
@@ -67,7 +67,7 @@ sub verbatim {
 
    print $fh "\n=end text\n\n";
 
-   
+
    # tbl
    print $fh "=begin roff\n\n";
 

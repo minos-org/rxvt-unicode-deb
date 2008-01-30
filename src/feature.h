@@ -30,7 +30,7 @@
 # define X11LIBDIR		X11USRLIBDIR "/X11"
 #endif
 #ifndef XAPPLOADDIR
-# define XAPPLOADDIR		X11LIBDIR "/app-defaults" 
+# define XAPPLOADDIR		X11LIBDIR "/app-defaults"
 # define XAPPLOADDIRLOCALE	X11LIBDIR "/%s/app-defaults"
 #endif
 
@@ -59,13 +59,6 @@
  * destroy your disks or have any other effects. You may freely try (and
  * report bugs, too!), but don't _expect_ them to work.
  */
-
-/*
- * Forcefully disable double-buffering for xft. On some card/driver combination
- * enabling it slightly decreases performance, on most it greatly helps it.
- * The slowdown is small, so it should normally be enabled.
- */
-/* #define FORCE_UNBUFFERED_XFT */
 
 /*
  * The cursor blink interval, in seconds.
@@ -154,7 +147,7 @@
  * Allow 80/132 mode switching on startup
  */
 /* #define ALLOW_132_MODE */
- 
+
 /*---------------------------------KEYS---------------------------------*/
 
 /*
@@ -192,7 +185,7 @@
 /*
  * Allow scrolling with modifier+Up/Down keys, in addition
  * to modifier+Prior/Next? (modifier is controlled with
- * SCROLL_ON_* defines above.). 
+ * SCROLL_ON_* defines above.).
  * Also for modifier+Home/End keys to move to top/bottom
  */
 /* #define SCROLL_ON_UPDOWN_KEYS */

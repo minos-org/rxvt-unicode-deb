@@ -13,18 +13,15 @@ using namespace std;
 
 #define HAVE_GCC_BUILTINS (__GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__ == 4))
 
-#ifndef __attribute__
-# if __GNUC__
-#  if (__GNUC__ == 2 && __GNUC_MINOR__ < 5) || (__GNUC__ < 2)
-#   define __attribute__(x)
-#  endif
-# endif
-# define __attribute__(x)
+#if __GNUC__ >= 4
+# define rxvt_attribute(x) __attribute__(x)
+#else
+# define rxvt_attribute(x)
 #endif
 
-#define NORETURN __attribute__ ((noreturn))
-#define UNUSED   __attribute__ ((unused))
-#define CONST    __attribute__ ((const))
+#define NORETURN rxvt_attribute ((noreturn))
+#define UNUSED   rxvt_attribute ((unused))
+#define CONST    rxvt_attribute ((const))
 
 // increases code size unless -fno-enforce-eh-specs
 #if __GNUC__
@@ -67,10 +64,29 @@ T lerp (T a, U b, P p)
   return (long(a) * long(100 - p) + long(b) * long(p) + 50) / 100;
 }
 
+template <typename I, typename T>
+I find (I first, I last, const T& value)
+{
+  while (first != last && *first != value)
+    ++first;
+
+  return first;
+}
+
+// return a very temporary (and never deallocated) buffer. keep small.
+void *rxvt_temp_buf (int len);
+
+template<typename T>
+static inline T *
+rxvt_temp_buf (int len)
+{
+  return (T *)rxvt_temp_buf (len * sizeof (T));
+}
+
 // some bit functions, xft fuck me plenty
 #if HAVE_GCC_BUILTINS
-static inline int ctz      (unsigned int x) CONST { return __builtin_ctz      (x); }
-static inline int popcount (unsigned int x) CONST { return __builtin_popcount (x); }
+static inline int ctz      (unsigned int x) { return __builtin_ctz      (x); }
+static inline int popcount (unsigned int x) { return __builtin_popcount (x); }
 #else
 // count trailing zero bits and count # of one bits
 int ctz      (unsigned int x) CONST;
@@ -85,6 +101,9 @@ int popcount (unsigned int x) CONST;
 #define IN_RANGE_EXC(val,beg,end) \
   ((unsigned int)(val) - (unsigned int)(beg) <  (unsigned int)(end) - (unsigned int)(beg))
 
+// for m >= -n, ensure remainder lies between 0..n-1
+#define MOD(m,n) (((m) + (n)) % (n))
+
 // makes dynamically allocated objects zero-initialised
 struct zero_initialized {
   void *operator new (size_t s);
@@ -92,7 +111,7 @@ struct zero_initialized {
 };
 
 /* simplevec taken (and heavily modified), from:
- * 
+ *
  *  MICO --- a free CORBA implementation
  *  Copyright (C) 1997-98 Kay Roemer & Arno Puder
  */
@@ -348,7 +367,17 @@ bool operator< (const simplevec<T> &v1, const simplevec<T> &v2)
 
 template<typename T>
 struct vector : simplevec<T>
-{ };
+{
+};
+
+struct stringvec : simplevec<char *>
+{
+  ~stringvec ()
+  {
+    for (char **c = begin (); c != end (); c++)
+      free (*c);
+  }
+};
 
 #if 0
 template<typename T>
@@ -365,15 +394,6 @@ struct rxvt_vec : simplevec<void *> {
   const T &operator [] (int i) const { return * (const T *) (& ((* (const simplevec<void *> *)this)[i])); }
 };
 #endif
-
-template <typename I, typename T>
-I find (I first, I last, const T& value)
-{
-  while (first != last && *first != value)
-    ++first;
-
-  return first;
-}
 
 template<typename T>
 struct auto_ptr {
@@ -434,25 +454,6 @@ struct auto_ptr {
 };
 
 typedef auto_ptr<char> auto_str;
-
-struct stringvec : simplevec<char *>
-{
-  ~stringvec ()
-  {
-    for (char **c = begin (); c != end (); c++)
-      free (*c);
-  }
-};
-
-// return a very temporary (and never deallocated) buffer. keep small.
-void *rxvt_temp_buf (int len);
-
-template<typename T>
-static inline T *
-rxvt_temp_buf (int len)
-{
-  return (T *)rxvt_temp_buf (len * sizeof (T));
-}
 
 #endif
 

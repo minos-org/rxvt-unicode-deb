@@ -1,6 +1,5 @@
-// all resource indices, used by rxvtlib.h and rxvtperl.xs
+// all resource indices, used by rxvt.h and rxvtperl.xs
 
- def(console,               0)
  def(loginShell,            1)
  def(iconic,                2)
  def(visualBell,            3)
@@ -34,15 +33,18 @@
  def(borderLess,           26) // mwm borderless hints
  def(hold,                 27) // hold window open after exit
  def(override_redirect,    28)
- def(skipBuiltinGlyphs,    29) // do not use internal glyphs
- def(urgentOnBell,         30)
+ def(urgentOnBell,         29)
 #else
  nodef(insecure)
  nodef(borderLess)
  nodef(hold)
  nodef(override_redirect)
- nodef(skipBuiltinGlyphs)
  nodef(urgentOnBell)
+#endif
+#ifdef BUILTIN_GLYPHS
+ def(skipBuiltinGlyphs,    30) // do not use internal glyphs
+#else
+ nodef(skipBuiltinGlyphs)
 #endif
 #if ENABLE_STYLES
  def(intensityStyles,      31) // font styles imply intensity
@@ -53,5 +55,11 @@
  def(iso14755_52,          32)
 #else
  nodef(iso14755_52)
+#endif
+ def(console,              33)
+#if XFT
+ def(buffered,             34)
+#else
+ nodef(buffered)
 #endif
 

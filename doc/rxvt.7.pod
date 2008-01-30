@@ -19,7 +19,10 @@ This document contains the FAQ, the RXVT TECHNICAL REFERENCE documenting
 all escape sequences, and other background information.
 
 The newest version of this document is also available on the World Wide Web at
-L<http://cvs.schmorp.de/browse/rxvt-unicode/doc/rxvt.7.html>.
+L<http://pod.tst.eu/http://cvs.schmorp.de/rxvt-unicode/doc/rxvt.7.pod>.
+
+The main manual page for @@RXVT_NAME@@ itself is available at
+L<http://pod.tst.eu/http://cvs.schmorp.de/rxvt-unicode/doc/rxvt.1.pod>.
 
 =head1 RXVT-UNICODE/URXVT FREQUENTLY ASKED QUESTIONS
 
@@ -199,9 +202,9 @@ And here is rxvt-unicode:
 
    libX11.so.6 => /usr/X11R6/lib/libX11.so.6 (0x00002aaaaabc3000)
    libgcc_s.so.1 => /lib/libgcc_s.so.1 (0x00002aaaaada2000)
-   libc.so.6 => /lib/libc.so.6 (0x00002aaaaaeb0000)     
-   libdl.so.2 => /lib/libdl.so.2 (0x00002aaaab0ee000)   
-   /lib64/ld-linux-x86-64.so.2 (0x00002aaaaaaab000)     
+   libc.so.6 => /lib/libc.so.6 (0x00002aaaaaeb0000)
+   libdl.so.2 => /lib/libdl.so.2 (0x00002aaaab0ee000)
+   /lib64/ld-linux-x86-64.so.2 (0x00002aaaaaaab000)
 
 No large bloated libraries (of course, none were linked in statically),
 except maybe libX11 :)
@@ -211,17 +214,17 @@ except maybe libX11 :)
 
 =head3 I can't get transparency working, what am I doing wrong?
 
-First of all, please address all transparency related issues to Sasha Vasko at 
-sasha@aftercode.net and do not bug the author about it. Also, if you can't 
+First of all, please address all transparency related issues to Sasha Vasko at
+sasha@aftercode.net and do not bug the author about it. Also, if you can't
 get it working consider it a rite of passage: ... and you failed.
 
 Here are four ways to get transparency. B<Do> read the manpage and option
 descriptions for the programs mentioned and rxvt-unicode. Really, do it!
 
-1. Use inheritPixmap:
+1. Use transparent mode:
 
    Esetroot wallpaper.jpg
-   @@URXVT_NAME@@ -ip -tint red -sh 40
+   @@URXVT_NAME@@ -tr -tint red -sh 40
 
 That works. If you think it doesn't, you lack transparency and tinting
 support, or you are unable to read.
@@ -231,9 +234,9 @@ to use effects other than tinting and shading: Just shade/tint/whatever
 your picture with gimp or any other tool:
 
    convert wallpaper.jpg -blur 20x20 -modulate 30 background.jpg
-   @@URXVT_NAME@@ -pixmap background.jpg -pe automove-background
+   @@URXVT_NAME@@ -pixmap "background.jpg;:root"
 
-That works. If you think it doesn't, you lack AfterImage and Perl support, or you
+That works. If you think it doesn't, you lack AfterImage support, or you
 are unable to read.
 
 3. Use an ARGB visual:
@@ -343,10 +346,9 @@ If you want antialiasing, you have to specify the fonts manually.
 If no bold colour is set via C<colorBD:>, bold will invert text using the
 standard foreground colour.
 
-For the standard background colour, blinking will actually make the
-text blink when compiled with C<--enable-blinking>. with standard
-colours. Without C<--enable-blinking>, the blink attribute will be
-ignored.
+For the standard background colour, blinking will actually make
+the text blink when compiled with C<--enable-text-blink>. Without
+C<--enable-text-blink>, the blink attribute will be ignored.
 
 On ANSI colours, bold/blink attributes are used to set high-intensity
 foreground/background colors.
@@ -484,7 +486,7 @@ To get a selection that is very similar to the old code, try this pattern:
 
    URxvt.selection.pattern-0: ([^"&'()*,;<=>?@[\\\\]^`{|})]+)
 
-Please also note that the I<LeftClick Shift-LeftClik> combination also
+Please also note that the I<LeftClick Shift-LeftClick> combination also
 selects words like the old code.
 
 =head3 I don't like the new selection/popups/hotkeys/perl, how do I change/disable it?
@@ -612,7 +614,7 @@ key has been assigned an escape sequence to match the vt100 for Execute
 
 Some other Backspace problems:
 
-some editors use termcap/terminfo, 
+some editors use termcap/terminfo,
 some editors (vim I'm told) expect Backspace = ^H,
 GNU Emacs (and Emacs-like editors) use ^H for help.
 
@@ -1075,7 +1077,7 @@ method servers are running with this command:
 
    xprop -root XIM_SERVERS
 
-=item 
+=item
 
 =back
 
@@ -1812,8 +1814,8 @@ Toggle DEC Private Mode Values (rxvt extension). I<where>
 
 =begin table
 
-	B<< C<h> >>	scrollBar visisble
-	B<< C<l> >>	scrollBar invisisble
+	B<< C<h> >>	scrollBar visible
+	B<< C<l> >>	scrollBar invisible
 
 =end table
 
@@ -1978,6 +1980,15 @@ X<Priv66>
 
 =end table
 
+=item B<< C<Pm = 2004> >>
+
+=begin table
+
+	B<< C<h> >>	Enable bracketed paste mode - prepend / append to the pasted text the control sequences C<ESC [ 200 ~> / C<ESC [ 201 ~>
+	B<< C<l> >>	Disable bracketed paste mode
+
+=end table
+
 =back
 
 =back
@@ -2001,19 +2012,19 @@ B<octet> can be escaped by prefixing it with SYN (0x16, ^V).
 	B<< C<Ps = 2> >>	Change Window Title to B<< C<Pt> >>
 	B<< C<Ps = 3> >>	If B<< C<Pt> >> starts with a B<< C<?> >>, query the (STRING) property of the window and return it. If B<< C<Pt> >> contains a B<< C<=> >>, set the named property to the given value, else delete the specified property.
 	B<< C<Ps = 4> >>	B<< C<Pt> >> is a semi-colon separated sequence of one or more semi-colon separated B<number>/B<name> pairs, where B<number> is an index to a colour and B<name> is the name of a colour. Each pair causes the B<number>ed colour to be changed to B<name>. Numbers 0-7 corresponds to low-intensity (normal) colours and 8-15 corresponds to high-intensity colours. 0=black, 1=red, 2=green, 3=yellow, 4=blue, 5=magenta, 6=cyan, 7=white
-	B<< C<Ps = 10> >>	Change colour of text foreground to B<< C<Pt> >> B<(NB: may change in future)>
-	B<< C<Ps = 11> >>	Change colour of text background to B<< C<Pt> >> B<(NB: may change in future)>
+	B<< C<Ps = 10> >>	Change colour of text foreground to B<< C<Pt> >>
+	B<< C<Ps = 11> >>	Change colour of text background to B<< C<Pt> >>
 	B<< C<Ps = 12> >>	Change colour of text cursor foreground to B<< C<Pt> >>
 	B<< C<Ps = 13> >>	Change colour of mouse foreground to B<< C<Pt> >>
 	B<< C<Ps = 17> >>	Change colour of highlight characters to B<< C<Pt> >>
 	B<< C<Ps = 18> >>	Change colour of bold characters to B<< C<Pt> >> [deprecated, see 706]
 	B<< C<Ps = 19> >>	Change colour of underlined characters to B<< C<Pt> >> [deprecated, see 707]
 	B<< C<Ps = 20> >>	Change background pixmap parameters (see section BACKGROUND IMAGE) (Compile AfterImage).
-	B<< C<Ps = 39> >>	Change default foreground colour to B<< C<Pt> >>.
+	B<< C<Ps = 39> >>	Change default foreground colour to B<< C<Pt> >>. [deprecated, use 10]
 	B<< C<Ps = 46> >>	Change Log File to B<< C<Pt> >> I<unimplemented>
-	B<< C<Ps = 49> >>	Change default background colour to B<< C<Pt> >>.
+	B<< C<Ps = 49> >>	Change default background colour to B<< C<Pt> >>. [deprecated, use 11]
 	B<< C<Ps = 50> >>	Set fontset to B<< C<Pt> >>, with the following special values of B<< C<Pt> >> (B<rxvt>) B<< C<#+n> >> change up B<< C<n> >> B<< C<#-n> >> change down B<< C<n> >> if B<< C<n> >> is missing of 0, a value of 1 is used I<empty> change to font0 B<< C<n> >> change to font B<< C<n> >>
-	B<< C<Ps = 55> >>	Log all scrollback buffer and all of screen to B<< C<Pt> >>
+	B<< C<Ps = 55> >>	Log all scrollback buffer and all of screen to B<< C<Pt> >> [disabled]
 	B<< C<Ps = 701> >>	Change current locale to B<< C<Pt> >>, or, if B<< C<Pt> >> is B<< C<?> >>, return the current locale (Compile frills).
 	B<< C<Ps = 702> >>	Request version if B<< C<Pt> >> is B<< C<?> >>, returning C<rxvt-unicode>, the resource name, the major and minor version numbers, e.g. C<ESC ] 702 ; rxvt-unicode ; urxvt ; 7 ; 4 ST>.
 	B<< C<Ps = 704> >>	Change colour of italic characters to B<< C<Pt> >>
@@ -2034,7 +2045,7 @@ B<octet> can be escaped by prefixing it with SYN (0x16, ^V).
 
 =head1 BACKGROUND IMAGE
 
-For the BACGROUND IMAGE XTerm escape sequence B<< C<ESC ] 20 ; Pt ST> >> then value
+For the BACKGROUND IMAGE XTerm escape sequence B<< C<ESC ] 20 ; Pt ST> >> the value
 of B<< C<Pt> >> can be the name of the background image file followed by a
 sequence of scaling/positioning commands separated by semi-colons. The
 scaling/positioning commands are as follows:
@@ -2327,7 +2338,7 @@ disable resource fallback use --disable-fallback.
 Use the given name as default application name when
 reading resources. Specify --with-res-name=rxvt to replace rxvt.
 
-=item --with-res-class=CLASS /default: URxvt)
+=item --with-res-class=CLASS (default: URxvt)
 
 Use the given class as default application class
 when reading resources. Specify --with-res-class=Rxvt to replace
@@ -2367,8 +2378,7 @@ lowered if libAfterImage is configured without support for SVG.
 
 =item --enable-transparency (default: on)
 
-Add support for inheriting parent backgrounds thus giving a fake
-transparency to the term.
+Add support for backgrounds, creating illusion of transparency in the term.
 
 =item --enable-fading (default: on)
 
@@ -2385,17 +2395,6 @@ Add support for a NeXT-like scrollbar.
 =item --enable-xterm-scroll (default: on)
 
 Add support for an Xterm-like scrollbar.
-
-=item --enable-plain-scroll (default: on)
-
-Add support for a very unobtrusive, plain-looking scrollbar that
-is the favourite of the rxvt-unicode author, having used it for
-many years.
-
-=item --enable-ttygid (default: off)
-
-Change tty device setting to group "tty" - only use this if
-your system uses this type of security.
 
 =item --disable-backspace-key
 
@@ -2438,6 +2437,7 @@ in combination with other switches) is:
   XEmbed support (-embed)
   user-pty (-pty-fd)
   hold on exit (-hold)
+  compile in built-in block graphics
   skip builtin block graphics (-sbg)
   separate highlightcolor support (-hc)
 
@@ -2487,6 +2487,10 @@ requires --enable-mousewheel to also be specified.
 Add smart growth/shrink behaviour when resizing.
 This should keep the window corner which is closest to a corner of
 the screen in a fixed position.
+
+=item --enable-text-blink (default: on)
+
+Add support for blinking text.
 
 =item --enable-pointer-blank (default: on)
 

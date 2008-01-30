@@ -12,10 +12,11 @@
 #endif
 
 #if defined(BG_IMAGE_FROM_FILE) || defined(ENABLE_TRANSPARENCY)
-# define HAVE_BG_PIXMAP 1/* to simplify further usage */
-struct  bgPixmap_t {
-
-  bgPixmap_t();
+# define HAVE_BG_PIXMAP 1 /* to simplify further usage */
+struct bgPixmap_t
+{
+  bgPixmap_t ();
+  void destroy ();
 
   enum {
     geometrySet     = (1UL<<0),
@@ -28,12 +29,12 @@ struct  bgPixmap_t {
     tintServerSide  = (1UL<<11),
     tintFlags       = (tintSet|tintServerSide|tintNeeded|tintWholesome),
     blurNeeded      = (1UL<<12),
-    blurServerSide  = (1UL<<13), /* this don't work yet */
+    blurServerSide  = (1UL<<13), /* this doesn't work yet */
 
     isTransparent   = (1UL<<16),
     isInvalid       = (1UL<<17),
     isVtOrigin      = (1UL<<18),  /* if set pixmap has origin at corner of
-                                    vt window instead of parent[0]! */
+                                     vt window instead of parent[0]! */
     hasChanged      = (1UL<<19)
   };
 
@@ -44,17 +45,24 @@ struct  bgPixmap_t {
     transpPmapTinted = tintNeeded,
     transpPmapBlured = blurNeeded,
     transpTransformations = (tintNeeded|blurNeeded)
-  }; /* this flags are returned by make_transparency_pixmap if called */
+  }; /* these flags are returned by make_transparency_pixmap if called */
 
   bool check_clearChanged () { bool r = flags & hasChanged; flags &= ~hasChanged; return r; };
-  
+
 # ifdef  BG_IMAGE_FROM_FILE
 #  ifdef HAVE_AFTERIMAGE
   ASImage *original_asim;
   bool render_asim (ASImage *background, ARGB32 background_tint);
 #  endif
 
-  enum { defaultScale = 100, defaultAlign = 50 };
+  enum {
+    noScale = 0,
+    windowScale = 100,
+    defaultScale = windowScale,
+    centerAlign = 50,
+    defaultAlign = centerAlign,
+    rootAlign = -10000
+  };
 
   unsigned int h_scale, v_scale;/* percents of the window size */
   int h_align, v_align;         /* percents of the window size:
@@ -90,29 +98,29 @@ struct  bgPixmap_t {
 
   unsigned long make_transparency_pixmap ();/* returns combination of the transpTransformations flags */
 # endif
-  double invalid_since;
+  double invalid_since, valid_since;
 
   Pixmap pixmap;
   unsigned int pmap_width, pmap_height;
   unsigned int pmap_depth;
 
   bool window_size_sensitive ();
-  bool window_position_sensitive () {
-    return (flags & isTransparent);
-  };
+  bool window_position_sensitive ();
 
-  bool is_parentOrigin () {
+  bool is_parentOrigin ()
+  {
     return !(flags & isVtOrigin);
   };
 
   bool need_client_side_rendering ();
   void apply ();
   bool render ();
-  void invalidate () {
+  void invalidate ()
+  {
     if (!(flags & isInvalid))
-      { 
-        flags |= isInvalid; 
-        invalid_since = NOW;
+      {
+        flags |= isInvalid;
+        invalid_since = ev::now ();
       }
   };
 };
@@ -122,4 +130,4 @@ struct  bgPixmap_t {
 
 
 
-#endif	/* _BACKGROUND_H_ */
+#endif /* _BACKGROUND_H_ */

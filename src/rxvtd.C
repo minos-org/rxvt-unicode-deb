@@ -3,7 +3,7 @@
  *----------------------------------------------------------------------*
  *
  * All portions of code are copyright by their respective author/s.
- * Copyright (c) 2003-2006 Marc Lehmann <pcg@goof.com>
+ * Copyright (c) 2003-2007 Marc Lehmann <pcg@goof.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,23 +38,25 @@
 #include "rxvt.h"
 #include "rxvtdaemon.h"
 #include "libptytty.h"
-#include "iom.h"
 
 struct server : rxvt_connection {
   log_callback log_cb;
   getfd_callback getfd_cb;
 
-  void read_cb (io_watcher &w, short revents); io_watcher read_ev;
+  void read_cb (ev::io &w, int revents); ev::io read_ev;
   void log_msg (const char *msg);
   int getfd (int remote_fd);
 
   server (int fd)
-  : read_ev (this, &server::read_cb),
-    log_cb (this, &server::log_msg),
-    getfd_cb (this, &server::getfd)
   {
+    read_ev.set <server, &server::read_cb> (this);
+    log_cb.set  <server, &server::log_msg> (this);
+    getfd_cb.set<server, &server::getfd>   (this);
+
     this->fd = fd;
-    read_ev.start (fd, EVENT_READ);
+    fcntl (fd, F_SETFD, FD_CLOEXEC);
+    fcntl (fd, F_SETFL, 0);
+    read_ev.start (fd, ev::READ);
   }
 
   void err (const char *format = 0, ...);
@@ -63,16 +65,17 @@ struct server : rxvt_connection {
 struct unix_listener {
   int fd;
 
-  void accept_cb (io_watcher &w, short revents); io_watcher accept_ev;
+  void accept_cb (ev::io &w, int revents); ev::io accept_ev;
 
   unix_listener (const char *sockname);
 };
 
 unix_listener::unix_listener (const char *sockname)
-: accept_ev (this, &unix_listener::accept_cb)
 {
+  accept_ev.set<unix_listener, &unix_listener::accept_cb> (this);
+
   sockaddr_un sa;
-  
+
   if (strlen (sockname) >= sizeof(sa.sun_path))
     {
       fputs ("socket name too long, aborting.\n", stderr);
@@ -86,6 +89,7 @@ unix_listener::unix_listener (const char *sockname)
     }
 
   fcntl (fd, F_SETFD, FD_CLOEXEC);
+  fcntl (fd, F_SETFL, O_NONBLOCK);
 
   sa.sun_family = AF_UNIX;
   strcpy (sa.sun_path, sockname);
@@ -108,18 +112,15 @@ unix_listener::unix_listener (const char *sockname)
       exit (EXIT_FAILURE);
     }
 
-  accept_ev.start (fd, EVENT_READ);
+  accept_ev.start (fd, ev::READ);
 }
 
-void unix_listener::accept_cb (io_watcher &w, short revents)
+void unix_listener::accept_cb (ev::io &w, int revents)
 {
   int fd2 = accept (fd, 0, 0);
 
   if (fd2 >= 0)
-    {
-      fcntl (fd2, F_SETFD, FD_CLOEXEC);
-      new server (fd2);
-    }
+    new server (fd2);
 }
 
 int server::getfd (int remote_fd)
@@ -153,7 +154,7 @@ void server::err (const char *format, ...)
   delete this;
 }
 
-void server::read_cb (io_watcher &w, short revents)
+void server::read_cb (ev::io &w, int revents)
 {
   auto_str tok;
 
@@ -163,7 +164,7 @@ void server::read_cb (io_watcher &w, short revents)
         {
           stringvec *argv = new stringvec;
           stringvec *envv = new stringvec;
-           
+
           for (;;)
             {
               if (!recv (tok))
@@ -193,15 +194,15 @@ void server::read_cb (io_watcher &w, short revents)
 
           {
             rxvt_term *term = new rxvt_term;
-            
+
             term->log_hook = &log_cb;
             term->getfd_hook = &getfd_cb;
 
-            bool success;
-            
+            bool success = true;
+
             try
               {
-                success = term->init (argv, envv);
+                term->init (argv, envv);
               }
             catch (const class rxvt_failure_exception &e)
               {
@@ -246,7 +247,7 @@ main (int argc, const char *const *argv)
           return EXIT_FAILURE;
         }
     }
-  
+
   chdir ("/");
 
   if (opt_opendisplay)
@@ -274,9 +275,11 @@ main (int argc, const char *const *argv)
         }
       else if (pid > 0)
         _exit (EXIT_SUCCESS);
+
+      ev_default_fork ();
     }
 
-  io_manager::loop ();
+  ev_loop (0);
 
   return EXIT_SUCCESS;
 }

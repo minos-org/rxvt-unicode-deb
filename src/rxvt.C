@@ -46,13 +46,12 @@ try
 
     envv->push_back (0);
 
-    if (!t->init (args, envv))
+    t->init (args, envv);
 #else
-    if (!t->init (argc, argv, 0))
+    t->init (argc, argv, 0);
 #endif
-      return EXIT_FAILURE;
 
-    io_manager::loop ();
+    ev_loop (0);
 
     return EXIT_SUCCESS;
   }

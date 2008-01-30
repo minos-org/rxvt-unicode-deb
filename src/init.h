@@ -4,15 +4,6 @@
 #undef CERASE /* TODO */
 #define CERASE	'\010'	/* ^H */
 
-/* ways to deal with getting/setting termios structure */
-
-/* termios interface */
-#define GET_TERMIOS(fd,tios)	tcgetattr (fd, tios)
-#define SET_TERMIOS(fd,tios)		\
-      cfsetospeed (tios, BAUDRATE),	\
-      cfsetispeed (tios, BAUDRATE),	\
-      tcsetattr (fd, TCSANOW, tios)
-
 /* use the fastest baud-rate */
 #ifdef B38400
 # define BAUDRATE	B38400
@@ -99,4 +90,4 @@
 
 #define CONSOLE		"/dev/console"	/* console device */
 
-#endif	/* _INIT_H_ */
+#endif /* _INIT_H_ */

@@ -13,7 +13,7 @@
  * Copyright (c) 1997,1998 Oezguer Kesim <kesim@math.fu-berlin.de>
  * Copyright (c) 1998-2001 Geoff Wing <gcw@pobox.com>
  *                              - extensive modifications
- * Copyright (c) 2003-2006 Marc Lehmann <pcg@goof.com>
+ * Copyright (c) 2003-2008 Marc Lehmann <pcg@goof.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,9 +40,7 @@
 #include <csignal>
 #include <cstring>
 
-#ifdef HAVE_TERMIOS_H
-# include <termios.h>
-#endif
+#include <termios.h>
 
 #ifdef HAVE_XSETLOCALE
 # define X_LOCALE
@@ -95,7 +93,7 @@ class rxvt_composite_vec rxvt_composite;
 text_t rxvt_composite_vec::compose (unicode_t c1, unicode_t c2)
 {
   compose_char *cc;
-  
+
   // break compose chains, as stupid readline really likes to duplicate
   // composing characters for some reason near the end of a line.
   cc = (*this)[c1];
@@ -154,49 +152,46 @@ int rxvt_composite_vec::expand (unicode_t c, wchar_t *r)
 #endif
 
 rxvt_term::rxvt_term ()
-    :
-#if ENABLE_TRANSPARENCY || ENABLE_PERL
-    rootwin_ev (this, &rxvt_term::rootwin_cb),
-#endif
+{
 #if HAVE_BG_PIXMAP
-    update_background_ev(this, &rxvt_term::update_background_cb),
-#endif
-#ifdef HAVE_SCROLLBARS
-    scrollbar_ev (this, &rxvt_term::x_cb),
+  update_background_ev.set<rxvt_term, &rxvt_term::update_background_cb> (this);
 #endif
 #ifdef CURSOR_BLINK
-    cursor_blink_ev (this, &rxvt_term::cursor_blink_cb),
+  cursor_blink_ev.set     <rxvt_term, &rxvt_term::cursor_blink_cb> (this); cursor_blink_ev.set (0., CURSOR_BLINK_INTERVAL);
 #endif
 #ifdef TEXT_BLINK
-    text_blink_ev (this, &rxvt_term::text_blink_cb),
+  text_blink_ev.set       <rxvt_term, &rxvt_term::text_blink_cb>   (this); text_blink_ev.set (0., TEXT_BLINK_INTERVAL);
 #endif
 #ifndef NO_SCROLLBAR_BUTTON_CONTINUAL_SCROLLING
-    cont_scroll_ev (this, &rxvt_term::cont_scroll_cb),
+  cont_scroll_ev.set      <rxvt_term, &rxvt_term::cont_scroll_cb>  (this);
 #endif
 #ifdef SELECTION_SCROLLING
-    sel_scroll_ev (this, &rxvt_term::sel_scroll_cb),
+  sel_scroll_ev.set       <rxvt_term, &rxvt_term::sel_scroll_cb>   (this);
 #endif
 #if defined(MOUSE_WHEEL) && defined(MOUSE_SLIP_WHEELING)
-    slip_wheel_ev (this, &rxvt_term::slip_wheel_cb),
+  slip_wheel_ev.set       <rxvt_term, &rxvt_term::slip_wheel_cb>   (this);
+#endif
+#if ENABLE_TRANSPARENCY || ENABLE_PERL
+  rootwin_ev.set          <rxvt_term, &rxvt_term::rootwin_cb> (this),
+#endif
+  scrollbar_ev.set        <rxvt_term, &rxvt_term::x_cb>       (this),
+#ifdef USE_XIM
+  im_ev.set               <rxvt_term, &rxvt_term::im_cb>      (this),
 #endif
 #ifdef POINTER_BLANK
-    pointer_ev (this, &rxvt_term::pointer_cb),
+  pointer_ev.set          <rxvt_term, &rxvt_term::pointer_cb> (this);
 #endif
-#ifdef USE_XIM
-    im_ev (this, &rxvt_term::im_cb),
+#ifndef NO_BELL
+  bell_ev.set             <rxvt_term, &rxvt_term::bell_cb>    (this);
 #endif
-#ifndef NO_BELL     
-    bell_ev (this, &rxvt_term::bell_cb),
-#endif
-    termwin_ev (this, &rxvt_term::x_cb),
-    vt_ev (this, &rxvt_term::x_cb),
-    child_ev (this, &rxvt_term::child_cb),
-    check_ev (this, &rxvt_term::check_cb),
-    flush_ev (this, &rxvt_term::flush_cb),
-    destroy_ev (this, &rxvt_term::destroy_cb),
-    pty_ev (this, &rxvt_term::pty_cb),
-    incr_ev (this, &rxvt_term::incr_cb)
-{
+  child_ev.set            <rxvt_term, &rxvt_term::child_cb>   (this);
+  flush_ev.set            <rxvt_term, &rxvt_term::flush_cb>   (this);
+  destroy_ev.set          <rxvt_term, &rxvt_term::destroy_cb> (this);
+  pty_ev.set              <rxvt_term, &rxvt_term::pty_cb>     (this);
+  incr_ev.set             <rxvt_term, &rxvt_term::incr_cb>    (this);
+  termwin_ev.set          <rxvt_term, &rxvt_term::x_cb>       (this);
+  vt_ev.set               <rxvt_term, &rxvt_term::x_cb>       (this);
+
   cmdbuf_ptr = cmdbuf_endp = cmdbuf_base;
 
   termlist.push_back (this);
@@ -230,6 +225,10 @@ rxvt_term::~rxvt_term ()
       delete fontset[i];
 #endif
   delete fontset[0];
+
+#ifdef HAVE_BG_PIXMAP
+  bgPixmap.destroy ();
+#endif
 
   if (display)
     {
@@ -279,14 +278,10 @@ rxvt_term::~rxvt_term ()
           }
 
       clear ();
+
+      display->flush (); /* ideally .put should do this */
+      displays.put (display);
     }
-
-  delete [] pix_colors_focused;
-#if OFF_FOCUS_FADING
-  delete [] pix_colors_unfocused;
-#endif
-
-  displays.put (display);
 
   scr_release ();
 
@@ -308,11 +303,14 @@ rxvt_term::~rxvt_term ()
 #ifdef KEYSYM_RESOURCE
   delete keyboard;
 #endif
+#ifndef NO_RESOURCES
+  XrmDestroyDatabase (option_db);
+#endif
 }
 
 // child has exited, usually destroys
 void
-rxvt_term::child_cb (child_watcher &w, int status)
+rxvt_term::child_cb (ev::child &w, int status)
 {
   HOOK_INVOKE ((this, HOOK_CHILD_EXIT, DT_INT, status, DT_END));
 
@@ -325,7 +323,7 @@ rxvt_term::child_cb (child_watcher &w, int status)
 void
 rxvt_term::destroy ()
 {
-  if (destroy_ev.active)
+  if (destroy_ev.is_active ())
     return;
 
   HOOK_INVOKE ((this, HOOK_DESTROY, DT_END));
@@ -339,9 +337,7 @@ rxvt_term::destroy ()
 #if USE_XIM
       im_ev.stop (display);
 #endif
-#if HAVE_SCROLLBARS
       scrollbar_ev.stop (display);
-#endif
 #if ENABLE_TRANSPARENCY || ENABLE_PERL
       rootwin_ev.stop (display);
 #endif
@@ -350,7 +346,7 @@ rxvt_term::destroy ()
       vt_ev.stop (display);
     }
 
-  check_ev.stop ();
+  flush_ev.stop ();
   pty_ev.stop ();
 #ifdef CURSOR_BLINK
   cursor_blink_ev.stop ();
@@ -368,11 +364,11 @@ rxvt_term::destroy ()
   pointer_ev.stop ();
 #endif
 
-  destroy_ev.start (0);
+  destroy_ev.start ();
 }
 
 void
-rxvt_term::destroy_cb (time_watcher &w)
+rxvt_term::destroy_cb (ev::idle &w, int revents)
 {
   make_current ();
 
@@ -436,7 +432,7 @@ print_x_error (Display *dpy, XErrorEvent *event)
 				  mesg, BUFSIZ);
 	rxvt_warn (strncat (mesg, "\n", BUFSIZ), event->resourceid);
     }
-    XGetErrorDatabaseText(dpy, mtype, "ErrorSerial", "Error Serial #%d", 
+    XGetErrorDatabaseText(dpy, mtype, "ErrorSerial", "Error Serial #%d",
 			  mesg, BUFSIZ);
     rxvt_warn (strncat (mesg, "\n", BUFSIZ), event->serial);
 }
@@ -470,146 +466,29 @@ rxvt_xioerror_handler (Display *display)
   _exit (EXIT_FAILURE);
 }
 
-/*----------------------------------------------------------------------*/
-bool
-rxvt_term::init (int argc, const char *const *argv, stringvec *envv)
-{
-  this->envv = envv;
-
-  SET_R (this);
-  set_locale ("");
-  set_environ (envv); // few things in X do not call setlocale :(
-
-  if (!init_vars ())
-    return false;
-
-  init_secondary ();
-
-  const char **cmd_argv = init_resources (argc, argv);
-
-#ifdef KEYSYM_RESOURCE
-  keyboard->register_done ();
-#endif
-
-#ifdef HAVE_SCROLLBARS
-  if (option (Opt_scrollBar))
-    scrollBar.setIdle ();    /* set existence for size calculations */
-#endif
-
-  pty = ptytty::create ();
-
-  create_windows (argc, argv);
-
-  init_xlocale ();
-
-  scr_reset (); // initialize screen
-
-#if 0
-  XSynchronize (dpy, True);
-#endif
-
-#ifdef HAVE_SCROLLBARS
-  if (option (Opt_scrollBar))
-    resize_scrollbar ();      /* create and map scrollbar */
-#endif
-#ifdef HAVE_BG_PIXMAP
-  {
-    bgPixmap.set_target (this);
-
-#ifdef ENABLE_TRANSPARENCY
-    if (option (Opt_transparent))
-      {
-        bgPixmap.set_transparent ();
-#ifdef HAVE_AFTERIMAGE        
-        if (rs [Rs_blurradius])
-          bgPixmap.set_blur_radius (rs [Rs_blurradius]);
-#endif          
-        if (ISSET_PIXCOLOR (Color_tint))
-          bgPixmap.set_tint (pix_colors_focused [Color_tint]);
-        if (rs [Rs_shade])
-          bgPixmap.set_shade (rs [Rs_shade]);
-
-        bgPixmap.set_root_pixmap ();
-        XSelectInput (dpy, display->root, PropertyChangeMask);
-        rootwin_ev.start (display, display->root);
-      }
-#endif
-
-#ifdef BG_IMAGE_FROM_FILE
-    if (rs[Rs_backgroundPixmap] != NULL)
-      {
-        const char *p = rs[Rs_backgroundPixmap];
-
-        if ((p = strchr (p, ';')) != NULL)
-          {
-            p++;
-            bgPixmap.set_geometry (p);
-          }
-        else
-          bgPixmap.set_defaultGeometry ();
-
-        if (bgPixmap.set_file (rs[Rs_backgroundPixmap]))
-          if (!bgPixmap.window_position_sensitive ())
-            update_background ();
-      }
-#endif
-  }
-#endif
-
-#if ENABLE_PERL
-  rootwin_ev.start (display, display->root);
-#endif
-
-  set_colorfgbg ();
-
-  init_command (cmd_argv);
-
-  free (cmd_argv);
-
-  if (pty->pty >= 0)
-    pty_ev.start (pty->pty, EVENT_READ);
-
-  check_ev.start ();
-
-  HOOK_INVOKE ((this, HOOK_START, DT_END));
-
-#if ENABLE_XEMBED
-  if (rs[Rs_embed])
-    {
-      long info[2] = { 0, XEMBED_MAPPED };
-
-      XChangeProperty (dpy, parent[0], xa[XA_XEMBED_INFO], xa[XA_XEMBED_INFO],
-                       32, PropModeReplace, (unsigned char *)&info, 2);
-    }
-#endif
-
-  XMapWindow (dpy, vt);
-  XMapWindow (dpy, parent[0]);
-
-  return true;
-}
-
 static struct sig_handlers
 {
-  sig_watcher sw_term, sw_int;
-  
+  ev::sig sw_term, sw_int;
+
   /*
    * Catch a fatal signal and tidy up before quitting
    */
-  void
-  sig_term (sig_watcher &w)
-  {
-    rxvt_emergency_cleanup ();
-    signal (w.signum, SIG_DFL);
-    kill (getpid (), w.signum);
-  }
+  void sig_term (ev::sig &w, int revents);
 
   sig_handlers ()
-  : sw_term (this, &sig_handlers::sig_term),
-    sw_int  (this, &sig_handlers::sig_term)
   {
+    sw_term.set<sig_handlers, &sig_handlers::sig_term> (this);
+    sw_int .set<sig_handlers, &sig_handlers::sig_term> (this);
   }
 } sig_handlers;
+
+void
+sig_handlers::sig_term (ev::sig &w, int revents)
+{
+  rxvt_emergency_cleanup ();
+  w.stop ();
+  kill (getpid (), w.signum);
+}
 
 char **rxvt_environ; // startup environment
 
@@ -618,13 +497,16 @@ rxvt_init ()
 {
   ptytty::init ();
 
+  if (!ev_default_loop (0))
+    rxvt_fatal ("cannot initialise libev (bad value for LIBEV_METHODS?)\n");
+
   rxvt_environ = environ;
 
   signal (SIGHUP,  SIG_IGN);
   signal (SIGPIPE, SIG_IGN);
 
-  sig_handlers.sw_term.start (SIGTERM);
-  sig_handlers.sw_int.start  (SIGINT);
+  sig_handlers.sw_term.start (SIGTERM); ev_unref ();
+  sig_handlers.sw_int.start  (SIGINT);  ev_unref ();
 
   /* need to trap SIGURG for SVR4 (Unixware) rlogin */
   /* signal (SIGURG, SIG_DFL); */
@@ -634,42 +516,6 @@ rxvt_init ()
   XSetIOErrorHandler (rxvt_xioerror_handler);
 
   XrmInitialize ();
-}
-
-/* ------------------------------------------------------------------------- *
- *                         MEMORY ALLOCATION WRAPPERS                        *
- * ------------------------------------------------------------------------- */
-void *
-rxvt_malloc (size_t size)
-{
-  void *p = malloc (size);
-
-  if (!p)
-    rxvt_fatal ("memory allocation failure. aborting.\n");
-
-  return p;
-}
-
-void *
-rxvt_calloc (size_t number, size_t size)
-{
-  void *p = calloc (number, size);
-
-  if (!p)
-    rxvt_fatal ("memory allocation failure. aborting.\n");
-
-  return p;
-}
-
-void *
-rxvt_realloc (void *ptr, size_t size)
-{
-  void *p = realloc (ptr, size);
-
-  if (!p)
-    rxvt_fatal ("memory allocation failure. aborting.\n");
-
-  return p;
 }
 
 /*----------------------------------------------------------------------*/
@@ -820,7 +666,7 @@ rxvt_term::tt_winch ()
   (void)ioctl (pty->pty, TIOCSWINSZ, &ws);
 
 #if 0
-  // TIOCSWINSZ⎈ is supposed to do this automatically and correctly
+  // TIOCSWINSZ is supposed to do this automatically and correctly
   if (cmd_pid)               /* force through to the command */
     kill (-cmd_pid, SIGWINCH);
 #endif
@@ -904,7 +750,7 @@ rxvt_term::set_fonts ()
       resize_all_windows (0, 0, 0);
       scr_remap_chars ();
       scr_touch (true);
-    }   
+    }
 
   return true;
 }
@@ -958,7 +804,7 @@ rxvt_term::set_window_color (int idx, const char *color)
 #ifdef XTERM_COLOR_CHANGE
   rxvt_color xcol;
   int i;
-  
+
   if (color == NULL || *color == '\0')
     return;
 
@@ -972,14 +818,15 @@ rxvt_term::set_window_color (int idx, const char *color)
       i = atoi (color);
 
       if (i >= 8 && i <= 15)
-        {        /* bright colors */
-          i -= 8;
-          pix_colors_focused[idx] = pix_colors_focused[minBrightCOLOR + i];
+        {
+          /* bright colors */
+          pix_colors_focused[idx] = pix_colors_focused[minBrightCOLOR + i - 8];
           goto done;
         }
 
       if (i >= 0 && i <= 7)
-        { /* normal colors */
+        {
+          /* normal colors */
           pix_colors_focused[idx] = pix_colors_focused[minCOLOR + i];
           goto done;
         }
@@ -994,15 +841,13 @@ rxvt_term::set_window_color (int idx, const char *color)
 
   pix_colors_focused[idx] = xcol;
 
-  /* XSetWindowAttributes attr; */
-  /* Cursor cursor; */
 done:
   /*TODO: handle Color_BD, scrollbar background, etc. */
 
   update_fade_color (idx);
   recolour_cursor ();
   scr_recolour ();
-#endif                          /* XTERM_COLOR_CHANGE */
+#endif /* XTERM_COLOR_CHANGE */
 }
 
 void
@@ -1029,7 +874,7 @@ void
 rxvt_term::set_colorfgbg ()
 {
   unsigned int i;
-  const char *xpmb = "\0";
+  const char *xpmb = "";
   char fstr[sizeof ("default") + 1], bstr[sizeof ("default") + 1];
 
   strcpy (fstr, "default");
@@ -1349,7 +1194,7 @@ xim_preedit_draw (XIC ic, XPointer client_data, XIMPreeditDrawCallbackStruct *ca
         }
       else
         str = (void *)text->string.wide_char;
-      
+
       HOOK_INVOKE ((term, HOOK_XIM_PREEDIT_DRAW,
                     DT_INT, call_data->caret,
                     DT_INT, call_data->chg_first,
@@ -1678,7 +1523,7 @@ rxvt_term::IMSetPosition ()
     {
       im_set_size (preedit_rect);
       preedit_attr = XVaCreateNestedList (0, XNArea, &preedit_rect, NULL);
-    
+
       XSetICValues (Input_Context,
                     XNPreeditAttributes, preedit_attr, NULL);
     }
@@ -1705,14 +1550,14 @@ rxvt_term::IMSetPosition ()
 
    XFree (preedit_attr);
 }
-#endif                          /* USE_XIM */
+#endif /* USE_XIM */
 
 void
 rxvt_term::get_window_origin (int &x, int &y)
 {
   Window cr;
   XTranslateCoordinates (dpy, parent[0], display->root, 0, 0, &x, &y, &cr);
-/*  fprintf( stderr, "origin is %+d%+d\n", x, y);*/
+/*  fprintf (stderr, "origin is %+d%+d\n", x, y);*/
 }
 
 Pixmap
@@ -1729,39 +1574,47 @@ rxvt_term::get_pixmap_property (int prop_id)
                                          0L, 1L, False, XA_PIXMAP, &atype, &aformat,
                                          &nitems, &bytes_after, &prop);
         if (result == Success && prop && atype == XA_PIXMAP)
-          {
-            return *(Pixmap *)prop;
-          }
+          return *(Pixmap *)prop;
       }
+
   return None;
 }
 
 #ifdef HAVE_BG_PIXMAP
-int
+# if TRACE_PIXMAPS
+#  undef update_background
+void
+rxvt_term::trace_update_background (const char *file, int line)
+{
+  fprintf (stderr, "%s:%d:update_background()\n", file, line);
+  update_background ();
+}
+# endif
+
+void
 rxvt_term::update_background ()
 {
+  if (update_background_ev.is_active ())
+    return;
+
   bgPixmap.invalidate ();
 
-  /* no chance of real time refresh if we are blurring ! */
-  if (bgPixmap.invalid_since + 0.5 < NOW && !(bgPixmap.flags & bgPixmap_t::blurNeeded))
+  ev_tstamp to_wait = 0.5 - (ev::now () - bgPixmap.valid_since);
+
+  if (to_wait <= 0.)
     bgPixmap.render ();
   else
-    {
-      update_background_ev.stop ();
-      if (!bgPixmap.need_client_side_rendering())
-        update_background_ev.start (NOW + .05);
-      else if (bgPixmap.flags & bgPixmap_t::blurNeeded)
-        update_background_ev.start (NOW + .2); /* very slow !!! */
-      else
-        update_background_ev.start (NOW + .07);
-    }
-  return 0;
+    update_background_ev.start (to_wait);
 }
 
 void
-rxvt_term::update_background_cb (time_watcher &w)
+rxvt_term::update_background_cb (ev::timer &w, int revents)
 {
+  make_current ();
+
+  update_background_ev.stop ();
   bgPixmap.render ();
+  refresh_check ();
 }
 
 #endif /* HAVE_BG_PIXMAP */

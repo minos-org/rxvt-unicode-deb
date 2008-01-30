@@ -13,12 +13,10 @@ dnl RXVT version
 changequote(, )dnl
 VERSION=`sed -n -e 's/^.*[ \t]VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 DATE=`sed -n -e 's/^.*[ \t]DATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-dnl LIBVERSION=`sed -n -e 's/^.*[ \t]LIBVERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 changequote([, ])dnl
 AC_SUBST(VERSION)dnl
 AC_SUBST(DATE)dnl
-AC_SUBST(LSMDATE)dnl
-AC_SUBST(LIBVERSION)dnl
+
 echo ""
 echo "configuring for rxvt $VERSION"
 echo ""
@@ -26,14 +24,13 @@ echo ""
 orig_CXXFLAGS="$CXXFLAGS"
 
 dnl# Checks for programs.
-dnl AC_MAKE_SET
-
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CPP
 AC_PROG_INSTALL
 
 AC_AIX
+AC_GNU_SOURCE
 AC_ISC_POSIX
 AC_LANG(C++)
 
@@ -64,7 +61,7 @@ dnl# Supply default CXXFLAGS, if not specified by `CXXFLAGS=flags ./configure'
 dnl#
 if test -z "$orig_CXXFLAGS"; then
   if test x$GCC = xyes && test "x$GXX" = xyes; then
-     CXXFLAGS="-g -O3 -fno-threadsafe-statics -fno-enforce-eh-specs"
+    CXXFLAGS="-g -O3 -fno-rtti -fvisibility-inlines-hidden -fno-threadsafe-statics -fno-enforce-eh-specs"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])], [], [CXXFLAGS="-g -O3"])
   else
     CXXFLAGS="-O"
@@ -72,17 +69,11 @@ if test -z "$orig_CXXFLAGS"; then
   CFLAGS="$CXXFLAGS"
 fi
 
-AC_DEFINE(_GNU_SOURCE, 1, Use all glibc features.)
-
 case $host in
    *-*-solaris* )
       AC_DEFINE(_XOPEN_SOURCE, 500, Needed to get declarations for msg_control and msg_controllen on Solaris)
       ;;
 esac
-
-dnl if test x$GXX = xyes; then
-dnl    CXXFLAGS="$CXXFLAGS" dnl I once had -fno-exceptions, but I am using them now...
-dnl fi
 
 dnl# FreeBSD needs to link libxpg4
 AC_CHECK_FUNC(setlocale,     [], [AC_CHECK_LIB(xpg4,   setlocale,     [LIBS="$LIBS -lxpg4"])])
@@ -90,10 +81,6 @@ AC_CHECK_FUNC(setlocale,     [], [AC_CHECK_LIB(xpg4,   setlocale,     [LIBS="$LI
 dnl# solaris needs to link libnsl and socket
 AC_CHECK_FUNC(gethostbyname, [], [AC_CHECK_LIB(nsl,    gethostbyname, [LIBS="$LIBS -lnsl"])])
 AC_CHECK_FUNC(socket,        [], [AC_CHECK_LIB(socket, socket,        [LIBS="$LIBS -lsocket"])])
-
-dnl AC_ENABLE_SHARED(no)dnl#	libtool
-dnl AC_ENABLE_STATIC(yes)dnl#	libtool
-dnl AC_PROG_LIBTOOL()dnl#		libtool
 
 support_frills=yes
 support_inheritpixmap=yes
@@ -107,7 +94,6 @@ support_pointer_blank=yes
 support_scroll_rxvt=yes
 support_scroll_next=yes
 support_scroll_xterm=yes
-support_scroll_plain=yes
 support_xim=yes
 support_afterimage=yes
 support_afterstep=yes
@@ -124,16 +110,9 @@ dnl# --------------------------------------------------------------------------
 dnl# CHECKING COMMAND LINE OPTIONS
 dnl# --------------------------------------------------------------------------
 
-if test "x$enable_shared" = xyes; then
-    AC_DEFINE(LIBRXVT, 1, Build shared library version - specify via configure only)
-    INSTALL_LIBRXVT=yes
-fi
-AC_SUBST(INSTALL_LIBRXVT)
-
 AC_ARG_ENABLE(everything,
   [  --enable-everything     enable standard non-multichoice features
-                     NOTE: this option is order dependent
-                     NOTE: automatically enabled with --enable-shared],
+                          NOTE: this option is order dependent],
   [
     if test x$enableval = xno; then
        support_frills=no
@@ -149,7 +128,6 @@ AC_ARG_ENABLE(everything,
        support_scroll_rxvt=no
        support_scroll_next=no
        support_scroll_xterm=no
-       support_scroll_plain=no
        support_utmp=no
        support_wtmp=no
        support_xim=no
@@ -178,7 +156,6 @@ AC_ARG_ENABLE(everything,
        support_scroll_rxvt=yes
        support_scroll_next=yes
        support_scroll_xterm=yes
-       support_scroll_plain=yes
        support_utmp=yes
        support_wtmp=yes
        support_xim=yes
@@ -194,6 +171,22 @@ AC_ARG_ENABLE(everything,
        codesets=all
     fi
   ])
+
+WARNINGS=no
+AC_ARG_ENABLE(warnings,
+  [  --enable-warnings       turn on g++ warnings],
+  [if test x$enableval = xyes; then
+    WARNINGS=yes
+  fi])
+if test x$GXX = xyes; then
+  if test $WARNINGS = yes; then
+    save_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS -Wall -Wno-sign-compare -Wno-reorder -Wno-non-virtual-dtor"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])], [], [CXXFLAGS="$save_CXXFLAGS"])
+  else
+    CXXFLAGS="$CXXFLAGS -w"
+  fi
+fi
 
 AC_ARG_ENABLE(unicode3,
   [  --enable-unicode3       use 21 instead of 16 bits to represent unicode characters],
@@ -220,7 +213,7 @@ AC_ARG_ENABLE(font-styles,
   fi])
 
 AC_ARG_ENABLE(afterimage,
-  [  --enable-afterimage enable integration with libAfterImage for background images],
+  [  --enable-afterimage     enable integration with libAfterImage for background images],
   [if test x$enableval = xyes -o x$enableval = xno; then
     support_afterimage=$enableval
   fi])
@@ -273,14 +266,8 @@ AC_ARG_ENABLE(perl,
     support_perl=$enableval
   fi])
 
-AC_ARG_ENABLE(plain-scroll,
-  [  --enable-plain-scroll   enable plain style scrollbar],
-  [if test x$enableval = xyes -o x$enableval = xno; then
-    support_scroll_plain=$enableval
-  fi])
-
 AC_ARG_WITH(codesets,
-  [  --with-codesets=CS,... compile in additional codesets (jp,jp_ext,kr,zh,zh_ext,all)],
+  [  --with-codesets=CS,...  compile in additional codesets (jp,jp_ext,kr,zh,zh_ext,all)],
   [codesets="$withval"])
 
 AC_ARG_ENABLE(xim,
@@ -421,20 +408,12 @@ AC_ARG_WITH(terminfo,
 
 dnl# --------------------------------------------------------------------------
 
+LIBEV_M4_AVOID_LIBRT=1
+m4_include([libev/libev.m4])
+
+dnl# --------------------------------------------------------------------------
+
 AC_PATH_PROG(TIC, tic, :)
-
-dnl# need a neat way to detect SVR4 or its features
-dnl# in src/command.c we use these functions:
-dnl# grantpt(), unlockpt(), ptsname(), which are defined in <sys/ptms.h>
-dnl# - but are these also defined for other systems?
-
-dnl# hack to find if this is SVR4 -- who knows?
-dnl## AC_MSG_CHECKING(for SVR4)
-dnl## AC_EGREP_CPP(yes,
-dnl## [#if defined (SVR4) || defined (_SVR4) || defined (__svr4__)
-dnl##   yes;
-dnl## #endif
-dnl## ], [AC_MSG_RESULT(yes); AC_DEFINE(PERHAPS_SVR4)], AC_MSG_RESULT(perhaps not?))
 
 AC_PATH_XTRA
 
@@ -476,36 +455,15 @@ fi
 dnl# --------------------------------------------------------------------------
 dnl# CHECKING FOR HEADER FILES
 dnl# --------------------------------------------------------------------------
-AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS( \
-	assert.h \
-	fcntl.h \
-	stdarg.h \
-	stdlib.h \
-	string.h \
-	termios.h \
-	unistd.h \
 	sys/byteorder.h \
 	sys/ioctl.h \
-	sys/select.h \
 	sys/sockio.h \
 	sys/strredir.h \
-	sys/time.h \
 	stdint.h \
 	wchar.h \
 	cwchar \
-	clocale \
 )
-
-AC_HEADER_TIME
-
-dnl# check to allow both <termios.h> and <sys/ioctl.h>
-AC_CACHE_CHECK(whether termios.h and sys/ioctl.h may both be included, rxvt_cv_header_sysioctl,
-[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>
-#include <sys/ioctl.h>
-#ifdef HAVE_TERMIOS_H
-#include <termios.h>
-#endif]], [[int a = ECHO;]])],[rxvt_cv_header_sysioctl=yes],[rxvt_cv_header_sysioctl=no])])
 
 AC_CACHE_CHECK([for XPointer], rxvt_cv_xpointer,
 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <X11/Xlib.h>]], [[XPointer dummy;]])],[rxvt_cv_xpointer=yes],[rxvt_cv_xpointer=no])])
@@ -528,137 +486,33 @@ if test x$rxvt_xlib_illegal_access = xyes; then
    AC_DEFINE(XLIB_ILLEGAL_ACCESS, 1, Define ONLY iff Xlib.h supports it)
 fi
 
-AC_C_CONST
-AC_C_INLINE
-
-dnl> AC_HEADER_STDC	 dnl# skip this test, Sun always fails anyhow.
-
 dnl# --------------------------------------------------------------------------
 dnl# CHECKING FOR MISSING TYPEDEFS
 dnl# --------------------------------------------------------------------------
 dnl# Missing typedefs and replacements
 AC_TYPE_MODE_T
-dnl> AC_CHECK_TYPE(umode_t, int)
-dnl> AC_CHECK_TYPE(off_t, long)
 AC_TYPE_PID_T
 AC_TYPE_UID_T
-
-AC_CHECK_SIZEOF(short, 2)
-AC_CHECK_SIZEOF(int, 4)
-dnl AC_CHECK_SIZEOF(long, 4)
-AC_CHECK_SIZEOF(long long, 8)
-AC_CHECK_SIZEOF(int *, 4)
-
-dnl# see usage below
-AC_DEFUN([RXVT_CHECK_SIZE],
-  [AC_CACHE_CHECK([for $2], $1,
-    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdint.h>]], [[$2 dummy;]])],[$1=yes],[dnl
-if test "$ac_cv_sizeof_char" -ge $3; then
-  $1="$4 char"
-else
-  if test "$ac_cv_sizeof_short" -ge $3; then
-    $1="$4 short"
-  else
-    if test "$ac_cv_sizeof_int" -ge $3; then
-      $1="$4 int"
-    else
-      if test "$ac_cv_sizeof_long" -ge $3; then
-        $1="$4 long"
-      else
-        if test "$ac_cv_sizeof_long_long" -ge $3; then
-          $1="$4 long long"
-        else
-          $1="$4 $5" # we _must_ have a (possibly wrong) default
-        fi
-      fi
-    fi
-  fi
-fi])])]
-if test x"$$1" != xyes; then
-  $6="typedef $$1 $2;"
-else
-  if test x"$4" = x; then
-    $6="/* typedef $5 $2; */"
-  else
-    $6="/* typedef $4 $5 $2; */"
-  fi
-fi dnl
-)
-dnl#
-dnl# Look for types the system may know about anyway.
-dnl#
-RXVT_CHECK_SIZE(rxvt_cv_int16_t, int16_t, 2, , short, rxvt_int16_typedef)
-AC_SUBST(rxvt_int16_typedef)
-RXVT_CHECK_SIZE(rxvt_cv_uint16_t, uint16_t, 2, unsigned, short, rxvt_uint16_typedef)
-AC_SUBST(rxvt_uint16_typedef)
-RXVT_CHECK_SIZE(rxvt_cv_int32_t, int32_t, 4, , int, rxvt_int32_typedef)
-AC_SUBST(rxvt_int32_typedef)
-RXVT_CHECK_SIZE(rxvt_cv_uint32_t, uint32_t, 4, unsigned, int, rxvt_uint32_typedef)
-AC_SUBST(rxvt_uint32_typedef)
-dnl RXVT_CHECK_SIZE(rxvt_cv_int64_t, int64_t, 8, , long long, rxvt_int64_typedef)
-dnl AC_SUBST(rxvt_int64_typedef)
-dnl RXVT_CHECK_SIZE(rxvt_cv_uint64_t, uint64_t, 8, unsigned, long long, rxvt_uint64_typedef)
-dnl AC_SUBST(rxvt_uint64_typedef)
-dnl#
-dnl# Now look for another we use
-dnl#
-if test "$ac_cv_sizeof_int_p" -eq 8; then
-  rxvt_intp_define="#define intp_t int64_t"
-  rxvt_u_intp_define="#define u_intp_t u_int64_t"
-else
-  if test "$ac_cv_sizeof_int_p" -eq 4; then
-    rxvt_intp_define="#define intp_t int32_t"
-    rxvt_u_intp_define="#define u_intp_t u_int32_t"
-  else
-    if test "$ac_cv_sizeof_int_p" -eq 2; then
-      rxvt_intp_define="#define intp_t int16_t"
-      rxvt_u_intp_define="#define u_intp_t u_int16_t"
-    else
-      rxvt_intp_define="#error set intp_t"
-      rxvt_u_intp_define="#error set u_intp_t"
-    fi
-  fi
-fi
-AC_SUBST(rxvt_intp_define)
-AC_SUBST(rxvt_u_intp_define)
+AC_TYPE_INT16_T
+AC_TYPE_UINT16_T
+AC_TYPE_INT32_T
+AC_TYPE_UINT32_T
 
 dnl# --------------------------------------------------------------------------
 dnl# CHECKING FOR LIBRARY FUNCTIONS
 dnl# --------------------------------------------------------------------------
-AC_TYPE_SIGNAL
-dnl> AC_FUNC_VPRINTF
-
-AC_CHECK_FUNCS( \
-	unsetenv \
-	setutent \
-	on_exit \
-)
+AC_CHECK_FUNCS(unsetenv)
 
 UTMP_CHECK
 
 dnl# --------------------------------------------------------------------------
 
-dnl# find ttys/ttytab
-AC_CACHE_CHECK(where ttys/ttytab is located, rxvt_cv_path_ttytab,
-[for ttys_file in   dnl
-  /etc/ttys /etc/ttytab;
-do
-  if test -f "$ttys_file" ; then
-    rxvt_cv_path_ttytab=$ttys_file
-    break
-  fi
-done
-])
-if test x$rxvt_cv_path_ttytab != x; then
-  AC_DEFINE_UNQUOTED(TTYTAB_FILENAME, "$rxvt_cv_path_ttytab", Define location of ttys/ttytab)
-fi
-
 dnl# --------------------------------------------------------------------------
 dnl# --------------------------------------------------------------------------
 
 dnl# this is a really hack test for some basic Xlocale stuff
-ac_save_LIBS=$LIBS
-ac_save_CFLAGS=$CFLAGS
+save_LIBS=$LIBS
+save_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS $X_CFLAGS"
 LIBS="$LIBS $X_LIBS $X_EXTRA_LIBS -lX11"
 if test x$support_xim = xyes; then
@@ -699,8 +553,8 @@ AC_CACHE_CHECK(for working X setlocale, rxvt_cv_func_xsetlocale,
 if test x$rxvt_cv_func_xsetlocale = xyes; then
   AC_DEFINE(HAVE_XSETLOCALE, 1, Define if setlocale (defined to Xsetlocale) works)
 fi
-LIBS=$ac_save_LIBS
-CFLAGS=$ac_save_CFLAGS
+LIBS=$save_LIBS
+CFLAGS=$save_CFLAGS
 
 AC_CACHE_CHECK(for working plain setlocale, rxvt_cv_func_setlocale,
 [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <clocale>]], [[setlocale(LC_CTYPE, "");]])],[rxvt_cv_func_setlocale=yes],[rxvt_cv_func_setlocale=no])])
@@ -726,18 +580,21 @@ dnl# --------------------------------------------------------------------------
 if test x$support_xft = xyes; then
   AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
   if test $PKG_CONFIG != no && $PKG_CONFIG --exists xft; then
-    LIBS="$LIBS `$PKG_CONFIG xft --libs`"
+    X_LIBS="`$PKG_CONFIG xft --libs` $X_LIBS"
     CPPFLAGS="$CPPFLAGS `$PKG_CONFIG xft --cflags`"
   else
     AC_PATH_PROG(XFT_CONFIG, xft-config, no)
     if test $XFT_CONFIG != no; then
-      LIBS="$LIBS `$XFT_CONFIG --libs`"
+      X_LIBS="`$XFT_CONFIG --libs` $X_LIBS"
       CPPFLAGS="$CPPFLAGS `$XFT_CONFIG --cflags`"
     fi
   fi
 
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $X_LIBS"
   AC_CHECK_HEADERS(X11/Xft/Xft.h,,[support_xft=no])
-  AC_CHECK_LIB(Xft,XftDrawString32,,[support_xft=no])
+  AC_CHECK_LIB(Xft,XftDrawString32,:,[support_xft=no])
+  LIBS="$save_LIBS"
 
   if test x$support_xft = xyes; then
     AC_DEFINE(XFT, 1, Define to enable xft support)
@@ -782,9 +639,12 @@ dnl if test x$support_afterstep = xyes; then
 dnl   AC_DEFINE(AFTERSTEP_INTEGRATION, 1, Define if you want to integrate with AfterStep window manager)
 dnl fi
 
+scrolltypes=plain
+AC_DEFINE(PLAIN_SCROLLBAR, 1, Support plain style scrollbars)
+
 if test x$support_scroll_rxvt = xyes; then
   AC_DEFINE(RXVT_SCROLLBAR, 1, Support Rxvt original style scrollbars)
-  scrolltypes="rxvt"
+  scrolltypes="$scrolltypes rxvt"
 fi
 if test x$support_scroll_next = xyes; then
   AC_DEFINE(NEXT_SCROLLBAR, 1, Support NeXT style scrollbars)
@@ -793,10 +653,6 @@ fi
 if test x$support_scroll_xterm = xyes; then
   AC_DEFINE(XTERM_SCROLLBAR, 1, Support Xterm style scrollbars)
   scrolltypes="$scrolltypes xterm"
-fi
-if test x$support_scroll_plain = xyes; then
-  AC_DEFINE(PLAIN_SCROLLBAR, 1, Support plain style scrollbars)
-  scrolltypes="$scrolltypes plain"
 fi
 if test x$support_pointer_blank = xyes; then
   AC_DEFINE(POINTER_BLANK, 1, Define if you want hide the pointer while typing)
@@ -837,13 +693,13 @@ if test x$support_perl = xyes; then
      save_LIBS="$LIBS"
      CXXFLAGS="$CXXFLAGS `$PERL -MExtUtils::Embed -e ccopts`"
      LIBS="$LIBS `$PERL -MExtUtils::Embed -e ldopts`"
-     AC_TRY_LINK([
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
-],[
+]], [[
      PerlInterpreter *perl = perl_alloc ();
-],[rxvt_perl_link=yes],[rxvt_perl_link=no])
+]])],[rxvt_perl_link=yes],[rxvt_perl_link=no])
      CXXFLAGS="$save_CXXFLAGS"
      LIBS="$save_LIBS"
 
@@ -884,35 +740,9 @@ AC_SUBST(AFTERIMAGE_LIBS)
 
 AC_ARG_PROGRAM
 
-dnl# test for "sun" or "__sun__" before include sys_ioctl
-
-dnl# revert HAVE_BLAH_H into a "#include <blah.h>"
-AC_DEFUN([RXVT_DEFINE_TO_INCLUDE], dnl
-[if test "$$3" = "$4" -o "$$5" = "$6"; then
-  $1="#include <$2>"
-else
-  $1="/* #include <$2> */"
-fi dnl
-AC_SUBST($1)])
-
-RXVT_DEFINE_TO_INCLUDE(include_stdint_h, stdint.h, ac_cv_header_stdint_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_stdarg_h, cstdarg, ac_cv_header_stdarg_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_stdlib_h, cstdlib, ac_cv_header_stdlib_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_unistd_h, unistd.h, ac_cv_header_unistd_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_string_h, cstring, ac_cv_header_string_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_fcntl_h, fcntl.h, ac_cv_header_fcntl_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_util_h, util.h, ac_cv_header_util_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_assert_h, assert.h, ac_cv_header_assert_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_sys_ioctl_h, sys/ioctl.h, rxvt_cv_header_sysioctl, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_sys_select_h, sys/select.h, ac_cv_header_sys_select_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_sys_strredir_h, sys/strredir.h, ac_cv_header_sys_strredir_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_sys_time_h, sys/time.h, ac_cv_header_sys_time_h, yes, notset, dontmatch)
-RXVT_DEFINE_TO_INCLUDE(include_time_h, time.h, ac_cv_header_sys_time_h, no, ac_cv_header_time, yes)
-
 AC_CONFIG_FILES([Makefile \
 doc/Makefile \
 src/Makefile \
-src/rxvtlib.h \
 ])
 AC_OUTPUT
 
