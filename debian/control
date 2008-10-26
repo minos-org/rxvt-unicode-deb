@@ -2,14 +2,14 @@ Source: rxvt-unicode
 Section: x11
 Priority: optional
 Maintainer: Decklin Foster <decklin@red-bean.com>
-Build-Depends: debhelper (>= 4.0.0), libxt-dev, libxrender-dev, libx11-dev, libxpm-dev, groff-base, autotools-dev, xutils, libxft-dev (>= 2.1.8.2-5.1), quilt, chrpath, libperl-dev, libafterimage-dev
+Build-Depends: debhelper (>= 4.0.0), libxt-dev, libxrender-dev, libx11-dev, libxpm-dev, groff-base, autotools-dev, xutils, libxft-dev (>= 2.1.8.2-5.1), chrpath, libperl-dev, libafterimage-dev
 Standards-Version: 3.7.2
 
 Package: rxvt-unicode
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, base-passwd (>= 2.0.3.4), ncurses-base (>= 5.4-7)
 Provides: x-terminal-emulator
-Suggests: ttf-bitstream-vera
+Suggests: ttf-dejavu
 Description: RXVT-like terminal emulator with Unicode support
  rxvt-unicode is a modern, Unicode-aware color xterm replacement that uses
  significantly less memory than a conventional xterm and many other Unicode
