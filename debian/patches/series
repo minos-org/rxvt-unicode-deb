@@ -1,2 +1,7 @@
-debian-changes-9.09-1
-debian-changes-9.09-2
+01_app-defaults.diff
+02_use_dejavu.diff
+06_debian_docs.diff
+07_rgb_location.diff
+08_rebuild_docs.diff
+11_fix_lexgrog.diff
+12_hyphen_minus_sign.diff

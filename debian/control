@@ -1,17 +1,36 @@
 Source: rxvt-unicode
 Section: x11
 Priority: optional
-Maintainer: Decklin Foster <decklin@red-bean.com>
-Build-Depends: debhelper (>= 4.0.0), libxt-dev, libxrender-dev, libx11-dev, libxpm-dev, groff-base, autotools-dev, xutils-dev, libxft-dev (>= 2.1.8.2-5.1), chrpath, libperl-dev, libafterimage-dev
-Standards-Version: 3.7.2
+Maintainer: Debian rxvt-unicode Maintainers <pkg-urxvt-maintainers@lists.alioth.debian.org>
+Uploaders: Ryan Kavanagh <ryanakca@kubuntu.org>, Yaroslav Halchenko <debian@onerussian.com>
+Build-Depends: debhelper (>= 7.0.0),
+ libxt-dev,
+ libxrender-dev,
+ libx11-dev,
+ libxpm-dev,
+ groff-base,
+ autotools-dev,
+ xutils-dev,
+ libxft-dev (>= 2.1.8.2-5.1),
+ chrpath,
+ libperl-dev,
+ libev-dev,
+ libgtk2.0-dev
+Standards-Version: 3.9.1
+Homepage: http://software.schmorp.de/pkg/rxvt-unicode.html
+Vcs-Browser: http://git.debian.org/?p=pkg-urxvt/pkg-urxvt.git
+Vcs-Git: git://git.debian.org/pkg-urxvt/pkg-urxvt.git
 
 Package: rxvt-unicode
 Architecture: any
 Provides: x-terminal-emulator
 Replaces: rxvt-unicode-ml
 Conflicts: rxvt-unicode-ml
-Depends: ${shlibs:Depends}, ${misc:Depends}, base-passwd (>= 2.0.3.4), ncurses-base (>= 5.4-7)
-Recommends: ttf-dejavu, ttf-sazanami-gothic
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ base-passwd (>= 2.0.3.4),
+ ncurses-base (>= 5.4-7)
+Recommends: ttf-dejavu,
+ ttf-sazanami-gothic
 Description: RXVT-like terminal emulator with Unicode support
  rxvt-unicode is a modern, Unicode-aware color xterm replacement that uses
  significantly less memory than a conventional xterm and many other Unicode
@@ -33,8 +52,11 @@ Description: multi-lingual terminal emulator -- transitional package
 Package: rxvt-unicode-256color
 Architecture: any
 Provides: x-terminal-emulator, rxvt-unicode
-Depends: ${shlibs:Depends}, ${misc:Depends}, base-passwd (>= 2.0.3.4), ncurses-term (>= 5.4-7)
-Recommends: ttf-dejavu, ttf-sazanami-gothic
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ base-passwd (>= 2.0.3.4),
+ ncurses-term (>= 5.8-1)
+Recommends: ttf-dejavu,
+ ttf-sazanami-gothic
 Conflicts: rxvt-unicode
 Description: multi-lingual terminal emulator with Unicode support for X11
  rxvt-unicode is a modern, Unicode-aware color xterm replacement that uses
@@ -51,7 +73,9 @@ Description: multi-lingual terminal emulator with Unicode support for X11
 
 Package: rxvt-unicode-lite
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, base-passwd (>= 2.0.3.4), ncurses-base (>= 5.4-7)
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ base-passwd (>= 2.0.3.4),
+ ncurses-base (>= 5.4-7)
 Provides: x-terminal-emulator, rxvt-unicode
 Conflicts: rxvt-unicode
 Description: RXVT-like terminal emulator with basic Unicode support
