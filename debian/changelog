@@ -1,3 +1,20 @@
+rxvt-unicode (9.14-1) unstable; urgency=low
+
+  * Imported Upstream version 9.14
+    - Updated copyright file
+    - Includes perl extension to specify bell command (Closes: #633989)
+    - Fixes bugs in tabbed extension (Closes: #531751, #511377, #459924)
+    - Fixes redraw bug that occurs when window managers do not honour the size
+      hints set by urxvt (Closes: #551898)
+  * Added missing NMU to changelog
+  * Recommend "fonts-vlgothic | fonts-japanese-gothic", not
+    "ttf-sazanami-gothic". (Closes: #642533)
+  * Drop 08_rebuild_docs.diff, upstream now supports rebuilding documentation
+  * Update debian/rules to rebuild docs using upstream Makefile
+  * rxvt-unicode-ml should be oldlibs/extra since it's a transition package
+
+ -- Ryan Kavanagh <ryanakca@kubuntu.org>  Thu, 22 Dec 2011 18:09:33 -0500
+
 rxvt-unicode (9.12-1) unstable; urgency=low
 
   * New upstream release
@@ -423,6 +440,13 @@ rxvt-unicode (5.7-1) unstable; urgency=low
   * enabled "next" scrollstyle in rxvt-unicode
 
  -- Eduard Bloch <blade@debian.org>  Sat, 01 Oct 2005 01:08:13 +0200
+
+rxvt-unicode (5.6-1.0.1) unstable; urgency=low
+
+  * Binary-only non-maintainer upload for hppa; no source changes.
+  * Rebuild for libgcc1 -> libgcc2 transition
+
+ -- Aurelien Jarno <aurel32@debian.org>  Thu, 14 Jul 2005 17:59:35 +0200
 
 rxvt-unicode (5.6-1) unstable; urgency=low
 
