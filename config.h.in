@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if you want to have sexy-looking background pixmaps. */
-#undef BG_IMAGE_FROM_FILE
-
 /* Define if you want 8 bit control sequences */
 #undef EIGHT_BIT_CONTROLS
 
@@ -41,9 +38,6 @@
 
 /* Define if you want extended chinese codesets */
 #undef ENCODING_ZH_EXT
-
-/* Define if you want to use libAfterImage for image processing */
-#undef HAVE_AFTERIMAGE
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME

@@ -11,9 +11,9 @@
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
-CPPFLAGS := $(shell dpkg-buildflags --get CPPFLAGS)
-CFLAGS   := $(shell dpkg-buildflags --get CFLAGS)
-CXXFLAGS := $(shell dpkg-buildflags --get CXXFLAGS)
+CPPFLAGS := $(shell dpkg-buildflags --get CPPFLAGS) -Wall
+CFLAGS   := $(shell dpkg-buildflags --get CFLAGS) -Wall
+CXXFLAGS := $(shell dpkg-buildflags --get CXXFLAGS) -Wall
 LDFLAGS  := $(shell dpkg-buildflags --get LDFLAGS)
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -36,6 +36,7 @@ cfgcommon = \
     --enable-pointer-blank \
     --enable-utmp \
     --enable-wtmp \
+    --enable-warnings \
     --enable-lastlog
 
 flagscommon = \
@@ -105,6 +106,14 @@ build-indep: build-stamp
 build-stamp: config.status
 	dh_testdir
 
+	# Backup files that get overwriten so that the clean target can restore
+	# them.
+	[ -d debian-backup ] || mkdir -p debian-backup/doc
+	for f in doc/rxvt.1.man.in doc/rxvt.7.man.in doc/rxvtc.1.man.in \
+		 README.configure README.FAQ; do \
+	     [ -f debian-backup/$$f ] || cp $$f debian-backup/$$f; \
+	 done
+
 	mkdir -p tmp
 	dh_installdirs -A usr/bin etc/X11/app-defaults usr/share/pixmaps
 
@@ -164,9 +173,17 @@ clean:
 	    rm -f debian/rxvt-$$x.docs; \
 	done
 
+	# Restore backed up files
+	-mv debian-backup/doc/* doc/
+	-rmdir debian-backup/doc
+	-mv debian-backup/* .
+	-rmdir debian-backup
+
 	rm -f doc/*.txt.in
 	rm -f doc/README.*.in
 	rm -f doc/pod2*.tmp
+	rm -f doc/rxvt.7.tbl
+	rm -f mantmp
 	rm -fr tmp
 
 	dh_clean build-stamp
@@ -175,7 +192,7 @@ clean:
 install: build
 #	dh_testdir
 #	dh_testroot
-#	dh_clean -k 
+#	dh_clean -k
 #	dh_installdirs -A usr/bin etc/X11/app-defaults usr/share/pixmaps etc/terminfo/r
 #	$(MAKE) install prefix=$(CURDIR)/debian/rxvt-unicode/usr
 #	cd debian/rxvt-unicode/usr/share/man/man1 && mv rxvt.1 rxvt-unicode.1 && cp $(CURDIR)/debian/rxvtc.1 . && ln -sf rxvtc.1.gz rxvtd.1.gz

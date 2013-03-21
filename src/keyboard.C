@@ -82,12 +82,7 @@ compare_priority (keysym_t *a, keysym_t *b)
   int ca = ecb_popcount32 (a->state /* & OtherModMask */);
   int cb = ecb_popcount32 (b->state /* & OtherModMask */);
 
-  if (ca != cb)
-    return ca - cb;
-//else if (a->state != b->state) // this behavior is to be discussed
-//  return b->state - a->state;
-  else
-    return 0;
+  return ca - cb;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,7 +165,6 @@ void
 keyboard_manager::register_done ()
 {
   unsigned int i, index, hashkey;
-  vector <keysym_t *> sorted_keymap;
   uint16_t hash_bucket_size[KEYSYM_HASH_BUCKETS];	// size of each bucket
 
   memset (hash_bucket_size, 0, sizeof (hash_bucket_size));
@@ -184,15 +178,14 @@ keyboard_manager::register_done ()
 
   // now we know the size of each bucket
   // compute the index of each bucket
-  hash [0] = 0;
-  for (index = 0, i = 1; i < KEYSYM_HASH_BUCKETS; ++i)
+  for (index = 0, i = 0; i < KEYSYM_HASH_BUCKETS; ++i)
     {
-      index += hash_bucket_size [i - 1];
       hash [i] = index;
+      index += hash_bucket_size [i];
     }
 
   // and allocate just enough space
-  sorted_keymap.insert (sorted_keymap.begin (), index + hash_bucket_size [i - 1], 0);
+  simplevec <keysym_t *> sorted_keymap (index, 0);
 
   memset (hash_bucket_size, 0, sizeof (hash_bucket_size));
 
