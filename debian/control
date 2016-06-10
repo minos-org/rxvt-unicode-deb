@@ -3,7 +3,7 @@ Section: x11
 Priority: optional
 Maintainer: Ryan Kavanagh <rak@debian.org>
 Uploaders: Yaroslav Halchenko <debian@onerussian.com>
-Build-Depends: debhelper (>= 7.0.0),
+Build-Depends: debhelper (>= 9.0.0),
  libxt-dev,
  libxrender-dev,
  libx11-dev,
@@ -17,10 +17,10 @@ Build-Depends: debhelper (>= 7.0.0),
  libev-dev,
  libstartup-notification0-dev,
  libgtk2.0-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: http://software.schmorp.de/pkg/rxvt-unicode.html
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-urxvt/pkg-urxvt.git
-Vcs-Git: git://anonscm.debian.org/pkg-urxvt/pkg-urxvt.git
+Vcs-Browser: https://anonscm.debian.org/git/pkg-urxvt/pkg-urxvt.git
+Vcs-Git: https://anonscm.debian.org/git/pkg-urxvt/pkg-urxvt.git
 
 Package: rxvt-unicode
 Architecture: any
@@ -30,7 +30,7 @@ Breaks: rxvt-unicode-ml (<< 9.10-2)
 Depends: ${shlibs:Depends}, ${misc:Depends},
  base-passwd (>= 2.0.3.4),
  ncurses-base (>= 5.4-7)
-Recommends: ttf-dejavu,
+Recommends: fonts-dejavu,
  fonts-vlgothic | fonts-japanese-gothic
 Description: RXVT-like terminal emulator with Unicode support
  rxvt-unicode is a modern, Unicode-aware color xterm replacement that uses
@@ -58,7 +58,7 @@ Provides: x-terminal-emulator, rxvt-unicode
 Depends: ${shlibs:Depends}, ${misc:Depends},
  base-passwd (>= 2.0.3.4),
  ncurses-term (>= 5.8-1)
-Recommends: ttf-dejavu,
+Recommends: fonts-dejavu,
  fonts-vlgothic | fonts-japanese-gothic
 Conflicts: rxvt-unicode
 Description: multi-lingual terminal emulator with Unicode support for X11
