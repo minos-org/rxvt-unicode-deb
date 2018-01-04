@@ -1,3 +1,38 @@
+rxvt-unicode (9.22-2) unstable; urgency=medium
+
+  * Better document modifiers, 13_document_modifiers.diff (Closes: #839769)
+  * Drop rxvt-unicode-ml transition package (Closes: #878860)
+  * Rename rxvt-unicode-256color to rxvt-unicode and creating dummy
+    transitional packages transitioning the following packages to rxvt-unicode
+    (Closes: #848284)
+    + rxvt-unicode-lite
+    + rxvt-unicode256color
+    + rxvt and rxvt-ml
+    + aterm and aterm-ml
+    This involves removing their entries for the rxvt alternative and manually
+    creating the appropriate links from the old executable path to urxvt.
+  * Update short description for rxvt-unicode to reflect it offers -256color
+  * Override conflicts-with-version between rxvt-unicode-*: these packages
+    cannot be unpacked at the same time
+  * Bump standards version to 4.1.3
+  * Simplify and modernize rules file. Rather than compile the terminfo entry
+    and then delete it from the package, let's just not build it:
+    16_no_terminfo.diff
+  * Enable all hardening flags
+  * Bump debhelper to >= 11 and compat to 11. Drop build-dependency on
+    dh-autoreconf: dh >= 11 deals with it for us
+  * Drop old patches we no longer apply from source package
+  * Switch copyright file to DEP-5 format
+  * Lintian likes complaining about someone's name: override
+    spelling-error-in-copyright
+  * Override duplicate-short-description for transitional packages
+  * Install urxvt-font-size extension, 14_install_urxvt-font-size.diff
+    (Closes: #844317)
+  * Perl scripts should be executable and have correct path to perl
+    interpreter in their shebangs, 15_perl_path.diff
+
+ -- Ryan Kavanagh <rak@debian.org>  Wed, 03 Jan 2018 22:25:56 -0500
+
 rxvt-unicode (9.22-1) unstable; urgency=medium
 
   * Imported Upstream version 9.22
