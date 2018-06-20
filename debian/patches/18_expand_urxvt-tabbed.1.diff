@@ -1,0 +1,34 @@
+Description: Expand macros in perl manpages
+ Based off of doc/Makefile.in
+Author: Ryan Kavanagh <rak@debian.org>
+Origin: Debian
+Bug-Debian: https://bugs.debian.org/858385
+Forwarded: no
+Last-Update: 2018-01-06
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: rxvt-unicode/src/Makefile.in
+===================================================================
+--- rxvt-unicode.orig/src/Makefile.in	2018-01-06 11:44:37.512976725 -0500
++++ rxvt-unicode/src/Makefile.in	2018-01-06 11:52:33.924333021 -0500
+@@ -48,6 +48,11 @@
+ RXVTC_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)c$(EXEEXT)
+ RXVTD_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)d$(EXEEXT)
+ 
++SEDREPLACE = -e 's%@@RXVT_VERSION@@%$(VERSION)%g;'      \
++             -e 's%@@RXVT_NAME@@%$(RXVTNAME)%g;'        \
++             -e 's%@@RXVT_DATE@@%$(DATE)%g;'            \
++             -e 's%@@RXVT_LIBDIR@@%$(libdir)%g;'        \
++             -e 's%@@URXVT_NAME@@%urxvt%g;'
+ #
+ # Distribution variables
+ #
+@@ -111,7 +116,7 @@
+ @IF_PERL@	   $(INSTALL_DATA) "$$ext" $(DESTDIR)$(libdir)/urxvt/perl/; \
+ @IF_PERL@	   < "$$ext" \
+ @IF_PERL@	   $(PERL) -MPod::Man -e '(new Pod::Man name => "'urxvt-$$base'", $(PODOPTS))->parse_from_file' \
+-@IF_PERL@	   > mantmp; \
++@IF_PERL@	   | sed $(SEDREPLACE) > mantmp; \
+ @IF_PERL@	   test -s mantmp && $(INSTALL_DATA) mantmp $(DESTDIR)$(man1dir)/$(RXVTNAME)-$$base.$(man1ext); \
+ @IF_PERL@	   < "$$ext" $(PERL) -ne '<>, (print <> . "\n"), exit if /^=head1/' >&3; \
+ @IF_PERL@	done 3>manlst

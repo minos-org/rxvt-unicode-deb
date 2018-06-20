@@ -1,3 +1,25 @@
+rxvt-unicode (9.22-4) unstable; urgency=medium
+
+  * Fix insecure temporary file handling in urxvt(7), 17_unsafe_man.diff
+    (Closes: #654986)
+  * Make rxvt-unicode Multi-Arch: foreign (Closes: #737319)
+  * Don't surprise users with a change of TERM: updated NEWS.Debian
+  * Set the StartupWMClass in desktop files (Closes: #763745)
+  * Expand macros in perl extensions' manpages (Closes: #858385)
+  * Set Vcs-* to point to salsa
+  * Prefer ncurses-base over ncurses-term now that it carries the
+    rxvt-unicode-256color terminfo entry (Closes: #899323)
+  * Bump standards version to 4.1.4
+  * Don't try to fix permissions for arch-related files on arch-independent
+    builds (Closes: #901115)
+  * Drop file 06_debian_docs.diff from the source package; we stopped applying
+    the patch in 2015
+  * The override_dh_fixperms-arch target in debian/rules requires fakeroot.
+    Set Rules-Requires-Root field to binary-targets in debian/control
+  * Drop unneeded lintian override about a spelling mistake in copyright file
+
+ -- Ryan Kavanagh <rak@debian.org>  Wed, 20 Jun 2018 16:44:23 -0400
+
 rxvt-unicode (9.22-3) unstable; urgency=medium
 
   * Remove obsolete config file /etc/metu-methods/rxvt (Closes: #886388)

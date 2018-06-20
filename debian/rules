@@ -63,7 +63,7 @@ override_dh_auto_install:
 override_dh_installchangelogs:
 	dh_installchangelogs Changes
 
-override_dh_fixperms:
+override_dh_fixperms-arch:
 	dh_fixperms
 	chgrp utmp $(PACKAGE_DIR)/usr/bin/urxvt $(PACKAGE_DIR)/usr/bin/urxvtd
 	chmod g+s $(PACKAGE_DIR)/usr/bin/urxvt $(PACKAGE_DIR)/usr/bin/urxvtd

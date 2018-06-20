@@ -1,0 +1,35 @@
+Description: Fix insecure temporary file handling and terminfo documentation
+ Be careful in the use of temporary files in the documentation to prevent
+ symlink attacks. Also document how to install the rxvt-unicode-256color
+ terminfo entry used by this Debian package.
+Author: Ryan Kavanagh <rak@debian.org>
+Origin: Debian
+Bug-Debian: https://bugs.debian.org/654986
+Forwarded: no
+Last-Update: 2018-01-06
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: rxvt-unicode/doc/rxvt.7.pod
+===================================================================
+--- rxvt-unicode.orig/doc/rxvt.7.pod	2018-01-06 10:38:13.924707542 -0500
++++ rxvt-unicode/doc/rxvt.7.pod	2018-01-06 10:49:28.881462580 -0500
+@@ -691,7 +691,7 @@
+ not I<typical>, but what's typical...
+ 
+    URxvt.cutchars: "()*,<>[]{}|'
+-   URxvt.print-pipe: cat >/tmp/xxx
++   URxvt.print-pipe: cat > $(TMPDIR=$HOME mktemp urxvt.XXXXXX)
+ 
+ These are just for testing stuff.
+ 
+@@ -866,7 +866,9 @@
+ user and root):
+ 
+    REMOTE=remotesystem.domain
+-   infocmp rxvt-unicode | ssh $REMOTE "mkdir -p .terminfo && cat >/tmp/ti && tic /tmp/ti"
++   infocmp rxvt-unicode-256color | \
++        ssh $REMOTE 'export TMPF=`mktemp` && mkdir -p ~/.terminfo \
++                     && cat >${TMPF} && tic ${TMPF} && rm ${TMPF}'
+ 
+ One some systems you might need to set C<$TERMINFO> to the full path of
+ F<$HOME/.terminfo> for this to work.

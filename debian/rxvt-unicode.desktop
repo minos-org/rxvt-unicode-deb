@@ -9,6 +9,7 @@ Categories=Utility;TerminalEmulator;
 StartupNotify=true
 Keywords=Run;
 Actions=New
+StartupWMClass=URxvt
 
 [Desktop Action New]
 Name=New Rxvt Color Unicode Terminal

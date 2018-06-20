@@ -1,3 +1,15 @@
+rxvt-unicode (9.22-4) unstable; urgency=medium
+
+    Since 9.22-2, rxvt-unicode uses "rxvt-unicode-256color" instead of
+    "rxvt-unicode" as its TERM value (see bug #848284 [0] for details). When
+    connecting to remote hosts, you may find that this terminfo entry is
+    missing. Please see urxvt(7) ("When I log-in to another system it tells me
+    about missing terminfo data?") for instructions on how to address this.
+
+    [0] https://bugs.debian.org/848284
+
+ -- Ryan Kavanagh <rak@debian.org>  Sat, 06 Jan 2018 11:24:06 -0500
+
 rxvt-unicode (9.06-2) unstable; urgency=medium
 
   * urxvtcd alternative removed
