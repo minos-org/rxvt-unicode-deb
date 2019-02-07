@@ -1,3 +1,22 @@
+rxvt-unicode (9.22-5) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/changelog: Remove trailing whitespaces
+  * d/control: Remove trailing whitespaces
+
+  [ Antoine Beaupré ]
+  * add support for 24bit colors (Closes: #920826)
+
+  [ Ryan Kavanagh ]
+  * Bump standards version to 4.3.0, no changes required
+  * Update perl path in font-size script
+  * Suggest sensible-utils package, which provides binaries used by the
+    matcher and selection-popup extensions
+  * Invoke dpkg-maintscript-helper from rxvt.maintscript instead of maintainer
+    scripts
+
+ -- Ryan Kavanagh <rak@debian.org>  Thu, 07 Feb 2019 15:09:48 -0500
+
 rxvt-unicode (9.22-4) unstable; urgency=medium
 
   * Fix insecure temporary file handling in urxvt(7), 17_unsafe_man.diff
@@ -603,7 +622,7 @@ rxvt-unicode (6.3-1) unstable; urgency=low
     + From upstream changelog: - meta8 support was forcefully enabled in most
       configurations.  restored configurability of this (useless) feature
       (reported by Mikachu). (closes: #346150, reopen if it doesn't)
-    
+
  -- Eduard Bloch <blade@debian.org>  Fri,  6 Jan 2006 01:11:00 +0100
 
 rxvt-unicode (6.2-1) unstable; urgency=low
@@ -683,7 +702,7 @@ rxvt-unicode (5.2-2) unstable; urgency=medium
 rxvt-unicode (5.2-1) unstable; urgency=low
 
   * New upstream release
-  * disabled all Debian specific patches (except of docs changes), 
+  * disabled all Debian specific patches (except of docs changes),
     new version seems to work smooth again
   * set the default font to more concrete default, not allowing X to provide
     bad bitmap fonts
@@ -711,7 +730,7 @@ rxvt-unicode (4.8-1) unstable; urgency=medium
     version 4.7 and bad non-Xft font drawing in 4.8
   * 08_correct_debian_rand.dpatch: correcting the anti-Debian rants in the
     manpage with a reference to README.Debian.gz, also updated README.Debian.gz
-    with a howto for installation of the alternative terminfo data 
+    with a howto for installation of the alternative terminfo data
   * README.devenagari: documented problems and hints for devenagari usage
     (closes: #269891)
 
