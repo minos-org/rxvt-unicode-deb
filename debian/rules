@@ -45,7 +45,6 @@ override_dh_auto_configure:
 	    --enable-xft \
 	    --enable-xim \
 	    --enable-xterm-scroll \
-	    --enable-24-bit-color \
 	    --with-term=rxvt-unicode-256color
 	perl -pe s,..tag.CXX,, -i src/Makefile
 	if expr $(DEB_HOST_GNU_TYPE) : 'alpha-linux-gnu\|sparc-linux-gnu' > /dev/null; then \

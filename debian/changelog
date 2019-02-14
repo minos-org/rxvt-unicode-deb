@@ -1,3 +1,12 @@
+rxvt-unicode (9.22-6) unstable; urgency=medium
+
+  * Revert the 24bit colour patch. Though no issues seem to arise when using
+    the default resource values, it seems to cause many issues if changes are
+    made to resources related to colour.
+    (Closes: #922268, #922289, #922297, #922298, #922299)
+
+ -- Ryan Kavanagh <rak@debian.org>  Thu, 14 Feb 2019 12:00:54 -0500
+
 rxvt-unicode (9.22-5) unstable; urgency=medium
 
   [ Ondřej Nový ]
