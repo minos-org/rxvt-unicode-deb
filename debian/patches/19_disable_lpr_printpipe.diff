@@ -1,0 +1,25 @@
+Description: Don't actually print screen contents on PrintScreen
+ By default, urxvt sends the contents of the screen to the default
+ printer whenever a user hits the PrintScreen key. This is really
+ something users should have to opt in to to avoid accidentally
+ leaking private data. It can be customized using the `print-pipe'
+ resource.
+Author: Ryan Kavanagh <rak@debian.org>
+Bug-Debian: https://bugs.debian.org/955980
+Forwarded: no
+Last-Update: 2020-04-10
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: rxvt-unicode/src/feature.h
+===================================================================
+--- rxvt-unicode.orig/src/feature.h	2014-11-16 07:22:34.000000000 -0500
++++ rxvt-unicode/src/feature.h	2020-04-10 10:10:39.097757946 -0400
+@@ -333,7 +333,7 @@
+ /*
+  * Printer pipe which will be used for emulation of attached vt100 printer
+  */
+-#define PRINTPIPE	"lpr"
++#define PRINTPIPE	"true"
+ 
+ /*
+  * Define defaults for backspace and delete keys - unless they have been

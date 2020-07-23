@@ -9,3 +9,4 @@
 16_no_terminfo.diff
 17_unsafe_man.diff
 18_expand_urxvt-tabbed.1.diff
+19_disable_lpr_printpipe.diff
