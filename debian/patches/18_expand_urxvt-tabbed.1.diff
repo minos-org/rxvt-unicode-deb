@@ -3,7 +3,7 @@ Description: Expand macros in perl manpages
 Author: Ryan Kavanagh <rak@debian.org>
 Origin: Debian
 Bug-Debian: https://bugs.debian.org/858385
-Forwarded: no
+Forwarded: yes
 Last-Update: 2018-01-06
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/

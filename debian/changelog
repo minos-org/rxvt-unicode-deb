@@ -1,3 +1,14 @@
+rxvt-unicode (9.22-8) unstable; urgency=medium
+
+  * Fix incorrect manpage output due to 12_hyphen_minus_sign.diff
+  * Revert patch 15_perl_path.diff and override interpreter-not-absolute and
+    wrong-path-for-interpreter and spare-manual-page for perl extensions
+  * Revert patch 19_disable_lpr_printpipe.diff . Though the default behaviour
+    can accidentally leak information to a printer, it has come to be expected
+    by users, and can be locally overridden if desired.
+
+ -- Ryan Kavanagh <rak@debian.org>  Wed, 29 Jul 2020 11:48:03 -0400
+
 rxvt-unicode (9.22-7) unstable; urgency=medium
 
   * Don't literally print screens by default, 19_disable_lpr_printpipe.diff
