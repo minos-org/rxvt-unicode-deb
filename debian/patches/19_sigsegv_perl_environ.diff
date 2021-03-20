@@ -1,0 +1,20 @@
+Description: Fix segfault on exit
+ Fix from upstream over IRC.
+Author: Ryan Kavanagh <rak@debian.org>
+Origin: Debian
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=981010
+Last-Update: 2021-03-20
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: rxvt-unicode/src/rxvtperl.xs
+===================================================================
+--- rxvt-unicode.orig/src/rxvtperl.xs	2019-02-07 15:12:08.000000000 -0500
++++ rxvt-unicode/src/rxvtperl.xs	2021-03-20 10:15:50.497359305 -0400
+@@ -376,7 +376,6 @@
+ {
+   if (perl)
+     {
+-      perl_destruct (perl);
+       perl_free (perl);
+       PERL_SYS_TERM ();
+     }

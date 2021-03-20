@@ -40,7 +40,7 @@ Files: debian/*
 Copyright:
     Copyright (C) 2004-2006  Eduard Bloch <blade@debian.org>
     Copyright (C) 2006-2011  Decklin Foster <decklin@red-bean.com>
-    Copyright (C) 2011-2017  Ryan Kavanagh <rak@debian.org>
+    Copyright (C) 2011-2021  Ryan Kavanagh <rak@debian.org>
 License: GPL-2.0+
 
 Files: debian/extensions/urxvt-font-size/*

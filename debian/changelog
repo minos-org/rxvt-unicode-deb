@@ -1,3 +1,10 @@
+rxvt-unicode (9.22-9) unstable; urgency=medium
+
+  * Fix segfault at exit, 19_sigsegv_perl_environ.diff (Closes: #981010)
+  * Bump copyright years
+
+ -- Ryan Kavanagh <rak@debian.org>  Sat, 20 Mar 2021 10:18:47 -0400
+
 rxvt-unicode (9.22-8) unstable; urgency=medium
 
   * Fix incorrect manpage output due to 12_hyphen_minus_sign.diff
