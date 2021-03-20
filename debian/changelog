@@ -1,3 +1,9 @@
+rxvt-unicode (9.22-10) unstable; urgency=medium
+
+  * Correct a mistake in 19_sigsegv_perl_environ.diff
+
+ -- Ryan Kavanagh <rak@debian.org>  Sat, 20 Mar 2021 12:48:03 -0400
+
 rxvt-unicode (9.22-9) unstable; urgency=medium
 
   * Fix segfault at exit, 19_sigsegv_perl_environ.diff (Closes: #981010)
