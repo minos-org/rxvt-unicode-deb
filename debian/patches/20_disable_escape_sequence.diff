@@ -1,0 +1,25 @@
+Description: disable ESC G Q escape sequence
+Origin: http://cvs.schmorp.de/rxvt-unicode/src/command.C?r1=1.584&r2=1.585
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=988763
+Last-Update: 2021-05-21
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: rxvt-unicode/src/command.C
+===================================================================
+--- rxvt-unicode.orig/src/command.C	2019-02-07 15:12:08.000000000 -0500
++++ rxvt-unicode/src/command.C	2021-05-21 10:45:22.522127101 -0400
+@@ -2722,12 +2722,14 @@
+         }
+         break;
+ 
++#if 0 // disabled because embedded newlines can make exploits easier
+         /* kidnapped escape sequence: Should be 8.3.48 */
+       case C1_ESA:		/* ESC G */
+         // used by original rxvt for rob nations own graphics mode
+         if (cmd_getc () == 'Q')
+           tt_printf ("\033G0\012");	/* query graphics - no graphics */
+         break;
++#endif
+ 
+         /* 8.3.63: CHARACTER TABULATION SET */
+       case C1_HTS:		/* ESC H */
