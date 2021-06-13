@@ -9,11 +9,11 @@ Last-Update: 2018-01-06
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 Index: rxvt-unicode/src/Makefile.in
 ===================================================================
---- rxvt-unicode.orig/src/Makefile.in	2018-01-06 11:44:37.512976725 -0500
-+++ rxvt-unicode/src/Makefile.in	2018-01-06 11:52:33.924333021 -0500
-@@ -48,6 +48,11 @@
- RXVTC_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)c$(EXEEXT)
+--- rxvt-unicode.orig/src/Makefile.in	2021-06-13 11:29:02.408667425 -0400
++++ rxvt-unicode/src/Makefile.in	2021-06-13 11:29:02.404665781 -0400
+@@ -49,6 +49,11 @@
  RXVTD_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)d$(EXEEXT)
+ RCLOCK_BINNAME=$(DESTDIR)$(bindir)/urclock$(EXEEXT)
  
 +SEDREPLACE = -e 's%@@RXVT_VERSION@@%$(VERSION)%g;'      \
 +             -e 's%@@RXVT_NAME@@%$(RXVTNAME)%g;'        \
@@ -23,7 +23,7 @@ Index: rxvt-unicode/src/Makefile.in
  #
  # Distribution variables
  #
-@@ -111,7 +116,7 @@
+@@ -113,7 +118,7 @@
  @IF_PERL@	   $(INSTALL_DATA) "$$ext" $(DESTDIR)$(libdir)/urxvt/perl/; \
  @IF_PERL@	   < "$$ext" \
  @IF_PERL@	   $(PERL) -MPod::Man -e '(new Pod::Man name => "'urxvt-$$base'", $(PODOPTS))->parse_from_file' \

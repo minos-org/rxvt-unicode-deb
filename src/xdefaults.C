@@ -115,13 +115,6 @@ optList[] = {
               BOOL (Rs_scrollTtyOutput, NULL, "si",  Opt_scrollTtyOutput, Optflag_Reverse, "scroll-on-tty-output inhibit"),
               BOOL (Rs_scrollTtyKeypress, "scrollTtyKeypress", "sk", Opt_scrollTtyKeypress, 0, "scroll-on-keypress"),
               BOOL (Rs_scrollWithBuffer, "scrollWithBuffer", "sw", Opt_scrollWithBuffer, 0, "scroll-with-buffer"),
-#if BG_IMAGE_FROM_ROOT
-              BOOL (Rs_transparent, "inheritPixmap", "ip", Opt_transparent, 0, "inherit parent pixmap"),
-              BOOL (Rs_transparent, "transparent", "tr", Opt_transparent, 0, "inherit parent pixmap"),
-              STRG (Rs_color + Color_tint, "tintColor", "tint", "color", "tint color"),
-              STRG (Rs_shade, "shading", "sh", "number", "shade background by number %."),
-              STRG (Rs_blurradius, "blurRadius", "blr", "HxV", "gaussian blur radii to apply to the root background"),
-#endif
 #if OFF_FOCUS_FADING
               STRG (Rs_fade, "fading", "fade", "number", "fade colors by number % when losing focus"),
               STRG (Rs_color + Color_fade, "fadeColor", "fadecolor", "color", "target color for off-focus fading"),
@@ -196,10 +189,6 @@ optList[] = {
               STRG (Rs_color + Color_pointer_fg, "pointerColor", "pr", "color", "pointer color"),
               STRG (Rs_color + Color_pointer_bg, "pointerColor2", "pr2", "color", "pointer bg color"),
               STRG (Rs_color + Color_border, "borderColor", "bd", "color", "border color"),
-#if BG_IMAGE_FROM_FILE
-              RSTRG (Rs_path, "path", "search path"),
-              STRG (Rs_backgroundPixmap, "backgroundPixmap", "pixmap", "file[;geom]", "background pixmap"),
-#endif
 #if ENABLE_EWMH
               STRG (Rs_iconfile, "iconFile", "icon", "file", "path to application icon image"),
 #endif
@@ -640,37 +629,6 @@ rxvt_define_key (rxvt_term *term, const char *k, const char *v)
 }
 
 /*
- * Define key from XrmEnumerateDatabase.
- *   quarks will be something like
- *      "rxvt" "keysym" "0xFF01"
- *   value will be a string
- */
-static int
-rxvt_keysym_enumerate_helper (
-   XrmDatabase *database ecb_unused,
-   XrmBindingList bindings ecb_unused,
-   XrmQuarkList quarks,
-   XrmRepresentation *type ecb_unused,
-   XrmValue *value,
-   XPointer closure
-)
-{
-  int last;
-
-  for (last = 0; quarks[last] != NULLQUARK; last++)	/* look for last quark in list */
-    ;
-
-  rxvt_term *term = (rxvt_term *)(((void **)closure)[0]);
-  void (*cb)(rxvt_term *, const char *, const char *)
-     = (void (*)(rxvt_term *, const char *, const char *))
-          (((void **)closure)[1]);
-
-  cb (term, XrmQuarkToString (quarks[last - 1]), (char *)value->addr);
-
-  return False;
-}
-
-/*
  * look for something like this (XK_Delete)
  * rxvt*keysym.0xFFFF: "\177"
  */
@@ -860,41 +818,119 @@ rxvt_term::extract_resources ()
 #endif /* NO_RESOURCES */
 }
 
+struct rxvt_enumerate_closure
+{
+  rxvt_term *term;
+  void (*cb)(rxvt_term *, const char *, const char *);
+  int specific; // iterate over only a specific subhierarchy
+};
+
+/*
+ * Define key from XrmEnumerateDatabase.
+ *   quarks will be something like
+ *      "rxvt" "keysym" "0xFF01"
+ *   value will be a string
+ */
+static int
+rxvt_enumerate_helper (
+   XrmDatabase *database ecb_unused,
+   XrmBindingList bindings ecb_unused,
+   XrmQuarkList quarks,
+   XrmRepresentation *type ecb_unused,
+   XrmValue *value,
+   XPointer closure
+)
+{
+  const rxvt_enumerate_closure *data = (const rxvt_enumerate_closure *)closure;
+
+  if (*quarks == NULLQUARK) return False;
+
+  // if the quark list starts with a tighly bound quark, we skip it,
+  // as it is the exactly matched the prefix. Otherwise, it matched because
+  // it started with "*", in which case we assuime the prefix is part
+  // of the "*".
+  if (*bindings == XrmBindTightly)
+    {
+      ++quarks, ++bindings; // skip if this is a fixed prefix, rather than a *-match
+      if (*quarks == NULLQUARK) return False;
+    }
+
+  // specific, a bit misleadingly named, is used when a specific "subclass"
+  // is iterated over, e.g. "keysym", and is used to skip one more
+  // component, as well as all generic prefixes
+  // this is a bit of a hack, ideally, keysym (the only user) should use its
+  // own iteration function, but this ought to be less bloated
+  if (data->specific)
+    {
+      if (*bindings != XrmBindTightly)
+        return False;
+
+      ++quarks, ++bindings; // skip if this is a fixed prefix, rather than a *-match
+      if (*quarks == NULLQUARK) return False;
+    }
+
+  char *pattern;
+  if (quarks[1] == NULLQUARK)
+    pattern = XrmQuarkToString (quarks[0]); // single component, fats path
+  else
+    {
+      // multiple components, slow path - should be rare, to don't optimize for speed
+      int size = 0;
+
+      for (int i = 0; quarks[i] != NULLQUARK; ++i)
+        size += strlen (XrmQuarkToString (quarks[i])) + 1;
+
+      pattern = rxvt_temp_buf<char> (size + 1);
+
+      // now print all components
+      {
+        char *cur = pattern;
+
+        for (int i = 0; quarks[i] != NULLQUARK; ++i)
+          cur += sprintf (cur, ".%s", XrmQuarkToString (quarks[i]));
+      }
+
+      ++pattern; // skip initial dot
+    }
+
+  data->cb (data->term, pattern, (char *)value->addr);
+
+  return False;
+}
+
 void
-rxvt_term::enumerate_keysym_resources (void (*cb)(rxvt_term *, const char *, const char *))
+rxvt_term::enumerate_resources (void (*cb)(rxvt_term *, const char *, const char *), const char *name_p, const char *class_p)
 {
   /*
    * [R5 or later]: enumerate the resource database
    */
+  assert (!name_p == !class_p); // both must be specified, or missing
+
 #ifdef KEYSYM_RESOURCE
-  void *closure[2] = {
-    (void *)this,
-    (void *)cb,
-  };
+  rxvt_enumerate_closure closure = { this, cb, name_p ? 1 : 0 };
 
   XrmDatabase database = XrmGetDatabase (dpy);
   XrmName name_prefix[3];
   XrmClass class_prefix[3];
 
-  name_prefix[1] = XrmStringToName ("keysym");
+  name_prefix[1] = name_p ? XrmStringToName (name_p) : NULLQUARK;
   name_prefix[2] = NULLQUARK;
-  class_prefix[1] = XrmStringToName ("Keysym");
+  class_prefix[1] = class_p ? XrmStringToName (class_p) : NULLQUARK;
   class_prefix[2] = NULLQUARK;
 
 # ifdef RESFALLBACK
   name_prefix[0] = class_prefix[0] = XrmStringToName (RESFALLBACK);
-  /* XXX: Need to check sizeof (rxvt_t) == sizeof (XPointer) */
   XrmEnumerateDatabase (database, name_prefix, class_prefix,
-                        XrmEnumOneLevel, rxvt_keysym_enumerate_helper, (XPointer)closure);
+                        XrmEnumAllLevels, rxvt_enumerate_helper, (XPointer)&closure);
 # endif
 
   name_prefix[0] = class_prefix[0] = XrmStringToName (RESCLASS);
   XrmEnumerateDatabase (database, name_prefix, class_prefix,
-                        XrmEnumOneLevel, rxvt_keysym_enumerate_helper, (XPointer)closure);
+                        XrmEnumAllLevels, rxvt_enumerate_helper, (XPointer)&closure);
 
   name_prefix[0] = class_prefix[0] = XrmStringToName (rs[Rs_name]);
   XrmEnumerateDatabase (database, name_prefix, class_prefix,
-                        XrmEnumOneLevel, rxvt_keysym_enumerate_helper, (XPointer)closure);
+                        XrmEnumAllLevels, rxvt_enumerate_helper, (XPointer)&closure);
 #endif
 }
 

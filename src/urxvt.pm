@@ -117,7 +117,9 @@ the C<urxvt::extension> section below.
 =head2 META comments
 
 Rxvt-unicode recognizes special meta comments in extensions that define
-different types of metadata.
+different types of metadata. These comments are scanned whenever a
+terminal is created and are typically used to autoload extensions when
+their resources or command line parameters are used.
 
 Currently, it recognises only one such comment:
 
@@ -128,6 +130,9 @@ Currently, it recognises only one such comment:
 The RESOURCE comment defines a resource used by the extension, where
 C<name> is the resource name, C<type> is the resource type, C<boolean>
 or C<string>, and C<desc> is the resource description.
+
+The extension will be autoloaded when this resource is specified or used
+as a command line parameter.
 
 =back
 
@@ -514,6 +519,18 @@ SelectionNotify, ColormapNotify, ClientMessage, MappingNotify
 
 Various constants for use in X calls and event processing.
 
+=item urxvt::PrivMode_132, PrivMode_132OK, PrivMode_rVideo, PrivMode_relOrigin,
+PrivMode_Screen, PrivMode_Autowrap, PrivMode_aplCUR, PrivMode_aplKP,
+PrivMode_HaveBackSpace, PrivMode_BackSpace, PrivMode_ShiftKeys,
+PrivMode_VisibleCursor, PrivMode_MouseX10, PrivMode_MouseX11,
+PrivMode_scrollBar, PrivMode_TtyOutputInh, PrivMode_Keypress,
+PrivMode_smoothScroll, PrivMode_vt52, PrivMode_LFNL, PrivMode_MouseBtnEvent,
+PrivMode_MouseAnyEvent, PrivMode_BracketPaste, PrivMode_ExtMouseUTF8,
+PrivMode_ExtMouseUrxvt, PrivMode_BlinkingCursor, PrivMode_mouse_report,
+PrivMode_Default
+
+Constants for checking DEC private modes.
+
 =back
 
 =head2 RENDITION
@@ -590,6 +607,8 @@ sub parse_resource {
 
    $term->scan_extensions;
 
+   # iterating over all resources has quadratic time overhead
+   # overall, maybe this could be optimised?
    my $r = $term->{meta}{resource};
    keys %$r; # reset iterator
    while (my ($k, $v) = each %$r) {
@@ -605,6 +624,8 @@ sub parse_resource {
          $name = "$urxvt::RESCLASS.$k$suffix";
 
          push @{ $term->{perl_ext_3} }, $v->[0];
+
+         return 1 unless $isarg;
 
          if ($v->[1] eq "boolean") {
             $term->put_option_db ($name, $flag ? "true" : "false");
@@ -1690,6 +1711,16 @@ Returns the currently displayed screen (0 primary, 1 secondary).
 =item $cursor_is_hidden = $term->hidden_cursor
 
 Returns whether the cursor is currently hidden or not.
+
+=item $priv_modes = $term->priv_modes
+
+Returns a bitset with the state of DEC private modes.
+
+Example:
+
+  if ($term->priv_modes & urxvt::PrivMode_mouse_report) {
+      # mouse reporting is turned on
+  }
 
 =item $view_start = $term->view_start ([$newvalue])
 

@@ -1279,9 +1279,9 @@ rxvt_term::pointer_cb (ev::timer &w, int revents)
 void
 rxvt_term::mouse_report (XButtonEvent &ev)
 {
-  int button_number, key_state = 0;
+  int button_number, state = 0;
   int x, y;
-  int code = 32;
+  bool release = ev.type == ButtonRelease;
 
   x = Pixel2Col (ev.x) + 1;
   y = Pixel2Row (ev.y) + 1;
@@ -1293,18 +1293,13 @@ rxvt_term::mouse_report (XButtonEvent &ev)
 
       mouse_row = x;
       mouse_col = y;
-      code += 32;
+      state += 32;
     }
 
-  if (MEvent.button == AnyButton)
-    button_number = 3;
-  else
-    {
-      button_number = MEvent.button - Button1;
-      /* add 0x3D for wheel events, like xterm does */
-      if (button_number >= 3)
-        button_number += 64 - 3;
-    }
+  button_number = MEvent.button - Button1;
+  /* add 0x3D for wheel events, like xterm does */
+  if (button_number >= 3)
+    button_number += 64 - 3;
 
   if (priv_modes & PrivMode_MouseX10)
     {
@@ -1312,8 +1307,7 @@ rxvt_term::mouse_report (XButtonEvent &ev)
        * do not report ButtonRelease
        * no state info allowed
        */
-      key_state = 0;
-      if (button_number == 3)
+      if (release)
         return;
     }
   else
@@ -1325,23 +1319,25 @@ rxvt_term::mouse_report (XButtonEvent &ev)
        * plus will add in our own Double-Click reporting
        *  32 = Double Click
        */
-      key_state = ((MEvent.state & ShiftMask) ? 4 : 0)
-                  + ((MEvent.state & ModMetaMask) ? 8 : 0)
-                  + ((MEvent.state & ControlMask) ? 16 : 0);
+      state += ((MEvent.state & ShiftMask) ? 4 : 0)
+               + ((MEvent.state & ModMetaMask) ? 8 : 0)
+               + ((MEvent.state & ControlMask) ? 16 : 0);
 #ifdef MOUSE_REPORT_DOUBLECLICK
-      key_state += ((MEvent.clicks > 1) ? 32 : 0);
+      state += ((MEvent.clicks > 1) ? 32 : 0);
 #endif
     }
 
+  int code = 32 + (release ? 3 : button_number) + state;
+
 #if DEBUG_MOUSEREPORT
   fprintf (stderr, "Mouse [");
-  if (key_state & 16)
+  if (state & 16)
     fputc ('C', stderr);
-  if (key_state & 4)
+  if (state & 4)
     fputc ('S', stderr);
-  if (key_state & 8)
+  if (state & 8)
     fputc ('A', stderr);
-  if (key_state & 32)
+  if (state & 32)
     fputc ('2', stderr);
   fprintf (stderr, "]: <%d>, %d/%d\n",
           button_number,
@@ -1350,20 +1346,26 @@ rxvt_term::mouse_report (XButtonEvent &ev)
 #endif
 
 #if ENABLE_FRILLS
-  if (priv_modes & PrivMode_ExtMouseRight)
+  if (priv_modes & PrivMode_ExtMouseSGR)
+    tt_printf ("\033[<%d;%d;%d%c",
+              button_number + state,
+              x,
+              y,
+              release ? 'm' : 'M');
+  else if (priv_modes & PrivMode_ExtMouseUrxvt)
     tt_printf ("\033[%d;%d;%dM",
-              code + button_number + key_state,
+              code,
               x,
               y);
-  else if (priv_modes & PrivMode_ExtModeMouse)
+  else if (priv_modes & PrivMode_ExtMouseUTF8)
     tt_printf ("\033[M%c%lc%lc",
-              code + button_number + key_state,
+              code,
               wint_t (32 + x),
               wint_t (32 + y));
   else
 #endif
     tt_printf ("\033[M%c%c%c",
-              code + button_number + key_state,
+              code,
               32 + x,
               32 + y);
 }
@@ -1484,16 +1486,6 @@ rxvt_term::x_cb (XEvent &ev)
 
             bool want_position_change = SHOULD_INVOKE (HOOK_POSITION_CHANGE);
 
-            bool moved = false;
-#ifdef HAVE_BG_PIXMAP
-            if (bg_window_position_sensitive ())
-              {
-                want_position_change = true;
-                if (bg_img == 0)
-                  moved = true;
-              }
-#endif
-
             if (want_position_change)
               {
                 int x, y;
@@ -1511,7 +1503,6 @@ rxvt_term::x_cb (XEvent &ev)
                     parent_x = x;
                     parent_y = y;
                     HOOK_INVOKE ((this, HOOK_POSITION_CHANGE, DT_INT, x, DT_INT, y, DT_END));
-                    moved = true;
                   }
               }
 
@@ -1519,13 +1510,6 @@ rxvt_term::x_cb (XEvent &ev)
               {
                 seen_resize = 1;
                 resize_all_windows (ev.xconfigure.width, ev.xconfigure.height, 1);
-              }
-            else
-              {
-#ifdef HAVE_BG_PIXMAP
-                if (moved)
-                  update_background ();
-#endif
               }
 
             HOOK_INVOKE ((this, HOOK_CONFIGURE_NOTIFY, DT_XEVENT, &ev, DT_END));
@@ -1545,17 +1529,6 @@ rxvt_term::x_cb (XEvent &ev)
         break;
 
       case MapNotify:
-#ifdef HAVE_BG_PIXMAP
-        // This is needed at startup for the case of no window manager
-        // or a non-reparenting window manager and also because we
-        // defer bg image updates if the window is not mapped. The
-        // short delay is to optimize for multiple ConfigureNotify
-        // events at startup when the window manager reparents the
-        // window, so as to perform the computation after we have
-        // received all of them.
-        if (bg_img == 0)
-          update_background_ev.start (0.025);
-#endif
         mapped = 1;
 #ifdef TEXT_BLINK
         text_blink_ev.start ();
@@ -1789,6 +1762,9 @@ rxvt_term::focus_in ()
 #if ENABLE_FRILLS
       if (option (Opt_urgentOnBell))
         set_urgency (0);
+
+      if (priv_modes & PrivMode_FocusEvent)
+        tt_printf ("\x1b[I");
 #endif
 
       HOOK_INVOKE ((this, HOOK_FOCUS_IN, DT_END));
@@ -1806,6 +1782,9 @@ rxvt_term::focus_out ()
 #if ENABLE_FRILLS
       if (option (Opt_urgentOnBell))
         set_urgency (0);
+
+      if (priv_modes & PrivMode_FocusEvent)
+        tt_printf ("\x1b[O");
 #endif
 #if ENABLE_FRILLS || ISO_14755
       if (iso14755buf)
@@ -1854,7 +1833,7 @@ rxvt_term::update_fade_color (unsigned int idx, bool first_time)
 #endif
 }
 
-#if BG_IMAGE_FROM_ROOT || ENABLE_PERL
+#if ENABLE_PERL
 void ecb_hot
 rxvt_term::rootwin_cb (XEvent &ev)
 {
@@ -1874,13 +1853,6 @@ rxvt_term::rootwin_cb (XEvent &ev)
         if (ev.xproperty.atom == xa[XA_XROOTPMAP_ID]
             || ev.xproperty.atom == xa[XA_ESETROOT_PMAP_ID])
           {
-#if BG_IMAGE_FROM_ROOT
-            if (option (Opt_transparent))
-              {
-                rxvt_img::new_from_root (this)->replace (root_img);
-                update_background ();
-              }
-#endif
             HOOK_INVOKE ((this, HOOK_ROOTPMAP_CHANGE, DT_END));
           }
 
@@ -2181,11 +2153,11 @@ rxvt_term::button_release (XButtonEvent &ev)
                       > multiClickTime / 2)))
             {
               MEvent.clicks = 0;
-              MEvent.button = AnyButton;
+              MEvent.button = ev.button;
               mouse_report (ev);
             }
 #else				/* MOUSE_REPORT_DOUBLECLICK */
-          MEvent.button = AnyButton;
+          MEvent.button = ev.button;
           mouse_report (ev);
 #endif /* MOUSE_REPORT_DOUBLECLICK */
           return;
@@ -2382,12 +2354,12 @@ rxvt_term::cmd_parse ()
 
 // read the next character
 wchar_t ecb_hot
-rxvt_term::next_char () NOTHROW
+rxvt_term::next_char () noexcept
 {
   while (cmdbuf_ptr < cmdbuf_endp)
     {
-      // assume 7-bit to be ascii ALWAYS
-      if (ecb_likely ((unsigned char)*cmdbuf_ptr <= 0x7f && *cmdbuf_ptr != 0x1b))
+      // assume 7-bit to be ascii ALWAYS (always true in POSIX)
+      if (ecb_likely ((unsigned char)*cmdbuf_ptr <= 0x7f))
         return *cmdbuf_ptr++;
 
       wchar_t wc;
@@ -2418,7 +2390,7 @@ rxvt_term::next_char () NOTHROW
 
 // read the next octet
 uint32_t ecb_hot
-rxvt_term::next_octet () NOTHROW
+rxvt_term::next_octet () noexcept
 {
   return cmdbuf_ptr < cmdbuf_endp
          ? (unsigned char)*cmdbuf_ptr++
@@ -2428,7 +2400,7 @@ rxvt_term::next_octet () NOTHROW
 static class out_of_input out_of_input;
 
 wchar_t ecb_hot
-rxvt_term::cmd_getc () THROW ((class out_of_input))
+rxvt_term::cmd_getc ()
 {
   wchar_t c = next_char ();
 
@@ -2439,7 +2411,7 @@ rxvt_term::cmd_getc () THROW ((class out_of_input))
 }
 
 uint32_t ecb_hot
-rxvt_term::cmd_get8 () THROW ((class out_of_input))
+rxvt_term::cmd_get8 ()
 {
   uint32_t c = next_octet ();
 
@@ -2722,12 +2694,14 @@ rxvt_term::process_escape_seq ()
         }
         break;
 
+#if 0 // disabled because embedded newlines can make exploits easier
         /* kidnapped escape sequence: Should be 8.3.48 */
       case C1_ESA:		/* ESC G */
         // used by original rxvt for rob nations own graphics mode
-        if (cmd_getc () == 'Q')
+        if (cmd_getc () == 'Q' && option (Opt_insecure))
           tt_printf ("\033G0\012");	/* query graphics - no graphics */
         break;
+#endif
 
         /* 8.3.63: CHARACTER TABULATION SET */
       case C1_HTS:		/* ESC H */
@@ -2895,6 +2869,8 @@ rxvt_term::process_csi_seq ()
           case '?':
             if (ch == 'h' || ch == 'l' || ch == 'r' || ch == 's' || ch == 't')
               process_terminal_mode (ch, priv, nargs, arg);
+            if (prev_ch == '$' && ch == 'p')
+              process_terminal_mode (ch, priv, nargs, arg);
             break;
 
           case '!':
@@ -2904,7 +2880,7 @@ rxvt_term::process_csi_seq ()
                 scr_soft_reset ();
 
                 static const int pm_h[] = { 7, 25 };
-                static const int pm_l[] = { 1, 3, 4, 5, 6, 9, 66, 1000, 1001, 1005, 1015, 1049 };
+                static const int pm_l[] = { 1, 3, 4, 5, 6, 9, 66, 1000, 1001, 1005, 1006, 1015, 1049 };
 
                 process_terminal_mode ('h', 0, ecb_array_length (pm_h), pm_h);
                 process_terminal_mode ('l', 0, ecb_array_length (pm_l), pm_l);
@@ -2944,7 +2920,7 @@ rxvt_term::process_csi_seq ()
         break;
 
       case CSI_CUB:		/* 8.3.18: (1) CURSOR LEFT */
-      case CSI_HPB: 		/* 8.3.59: (1) CHARACTER POSITION BACKWARD */
+      case CSI_HPB:		/* 8.3.59: (1) CHARACTER POSITION BACKWARD */
 #ifdef ISO6429
         arg[0] = -arg[0];
 #else				/* emulate common DEC VTs */
@@ -3330,20 +3306,120 @@ rxvt_term::process_osc_seq ()
     }
 }
 
+static unsigned int
+colorcube_index (unsigned int idx_r,
+                 unsigned int idx_g,
+                 unsigned int idx_b)
+{
+  assert (idx_r < Red_levels);
+  assert (idx_g < Green_levels);
+  assert (idx_b < Blue_levels);
+
+  return idx_r * Blue_levels * Green_levels +
+         idx_g * Blue_levels +
+         idx_b;
+}
+
+/*
+ * Find the nearest color slot in the hidden color cube,
+ * adapt its value to the 32bit RGBA color.
+ */
+unsigned int
+rxvt_term::map_rgb24_color (unsigned int r, unsigned int g, unsigned int b, unsigned int a)
+{
+  r &= 0xff;
+  g &= 0xff;
+  b &= 0xff;
+  a &= 0xff;
+
+  uint32_t color = (a << 24) | (r << 16) | (g << 8) | b;
+
+  /* we allow one of the 6 closest neighbouring colours */
+  /* to replace the current color, if they not used recently */
+  static const signed char dxyz[][3] = {
+    0, 0, 0,
+    0, 0, 4,
+    0, 4, 0,
+    4, 0, 0,
+    0, 4, 4,
+    4, 4, 0,
+    4, 0, 4,
+  };
+
+  static const unsigned char color_level[8][32] = {
+    // neighbour index
+    {0, 0, 1, 0, 0, 1, 1, 2, 2, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+    {0, 1, 0, 1, 1, 2, 1, 1, 2, 2, 3, 3, 2, 2, 2, 3, 3, 3, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4},
+    {0, 0, 1, 2, 1, 1, 2, 3, 3, 2, 2, 3, 3, 4, 4, 3, 3, 3, 4, 4, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 5, 5},
+    {0, 0, 2, 1, 2, 3, 2, 2, 3, 4, 4, 3, 3, 4, 4, 5, 5, 4, 4, 5, 5, 5, 6, 6, 5, 5, 5, 6, 6, 6, 6, 6},
+    // Red_levels/Green_levels/Blue_levels index
+    {0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+    {0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
+    {0, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5},
+    {0, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6},
+  };
+
+  unsigned int idx;
+
+  for (int n = 0; n < ecb_array_length (dxyz); ++n)
+    {
+      unsigned int idx_r = color_level[  Red_levels - dxyz[n][0]][r / 8];
+      unsigned int idx_g = color_level[Green_levels - dxyz[n][1]][g / 8];
+      unsigned int idx_b = color_level[ Blue_levels - dxyz[n][2]][b / 8];
+      unsigned int index = colorcube_index (idx_r, idx_g, idx_b);
+
+      if (n == 0)
+        idx = index;
+
+      if (rgb24_color[index] == color)
+        {
+          rgb24_seqno[index] = ++rgb24_sequence;
+          return index + minTermCOLOR24;
+        }
+
+      // minor issue: could update index 0 few more times
+      if ((rgb24_seqno[index] | rgb24_color[index]) == 0)
+        {
+          idx = index;
+          goto update;
+        }
+
+      // like (rgb24_seqno[idx] > rgb24_seqno[index])
+      // but also handles wrap around values good enough
+      if ((uint16_t)(rgb24_seqno[idx] - rgb24_seqno[index]) < 0x7fff)
+        idx = index;
+    }
+
+update:
+  rgb24_color[idx] = color;
+  rgb24_seqno[idx] = ++rgb24_sequence;
+
+  idx += minTermCOLOR24;
+  pix_colors_focused [idx].free (this);
+  pix_colors_focused [idx].set (this, rgba (r * 0x0101, g * 0x0101, b * 0x0101, a * 0x0101));
+  update_fade_color (idx, false);
+
+  return idx;
+}
+
 void
 rxvt_term::process_color_seq (int report, int color, const char *str, char resp)
 {
   if (str[0] == '?' && !str[1])
     {
+      if (!IN_RANGE_INC (color, minCOLOR, maxTermCOLOR))
+        return;
+
       rgba c;
       pix_colors_focused[color].get (c);
+      color -= minCOLOR;
 
 #if XFT
       if (c.a != rgba::MAX_CC)
-        tt_printf ("\033]%d;rgba:%04x/%04x/%04x/%04x%c", report, c.r, c.g, c.b, c.a, resp);
+        tt_printf ("\033]%d;%d;rgba:%04x/%04x/%04x/%04x%c", report, color, c.r, c.g, c.b, c.a, resp);
       else
 #endif
-        tt_printf ("\033]%d;rgb:%04x/%04x/%04x%c", report, c.r, c.g, c.b, resp);
+        tt_printf ("\033]%d;%d;rgb:%04x/%04x/%04x%c", report, color, c.r, c.g, c.b, resp);
     }
   else
     set_window_color (color, str);
@@ -3476,74 +3552,6 @@ rxvt_term::process_xterm_seq (int op, char *str, char resp)
       case URxvt_Color_border:
         process_color_seq (op, Color_border, str, resp);
         break;
-
-#if BG_IMAGE_FROM_ROOT
-      case URxvt_Color_tint:
-        process_color_seq (op, Color_tint, str, resp);
-        {
-          bool changed = false;
-
-          if (ISSET_PIXCOLOR (Color_tint))
-            changed = root_effects.set_tint (pix_colors_focused [Color_tint]);
-
-          if (changed)
-            update_background ();
-        }
-
-        break;
-#endif
-
-#if BG_IMAGE_FROM_FILE
-      case Rxvt_Pixmap:
-        if (!strcmp (str, "?"))
-          {
-            char str[256];
-            int h_scale = fimage.h_scale;
-            int v_scale = fimage.v_scale;
-            int h_align = fimage.h_align;
-            int v_align = fimage.v_align;
-
-            sprintf (str, "[%dx%d+%d+%d]",
-                     h_scale, v_scale,
-                     h_align, v_align);
-            process_xterm_seq (XTerm_title, str, CHAR_ST);
-          }
-        else
-          {
-            bool changed = false;
-
-            if (*str != ';')
-              {
-                try
-                  {
-                    fimage.set_file_geometry (this, str);
-                    changed = true;
-                  }
-                catch (const class rxvt_failure_exception &e)
-                  {
-                  }
-              }
-            else
-              {
-                str++;
-                if (fimage.set_geometry (str, true))
-                  changed = true;
-              }
-
-            if (changed)
-              {
-                if (bg_window_position_sensitive ())
-                  {
-                    int x, y;
-                    get_window_origin (x, y);
-                    parent_x = x;
-                    parent_y = y;
-                  }
-                update_background ();
-              }
-          }
-        break;
-#endif
 
       case XTerm_logfile:
         // TODO, when secure mode?
@@ -3709,12 +3717,14 @@ rxvt_term::process_terminal_mode (int mode, int priv ecb_unused, unsigned int na
                   { 1002, PrivMode_MouseBtnEvent },
                   { 1003, PrivMode_MouseAnyEvent },
 #if ENABLE_FRILLS
-                  { 1005, PrivMode_ExtModeMouse },
+                  { 1004, PrivMode_FocusEvent },
+                  { 1005, PrivMode_ExtMouseUTF8 },
+                  { 1006, PrivMode_ExtMouseSGR },
 #endif
                   { 1010, PrivMode_TtyOutputInh }, // rxvt extension
                   { 1011, PrivMode_Keypress }, // rxvt extension
 #if ENABLE_FRILLS
-                  { 1015, PrivMode_ExtMouseRight }, // urxvt extension of 1005
+                  { 1015, PrivMode_ExtMouseUrxvt }, // urxvt extension of 1005
 #endif
                  // 1035 enable modifiers for alt, numlock NYI
                  // 1036 send ESC for meta keys NYI
@@ -3728,6 +3738,24 @@ rxvt_term::process_terminal_mode (int mode, int priv ecb_unused, unsigned int na
 
   if (nargs == 0)
     return;
+
+  // DECRQM
+  if (mode == 'p')
+    {
+      int status = 0;
+      if (nargs != 1)
+        return;
+
+      for (j = 0; j < ecb_array_length (argtopriv); j++)
+        if (argtopriv[j].argval == arg[0])
+          {
+            status = (priv_modes & argtopriv[j].bit) ? 1 : 2;
+            break;
+          }
+
+      tt_printf ("\33[?%d;%d$y", arg[0], status);
+      return;
+    }
 
   /* make lo/hi boolean */
   if (mode == 'l')
@@ -3965,13 +3993,6 @@ rxvt_term::process_sgr_mode (unsigned int nargs, const int *arg)
           case 37:
             scr_color ((unsigned int) (minCOLOR + (arg[i] - 30)), Color_fg);
             break;
-          case 38: // set fg color, ISO 8613-6
-            if (nargs > i + 2 && arg[i + 1] == 5)
-              {
-                scr_color ((unsigned int) (minCOLOR + arg[i + 2]), Color_fg);
-                i += 2;
-              }
-            break;
           case 39:		/* default fg */
             scr_color (Color_fg, Color_fg);
             break;
@@ -3986,15 +4007,37 @@ rxvt_term::process_sgr_mode (unsigned int nargs, const int *arg)
           case 47:
             scr_color ((unsigned int) (minCOLOR + (arg[i] - 40)), Color_bg);
             break;
-          case 48: // set bg color, ISO 8613-6
-            if (nargs > i + 2 && arg[i + 1] == 5)
-              {
-                scr_color ((unsigned int) (minCOLOR + arg[i + 2]), Color_bg);
-                i += 2;
-              }
-            break;
           case 49:		/* default bg */
             scr_color (Color_bg, Color_bg);
+            break;
+
+          case 38: // set fg color, ISO 8613-6
+          case 48: // set bg color, ISO 8613-6
+            {
+              unsigned int fgbg = arg[i] == 38 ? Color_fg : Color_bg;
+              unsigned int idx;
+
+              if (nargs > i + 2 && arg[i + 1] == 5)
+                {
+                  idx = minCOLOR + arg[i + 2];
+                  i += 2;
+
+                  scr_color (idx, fgbg);
+                }
+              else if (nargs > i + 4 && arg[i + 1] == 2)
+                {
+                  unsigned int r = arg[i + 2];
+                  unsigned int g = arg[i + 3];
+                  unsigned int b = arg[i + 4];
+                  unsigned int a = 0xff;
+
+                  idx = map_rgb24_color (r, g, b, a);
+
+                  i += 4;
+
+                  scr_color (idx, fgbg);
+                }
+            }
             break;
 
           //case 50: // not variable spacing

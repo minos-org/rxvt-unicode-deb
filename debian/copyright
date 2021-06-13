@@ -4,51 +4,52 @@ Source: http://dist.schmorp.de/rxvt-unicode/
 
 Files: *
 Copyright:
-    Copyright (C) 2003-2015 Marc Alexander Lehmann <schmorp@schmorp.de>
-    Copyright (C) 2006-2015 Emanuele Giaquinta <e.giaquinta@glauco.it>
-    Copyright (C) 1998      Alfredo K. Kojima <kojima@windowmaker.org>
-    Copyright (C) 1993      Brian Stempien <stempien@cs.wmich.edu>
-    Copyright (C) 1996      Chuck Blake <cblake@BBN.COM>
-    Copyright (C) 1999      D J Hawkey Jr <hawkeyd@visi.com>
-    Copyright (C) 1995      Garrett D'Amore <garrett@netcom.com>
-    Copyright (C) 1997-2001 Geoff Wing <gcw@pobox.com>
-    Copyright (C) 1995      Jakub Jelinek <jj@gnu.ai.mit.edu>
-    Copyright (C) 1992      John Bovey <jdb@ukc.ac.uk>
-    Copyright (C) 1997-1998 Kay Roemer & Arno Puder
-    Copyright (C) 1993      lipka
-    Copyright (C) 2001      Marius Gedminas
-    Copyright (C) 1996-1998 mj olesen <olesen@me.queensu.ca>
-    Copyright (C) 1997-1998 Oezguer Kesim <kesim@math.fu-berlin.de>
-    Copyright (C) 1995      Piet W. Plomp <piet@idefix.icce.rug.nl>
-    Copyright (C) 1995,1997 Raul Garcia Garcia <rgg@tid.es>
-    Copyright (C) 1994      Robert Nation <nation@rocket.sanders.lockheed.com>
-    Copyright (C) 2003      Rob McMullen <robm@flipturn.org>
-    Copyright (C) 2011      Ryan Kavanagh <ryanakca@kubuntu.org>
-    Copyright (C) 2006      Samuel Ljungkvist <salj@triplefusion.net>
-    Copyright (C) 2007      Sasha Vasko <sasha@aftercode.net>
-    Copyright (C) 1995      Steven Hirsch <hirsch@emba.uvm.edu>
-    Copyright (C) 2005      WU Fengguang
+    2003-2021 Marc Alexander Lehmann <schmorp@schmorp.de>
+              Wolfgang Pietsch
+    1992      John Bovey <jdb@ukc.ac.uk>
+    1992-1994 Robert Nation <nation@rocket.sanders.lockheed.com>
+    1993      Brian Stempien <stempien@cs.wmich.edu>
+    1993      lipka
+    1995      Garrett D'Amore <garrett@netcom.com>
+    1995      Jakub Jelinek <jj@gnu.ai.mit.edu>
+    1995      Piet W. Plomp <piet@idefix.icce.rug.nl>
+    1995      Steven Hirsch <hirsch@emba.uvm.edu>
+    1995-1997 Raul Garcia Garcia <rgg@tid.es>
+    1996      Chuck Blake <cblake@BBN.COM>
+    1996-1998 mj olesen <olesen@me.queensu.ca>
+    1997-1998 Kay Roemer & Arno Puder
+    1997-1998 Oezguer Kesim <kesim@math.fu-berlin.de>
+    1997-2001 Geoff Wing <gcw@pobox.com>
+    1998      Alfredo K. Kojima <kojima@windowmaker.org>
+    1999      D J Hawkey Jr <hawkeyd@visi.com>
+    2001      Marius Gedminas
+    2003      Rob McMullen <robm@flipturn.org>
+    2005      WU Fengguang
+    2006      Samuel Ljungkvist <salj@triplefusion.net>
+    2006-2015 Emanuele Giaquinta <e.giaquinta@glauco.it>
+    2011      Ryan Kavanagh <ryanakca@kubuntu.org>
 License: GPL-2.0+
 
 Files: libptytty/src/ecb.h
+       libev/*
 Copyright:
-    Copyright (C) 2009-2015 Marc Alexander Lehmann <libecb@schmorp.de>
-    Copyright (C) 2011 Emanuele Giaquinta
+    2009-2020 Marc Alexander Lehmann <libecb@schmorp.de>
+    2011 Emanuele Giaquinta
 License: BSD-2-clause or GPL-2.0+
 
 Files: debian/*
 Copyright:
-    Copyright (C) 2004-2006  Eduard Bloch <blade@debian.org>
-    Copyright (C) 2006-2011  Decklin Foster <decklin@red-bean.com>
-    Copyright (C) 2011-2021  Ryan Kavanagh <rak@debian.org>
+    2004-2006  Eduard Bloch <blade@debian.org>
+    2006-2011  Decklin Foster <decklin@red-bean.com>
+    2011-2021  Ryan Kavanagh <rak@debian.org>
 License: GPL-2.0+
 
 Files: debian/extensions/urxvt-font-size/*
 Copyright:
-    Copyright (c) 2008 David O'Neill
-    Copyright (c) 2012 Noah K. Tilton <noahktilton@gmail.com>
-    Copyright (c) 2009-2012 Simon Lundström <simmel@soy.se>
-    Copyright (c) 2012-2016 Jan Larres <jan@majutsushi.net>
+    2008      David O'Neill
+    2009-2012 Simon Lundström <simmel@soy.se>
+    2012      Noah K. Tilton <noahktilton@gmail.com>
+    2012-2016 Jan Larres <jan@majutsushi.net>
 Comment: Downloaded from https://github.com/majutsushi/urxvt-font-size
 License: Expat
 

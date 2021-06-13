@@ -1,0 +1,18 @@
+Description: Fix a bug in tabbed extension
+Origin: upstream
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: rxvt-unicode/src/urxvt.pm
+===================================================================
+--- rxvt-unicode.orig/src/urxvt.pm	2021-06-12 17:51:26.934178750 -0400
++++ rxvt-unicode/src/urxvt.pm	2021-06-13 11:32:26.356432782 -0400
+@@ -731,8 +731,8 @@
+       }
+ 
+       for (
++         @{ delete $TERM->{perl_ext_3} },
+          (grep $_, map { split /,/, $TERM->resource ("perl_ext_$_") } 1, 2),
+-         @{ delete $TERM->{perl_ext_3} }
+       ) {
+          if ($_ eq "default") {
+ 

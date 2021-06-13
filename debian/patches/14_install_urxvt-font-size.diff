@@ -7,9 +7,9 @@ Last-Update: 2018-01-02
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 Index: rxvt-unicode/src/Makefile.in
 ===================================================================
---- rxvt-unicode.orig/src/Makefile.in	2016-01-23 15:09:22.000000000 -0500
-+++ rxvt-unicode/src/Makefile.in	2018-01-02 15:11:55.910803007 -0500
-@@ -105,7 +105,7 @@
+--- rxvt-unicode.orig/src/Makefile.in	2021-06-13 11:27:41.463421621 -0400
++++ rxvt-unicode/src/Makefile.in	2021-06-13 11:27:41.459419977 -0400
+@@ -107,7 +107,7 @@
  @IF_PERL@	$(INSTALL) -d $(DESTDIR)$(man1dir)
  @IF_PERL@	$(INSTALL) -d $(DESTDIR)$(man3dir)
  @IF_PERL@	$(INSTALL_DATA) $(srcdir)/urxvt.pm $(DESTDIR)$(libdir)/urxvt/urxvt.pm

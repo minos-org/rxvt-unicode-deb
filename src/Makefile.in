@@ -36,7 +36,7 @@ first_rule: all
 dummy:
 
 COMMON = \
-	background.o command.o rxvtfont.o init.o main.o misc.o \
+	command.o rxvtfont.o init.o main.o misc.o \
 	screen.o scrollbar.o scrollbar-next.o scrollbar-rxvt.o \
 	scrollbar-xterm.o scrollbar-plain.o xdefaults.o encoding.o \
 	rxvttoolkit.o rxvtutil.o keyboard.o rxvtimg.o \
@@ -47,6 +47,7 @@ COMMON_DAEMON = rxvtdaemon.o
 RXVT_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)$(EXEEXT)
 RXVTC_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)c$(EXEEXT)
 RXVTD_BINNAME=$(DESTDIR)$(bindir)/$(RXVTNAME)d$(EXEEXT)
+RCLOCK_BINNAME=$(DESTDIR)$(bindir)/urclock$(EXEEXT)
 
 #
 # Distribution variables
@@ -72,17 +73,18 @@ rxvtd: rxvtd.o $(COMMON) $(COMMON_DAEMON)
 rxvtc: rxvtc.o $(COMMON_DAEMON) fdpass_wrapper.o
 	$(LINK) -o $@ rxvtc.o $(COMMON_DAEMON) fdpass_wrapper.o $(LIBS)
 
+rclock: rclock.o
+	$(LINK) -o $@ rclock.o $(LIBS) $(XLIB)
+
 #-------------------------------------------------------------------------
 
-#EXUBERANT_OPTS = -I NOTHROW -I THROW
-
 tags: *.[Ch]
-	ctags $(EXUBERANT_OPTS) *.[Ch]
+	ctags *.[Ch]
 
 TAGS: *.[Ch]
-	etags $(EXUBERANT_OPTS) *.[Ch]
+	etags *.[Ch]
 
-allbin: rxvt rxvtd rxvtc
+allbin: rxvt rxvtd rxvtc rclock
 
 alldoc:
 
@@ -129,6 +131,7 @@ install-bin: allbin
 	$(INSTALL_PROGRAM) rxvt  $(RXVT_BINNAME)
 	$(INSTALL_PROGRAM) rxvtc $(RXVTC_BINNAME)
 	$(INSTALL_PROGRAM) rxvtd $(RXVTD_BINNAME)
+	$(INSTALL_PROGRAM) rclock $(RCLOCK_BINNAME)
 
 install: install-bin install-perl
 
@@ -144,14 +147,13 @@ rxvtperl.o: rxvtperl.C perlxsi.c
 depend:
 	makedepend -f Makefile.in -I. -I.. -I../libptytty/src -I../libev -Y *.C *.xs >/dev/null 2>&1
 
+# makedepend has trouble finding these
+ev_cpp.o: ../libev/ev.c ../libev/ev_epoll.c ../libev/ev_kqueue.c ../libev/ev_linuxaio.c
+ev_cpp.o: ../libev/ev_poll.c ../libev/ev_port.c ../libev/ev_select.c ../libev/ev_win32.c
+
+
 # DO NOT DELETE: nice dependency list follows
 
-background.o: ../config.h rxvt.h feature.h ../libptytty/src/ecb.h encoding.h
-background.o: rxvtutil.h ../libptytty/src/estl.h emman.h rxvtfont.h
-background.o: rxvttoolkit.h ev_cpp.h ../config.h ../libev/ev++.h
-background.o: ../libev/ev.h callback.h rxvtimg.h scrollbar.h
-background.o: ../libptytty/src/libptytty.h rxvtperl.h hookinc.h rsinc.h
-background.o: optinc.h
 command.o: ../config.h rxvt.h feature.h ../libptytty/src/ecb.h encoding.h
 command.o: rxvtutil.h ../libptytty/src/estl.h emman.h rxvtfont.h
 command.o: rxvttoolkit.h ev_cpp.h ../config.h ../libev/ev++.h ../libev/ev.h

@@ -153,6 +153,31 @@ rxvt_network_display (const char *display)
 }
 #endif
 
+#define NULL_5   \
+        NULL,    \
+        NULL,    \
+        NULL,    \
+        NULL,    \
+        NULL,
+
+#define NULL_10  \
+        NULL_5   \
+        NULL_5
+
+#define NULL_40  \
+        NULL_10  \
+        NULL_10  \
+        NULL_10  \
+        NULL_10
+
+#define NULL_50  \
+        NULL_40  \
+        NULL_10
+
+#define NULL_100 \
+        NULL_50  \
+        NULL_50
+
 static const char *const def_colorName[] =
   {
     COLOR_FOREGROUND,
@@ -258,6 +283,12 @@ static const char *const def_colorName[] =
     "rgb:b9/b9/b9",
     "rgb:d0/d0/d0",
     "rgb:e7/e7/e7",
+    NULL_100
+    NULL_40
+    NULL,
+    NULL,
+    NULL,
+    NULL,
 #else
     // 256 xterm colours
     "rgb:00/00/00",
@@ -500,6 +531,10 @@ static const char *const def_colorName[] =
     "rgb:da/da/da",
     "rgb:e4/e4/e4",
     "rgb:ee/ee/ee",
+    NULL_100
+    NULL_100
+    NULL_40
+    NULL_5
 #endif
 
 #ifndef NO_CURSORCOLOR
@@ -525,9 +560,6 @@ static const char *const def_colorName[] =
     COLOR_SCROLLBAR,
 #ifdef RXVT_SCROLLBAR
     COLOR_SCROLLTROUGH,
-#endif
-#if BG_IMAGE_FROM_ROOT
-    NULL,
 #endif
 #if OFF_FOCUS_FADING
     "rgb:00/00/00",
@@ -567,6 +599,14 @@ rxvt_term::init_vars ()
   set_option (Opt_iso14755_52);
   set_option (Opt_buffered);
 }
+
+#if ENABLE_PERL
+static void
+rxvt_perl_parse_resource (rxvt_term *term, const char *k, const char *v)
+{
+  rxvt_perl.parse_resource (term, k, false, false, 0, v);
+}
+#endif
 
 /*----------------------------------------------------------------------*/
 const char **
@@ -615,6 +655,7 @@ rxvt_term::init_resources (int argc, const char *const *argv)
       || (rs[Rs_perl_eval] && *rs[Rs_perl_eval]))
     {
       rxvt_perl.init (this);
+      enumerate_resources (rxvt_perl_parse_resource);
       HOOK_INVOKE ((this, HOOK_INIT, DT_END));
     }
 #endif
@@ -824,10 +865,6 @@ rxvt_term::init2 (int argc, const char *const *argv)
   if (option (Opt_scrollBar))
     scrollBar.resize ();      /* create and map scrollbar */
 
-#ifdef HAVE_BG_PIXMAP
-  bg_init ();
-#endif
-
 #if ENABLE_PERL
   rootwin_ev.start (display, display->root);
 #endif
@@ -938,9 +975,9 @@ rxvt_term::init_env ()
 #endif
 
   if (depth <= 2)
-    putenv ("COLORTERM=" COLORTERMENV "-mono");
+    putenv ((char *)"COLORTERM=" COLORTERMENV "-mono");
   else
-    putenv ("COLORTERM=" COLORTERMENVFULL);
+    putenv ((char *)"COLORTERM=" COLORTERMENVFULL);
 
   if (rs[Rs_term_name] != NULL)
     {
@@ -949,7 +986,7 @@ rxvt_term::init_env ()
       putenv (env_term);
     }
   else
-    putenv ("TERM=" TERMENV);
+    putenv ((char *)"TERM=" TERMENV);
 
 #ifdef HAVE_UNSETENV
   /* avoid passing old settings and confusing term size */
@@ -978,7 +1015,7 @@ rxvt_term::set_locale (const char *locale)
       else
         rxvt_warn ("default locale unavailable, check LC_* and LANG variables. Continuing.\n");
 
-      this->locale = "C";
+      this->locale = (char *)"C"; /* strdup'ed below */
     }
 
 

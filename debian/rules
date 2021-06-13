@@ -68,10 +68,3 @@ override_dh_fixperms-arch:
 	chgrp utmp $(PACKAGE_DIR)/usr/bin/urxvt $(PACKAGE_DIR)/usr/bin/urxvtd
 	chmod g+s $(PACKAGE_DIR)/usr/bin/urxvt $(PACKAGE_DIR)/usr/bin/urxvtd
 	chmod +x $(PACKAGE_DIR)/usr/lib/$(DEB_HOST_MULTIARCH)/urxvt/perl/*
-
-override_dh_gencontrol:
-	dh_gencontrol
-	# We need to make our version greater than the rxvt version to allow for
-	# upgrades
-	dh_gencontrol -prxvt -- -v1:2.7.10-7.1+urxvt$(DEB_VERSION)
-	dh_gencontrol -prxvt-ml -- -v1:2.7.10-7.1+urxvt$(DEB_VERSION)

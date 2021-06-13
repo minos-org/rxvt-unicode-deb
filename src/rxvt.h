@@ -77,20 +77,12 @@ typedef  int32_t tlen_t_; // specifically for use in the line_t structure
 #endif
 
 #if XRENDER && (HAVE_PIXBUF || ENABLE_TRANSPARENCY)
-# define HAVE_BG_PIXMAP 1
 # define HAVE_IMG 1
 #endif
 
-#if HAVE_BG_PIXMAP
-# if HAVE_PIXBUF
-#  define BG_IMAGE_FROM_FILE 1
-# endif
-# if ENABLE_TRANSPARENCY
-#  define BG_IMAGE_FROM_ROOT 1
-# endif
-#endif
+#define ECB_NO_THREADS 1
+#include "ecb.h"
 
-#include <ecb.h>
 #include "encoding.h"
 #include "rxvtutil.h"
 #include "rxvtfont.h"
@@ -145,9 +137,9 @@ class out_of_input { };
  */
 // main.C
 #define SET_LOCALE(locale) rxvt_set_locale (locale)
-extern bool rxvt_set_locale (const char *locale) NOTHROW;
-extern void rxvt_push_locale (const char *locale) NOTHROW;
-extern void rxvt_pop_locale () NOTHROW;
+extern bool rxvt_set_locale (const char *locale) noexcept;
+extern void rxvt_push_locale (const char *locale) noexcept;
+extern void rxvt_pop_locale () noexcept;
 void rxvt_init ();
 
 // misc.C
@@ -156,24 +148,24 @@ wchar_t *        rxvt_mbstowcs                    (const char *str, int len = -1
 char *           rxvt_wcstoutf8                   (const wchar_t *str, int len = -1);
 wchar_t *        rxvt_utf8towcs                   (const char *str, int len = -1);
 
-const char *     rxvt_basename                    (const char *str) NOTHROW;
-void             rxvt_vlog                        (const char *fmt, va_list arg_ptr) NOTHROW;
-void             rxvt_log                         (const char *fmt,...) NOTHROW;
-void             rxvt_warn                        (const char *fmt,...) NOTHROW;
+const char *     rxvt_basename                    (const char *str) noexcept;
+void             rxvt_vlog                        (const char *fmt, va_list arg_ptr) noexcept;
+void             rxvt_log                         (const char *fmt,...) noexcept;
+void             rxvt_warn                        (const char *fmt,...) noexcept;
 ecb_noreturn ecb_cold
-void             rxvt_fatal                       (const char *fmt, ...) THROW ((class rxvt_failure_exception));
+void             rxvt_fatal                       (const char *fmt, ...);
 ecb_noreturn ecb_cold
-void             rxvt_exit_failure                () THROW ((class rxvt_failure_exception));
+void             rxvt_exit_failure                ();
 
 void *           rxvt_malloc                      (size_t size);
 void *           rxvt_calloc                      (size_t number, size_t size);
 void *           rxvt_realloc                     (void *ptr, size_t size);
 
-char *           rxvt_strtrim                     (char *str) NOTHROW;
-char **          rxvt_strsplit                    (char delim, const char *str) NOTHROW;
+char *           rxvt_strtrim                     (char *str) noexcept;
+char **          rxvt_strsplit                    (char delim, const char *str) noexcept;
 
 static inline void
-rxvt_free_strsplit (char **ptr) NOTHROW
+rxvt_free_strsplit (char **ptr) noexcept
 {
   free (ptr[0]);
   free (ptr);
@@ -213,85 +205,6 @@ struct localise_env
     environ = orig_env;
   }
 };
-
-#ifdef HAVE_BG_PIXMAP
-struct image_effects
-{
-  bool tint_set;
-  rxvt_color tint;
-  int shade;
-  int h_blurRadius, v_blurRadius;
-
-  image_effects ()
-  {
-    tint_set     =
-    h_blurRadius =
-    v_blurRadius = 0;
-    shade = 100;
-  }
-
-  bool need_tint ()
-  {
-    return shade != 100 || tint_set;
-  }
-
-  bool need_blur ()
-  {
-    return h_blurRadius && v_blurRadius;
-  }
-
-  bool set_tint (const rxvt_color &new_tint);
-  bool set_shade (const char *shade_str);
-  bool set_blur (const char *geom);
-};
-
-# if BG_IMAGE_FROM_FILE
-enum {
-  IM_IS_SIZE_SENSITIVE = 1 << 1,
-  IM_KEEP_ASPECT       = 1 << 2,
-  IM_ROOT_ALIGN        = 1 << 3,
-  IM_TILE              = 1 << 4,
-  IM_GEOMETRY_FLAGS    = IM_KEEP_ASPECT | IM_ROOT_ALIGN | IM_TILE,
-};
-
-enum {
-  noScale = 0,
-  windowScale = 100,
-  defaultScale = windowScale,
-  centerAlign = 50,
-  defaultAlign = centerAlign,
-};
-
-struct rxvt_image : image_effects
-{
-  unsigned short alpha;
-  uint8_t flags;
-  unsigned int h_scale, v_scale; /* percents of the window size */
-  int h_align, v_align;          /* percents of the window size:
-                                    0 - left align, 50 - center, 100 - right */
-
-  bool is_size_sensitive ()
-  {
-    return (!(flags & IM_TILE)
-            || h_scale || v_scale
-            || (!(flags & IM_ROOT_ALIGN) && (h_align || v_align)));
-  }
-
-  rxvt_img *img;
-
-  void destroy ()
-  {
-    delete img;
-    img = 0;
-  }
-
-  rxvt_image ();
-  void set_file_geometry (rxvt_screen *s, const char *file);
-  void set_file (rxvt_screen *s, const char *file);
-  bool set_geometry (const char *geom, bool update = false);
-};
-# endif
-#endif
 
 /*
  *****************************************************************************
@@ -344,7 +257,7 @@ struct mouse_event
 
 /* COLORTERM, TERM environment variables */
 #define COLORTERMENV    "rxvt"
-#if BG_IMAGE_FROM_FILE
+#if HAVE_IMG
 # define COLORTERMENVFULL COLORTERMENV "-xpm"
 #else
 # define COLORTERMENVFULL COLORTERMENV
@@ -356,6 +269,23 @@ struct mouse_event
 #  define TERMENV        "rxvt-unicode"
 # endif
 #endif
+
+// Hidden color cube for indexed 24-bit colors. There are fewer blue levels
+// because normal human eye is less sensitive to the blue component than to
+// the red or green. (https://en.m.wikipedia.org/wiki/Color_depth#8-bit_color)
+#if USE_256_COLORS
+// 7x7x5=245 < 254 unused color indices
+# define Red_levels      7
+# define Green_levels    7
+# define Blue_levels     5
+#else
+// 6x6x4=144 < 166 unused color indices
+# define Red_levels      6
+# define Green_levels    6
+# define Blue_levels     4
+#endif
+
+#define RGB24_CUBE_SIZE (Red_levels * Green_levels * Blue_levels)
 
 #if defined (NO_MOUSE_REPORT) && !defined (NO_MOUSE_REPORT_SCROLLBAR)
 # define NO_MOUSE_REPORT_SCROLLBAR 1
@@ -495,14 +425,12 @@ enum {
   Rxvt_restoreFG         = 39,
   Rxvt_restoreBG         = 49,
 
-  Rxvt_Pixmap            = 20,      // new bg pixmap
   Rxvt_dumpscreen        = 55,      // dump scrollback and all of screen
 
   URxvt_locale           = 701,     // change locale
   URxvt_version          = 702,     // request version
 
   URxvt_Color_IT         = 704,     // change actual 'Italic' colour
-  URxvt_Color_tint       = 705,     // change actual tint colour
   URxvt_Color_BD         = 706,     // change actual 'Bold' color
   URxvt_Color_UL         = 707,     // change actual 'Underline' color
   URxvt_Color_border     = 708,
@@ -560,6 +488,9 @@ enum colour_list {
 #else
   maxTermCOLOR = Color_White + 72,
 #endif
+  minTermCOLOR24,
+  maxTermCOLOR24 = minTermCOLOR24 +
+                   RGB24_CUBE_SIZE - 1,
 #ifndef NO_CURSORCOLOR
   Color_cursor,
   Color_cursor2,
@@ -584,9 +515,6 @@ enum colour_list {
 #ifdef RXVT_SCROLLBAR
   Color_trough,
 #endif
-#if BG_IMAGE_FROM_ROOT
-  Color_tint,
-#endif
 #if OFF_FOCUS_FADING
   Color_fade,
 #endif
@@ -601,9 +529,13 @@ enum colour_list {
 };
 
 #if USE_256_COLORS
-# define Color_Bits      9 // 0 .. maxTermCOLOR
+# define Color_Bits      9 // 0 .. maxTermCOLOR24
 #else
-# define Color_Bits      7 // 0 .. maxTermCOLOR
+# define Color_Bits      8 // 0 .. maxTermCOLOR24
+#endif
+
+#if maxTermCOLOR24 >= (1 << Color_Bits)
+# error color index overflow
 #endif
 
 /*
@@ -642,9 +574,11 @@ enum {
 #define PrivMode_MouseBtnEvent  (1UL<<20)
 #define PrivMode_MouseAnyEvent  (1UL<<21)
 #define PrivMode_BracketPaste   (1UL<<22)
-#define PrivMode_ExtModeMouse   (1UL<<23) // xterm pseudo-utf-8 hack
-#define PrivMode_ExtMouseRight  (1UL<<24) // xterm pseudo-utf-8, but works in non-utf-8-locales
+#define PrivMode_ExtMouseUTF8   (1UL<<23) // xterm pseudo-utf-8 hack
+#define PrivMode_ExtMouseUrxvt  (1UL<<24) // xterm pseudo-utf-8, but works in non-utf-8-locales
 #define PrivMode_BlinkingCursor (1UL<<25)
+#define PrivMode_FocusEvent     (1UL<<26)
+#define PrivMode_ExtMouseSGR    (1UL<<27)
 
 #define PrivMode_mouse_report   (PrivMode_MouseX10|PrivMode_MouseX11|PrivMode_MouseBtnEvent|PrivMode_MouseAnyEvent)
 
@@ -1170,35 +1104,10 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   static struct termios def_tio;
   row_col_t       oldcursor;
 
-#ifdef HAVE_BG_PIXMAP
-  void bg_init ();
-  void bg_destroy ();
-
-# if BG_IMAGE_FROM_FILE
-  rxvt_image fimage;
-  void render_image (rxvt_image &image);
-# endif
-
-# if BG_IMAGE_FROM_ROOT
-  rxvt_img *root_img;
-  image_effects root_effects;
-
-  void render_root_image ();
-# endif
-
-  ev_tstamp bg_valid_since;
-
-  bool bg_window_size_sensitive ();
-  bool bg_window_position_sensitive ();
-
-  void bg_render ();
-#endif
-
 #ifdef HAVE_IMG
   enum {
     BG_IS_TRANSPARENT    = 1 << 1,
     BG_NEEDS_REFRESH     = 1 << 2,
-    BG_INHIBIT_RENDER    = 1 << 3,
   };
 
   uint8_t bg_flags;
@@ -1209,14 +1118,14 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
 #if ENABLE_OVERLAY
   overlay_base ov;
 
-  void scr_swap_overlay () NOTHROW;
-  void scr_overlay_new (int x, int y, int w, int h) NOTHROW;
-  void scr_overlay_off () NOTHROW;
+  void scr_swap_overlay () noexcept;
+  void scr_overlay_new (int x, int y, int w, int h) noexcept;
+  void scr_overlay_off () noexcept;
   void scr_overlay_set (int x, int y,
                         text_t text,
-                        rend_t rend = OVERLAY_RSTYLE) NOTHROW;
-  void scr_overlay_set (int x, int y, const char *s) NOTHROW;
-  void scr_overlay_set (int x, int y, const wchar_t *s) NOTHROW;
+                        rend_t rend = OVERLAY_RSTYLE) noexcept;
+  void scr_overlay_set (int x, int y, const char *s) noexcept;
+  void scr_overlay_set (int x, int y, const wchar_t *s) noexcept;
 #endif
 
   vector<void *> allocated;           // free these memory blocks with free()
@@ -1249,6 +1158,10 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   void           *chunk;
   size_t          chunk_size;
 
+  uint32_t        rgb24_color[RGB24_CUBE_SIZE];   // the 24-bit color value
+  uint16_t        rgb24_seqno[RGB24_CUBE_SIZE];   // which one is older?
+  uint16_t        rgb24_sequence;
+
   static vector<rxvt_term *> termlist; // a vector of all running rxvt_term's
 
 #if ENABLE_FRILLS || ISO_14755
@@ -1263,19 +1176,14 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
 
   long vt_emask, vt_emask_perl, vt_emask_xim, vt_emask_mouse;
 
-  void vt_select_input () const NOTHROW
+  void vt_select_input () const noexcept
   {
     XSelectInput (dpy, vt, vt_emask | vt_emask_perl | vt_emask_xim | vt_emask_mouse);
   }
 
-#if BG_IMAGE_FROM_ROOT || ENABLE_PERL
+#if ENABLE_PERL
   void rootwin_cb (XEvent &xev);
   xevent_watcher rootwin_ev;
-#endif
-#ifdef HAVE_BG_PIXMAP
-  void update_background ();
-  void update_background_cb (ev::timer &w, int revents);
-  ev::timer update_background_ev;
 #endif
 
   void x_cb (XEvent &xev);
@@ -1342,7 +1250,7 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   void im_destroy ();
   void im_cb (); im_watcher im_ev;
   void im_set_size (XRectangle &size);
-  void im_set_position (XPoint &pos) NOTHROW;
+  void im_set_position (XPoint &pos) noexcept;
   void im_set_color (unsigned long &fg, unsigned long &bg);
   void im_set_preedit_area (XRectangle &preedit_rect, XRectangle &status_rect, const XRectangle &needed_rect);
 
@@ -1356,10 +1264,10 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   void key_press (XKeyEvent &ev);
   void key_release (XKeyEvent &ev);
 
-  wchar_t next_char () NOTHROW;
-  wchar_t cmd_getc () THROW ((class out_of_input));
-  uint32_t next_octet () NOTHROW;
-  uint32_t cmd_get8 () THROW ((class out_of_input));
+  wchar_t next_char () noexcept;
+  wchar_t cmd_getc ();
+  uint32_t next_octet () noexcept;
+  uint32_t cmd_get8 ();
 
   void cmd_parse ();
   void mouse_report (XButtonEvent &ev);
@@ -1388,6 +1296,7 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   void process_osc_seq ();
   void process_color_seq (int report, int color, const char *str, char resp);
   void process_xterm_seq (int op, char *str, char resp);
+  unsigned int map_rgb24_color (unsigned int r, unsigned int g, unsigned int b, unsigned int a);
   int privcases (int mode, unsigned long bit);
   void process_terminal_mode (int mode, int priv, unsigned int nargs, const int *arg);
   void process_sgr_mode (unsigned int nargs, const int *arg);
@@ -1433,14 +1342,14 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
 
   // screen.C
 
-  bool option (uint8_t opt) const NOTHROW
+  bool option (uint8_t opt) const noexcept
   {
     return options[opt >> 3] & (1 << (opt & 7));
   }
 
-  void set_option (uint8_t opt, bool set = true) NOTHROW;
+  void set_option (uint8_t opt, bool set = true) noexcept;
 
-  int fgcolor_of (rend_t r) const NOTHROW
+  int fgcolor_of (rend_t r) const noexcept
   {
     int base = GET_BASEFG (r);
 #ifndef NO_BRIGHTCOLOR
@@ -1454,7 +1363,7 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
     return base;
   }
 
-  int bgcolor_of (rend_t r) const NOTHROW
+  int bgcolor_of (rend_t r) const noexcept
   {
     int base = GET_BASEBG (r);
 #ifndef NO_BRIGHTCOLOR
@@ -1469,90 +1378,90 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   }
 
   // modifies first argument(!)
-  void tt_paste (char *data, unsigned int len) NOTHROW;
-  void paste (char *data, unsigned int len) NOTHROW;
-  void scr_alloc () NOTHROW;
-  void scr_blank_line (line_t &l, unsigned int col, unsigned int width, rend_t efs) const NOTHROW;
-  void scr_blank_screen_mem (line_t &l, rend_t efs) const NOTHROW;
-  void scr_kill_char (line_t &l, int col) const NOTHROW;
+  void tt_paste (char *data, unsigned int len) noexcept;
+  void paste (char *data, unsigned int len) noexcept;
+  void scr_alloc () noexcept;
+  void scr_blank_line (line_t &l, unsigned int col, unsigned int width, rend_t efs) const noexcept;
+  void scr_blank_screen_mem (line_t &l, rend_t efs) const noexcept;
+  void scr_kill_char (line_t &l, int col) const noexcept;
   void scr_set_char_rend (line_t &l, int col, rend_t rend);
-  int scr_scroll_text (int row1, int row2, int count) NOTHROW;
+  int scr_scroll_text (int row1, int row2, int count) noexcept;
   void copy_line (line_t &dst, line_t &src);
   void scr_reset ();
-  void scr_release () NOTHROW;
-  void scr_clear (bool really = false) NOTHROW;
-  void scr_refresh () NOTHROW;
-  bool scr_refresh_rend (rend_t mask, rend_t value) NOTHROW;
-  void scr_erase_screen (int mode) NOTHROW;
+  void scr_release () noexcept;
+  void scr_clear (bool really = false) noexcept;
+  void scr_refresh () noexcept;
+  bool scr_refresh_rend (rend_t mask, rend_t value) noexcept;
+  void scr_erase_screen (int mode) noexcept;
 #if ENABLE_FRILLS
-  void scr_erase_savelines () NOTHROW;
-  void scr_backindex () NOTHROW;
-  void scr_forwardindex () NOTHROW;
+  void scr_erase_savelines () noexcept;
+  void scr_backindex () noexcept;
+  void scr_forwardindex () noexcept;
 #endif
-  void scr_touch (bool refresh) NOTHROW;
-  void scr_expose (int x, int y, int width, int height, bool refresh) NOTHROW;
-  void scr_recolor (bool refresh = true) NOTHROW;
-  void scr_remap_chars () NOTHROW;
-  void scr_remap_chars (line_t &l) NOTHROW;
+  void scr_touch (bool refresh) noexcept;
+  void scr_expose (int x, int y, int width, int height, bool refresh) noexcept;
+  void scr_recolor (bool refresh = true) noexcept;
+  void scr_remap_chars () noexcept;
+  void scr_remap_chars (line_t &l) noexcept;
 
   enum cursor_mode { SAVE, RESTORE };
 
   void scr_poweron ();
-  void scr_soft_reset () NOTHROW;
-  void scr_cursor (cursor_mode mode) NOTHROW;
-  void scr_do_wrap () NOTHROW;
-  void scr_swap_screen () NOTHROW;
+  void scr_soft_reset () noexcept;
+  void scr_cursor (cursor_mode mode) noexcept;
+  void scr_do_wrap () noexcept;
+  void scr_swap_screen () noexcept;
   void scr_change_screen (int scrn);
-  void scr_color (unsigned int color, int fgbg) NOTHROW;
-  void scr_rendition (int set, int style) NOTHROW;
-  void scr_add_lines (const wchar_t *str, int len, int minlines = 0) NOTHROW;
-  void scr_backspace () NOTHROW;
-  void scr_tab (int count, bool ht = false) NOTHROW;
-  void scr_gotorc (int row, int col, int relative) NOTHROW;
-  void scr_index (enum page_dirn direction) NOTHROW;
-  void scr_erase_line (int mode) NOTHROW;
-  void scr_E () NOTHROW;
-  void scr_insdel_lines (int count, int insdel) NOTHROW;
-  void scr_insdel_chars (int count, int insdel) NOTHROW;
-  void scr_scroll_region (int top, int bot) NOTHROW;
-  void scr_cursor_visible (int mode) NOTHROW;
-  void scr_autowrap (int mode) NOTHROW;
-  void scr_relative_origin (int mode) NOTHROW;
-  void scr_insert_mode (int mode) NOTHROW;
-  void scr_set_tab (int mode) NOTHROW;
-  void scr_rvideo_mode (bool on) NOTHROW;
-  void scr_report_position () NOTHROW;
-  void set_font_style () NOTHROW;
-  void scr_charset_choose (int set) NOTHROW;
-  void scr_charset_set (int set, unsigned int ch) NOTHROW;
-  void scr_move_to (int y, int len) NOTHROW;
-  bool scr_page (int nlines) NOTHROW;
-  bool scr_page (enum page_dirn direction, int nlines) NOTHROW
+  void scr_color (unsigned int color, int fgbg) noexcept;
+  void scr_rendition (int set, int style) noexcept;
+  void scr_add_lines (const wchar_t *str, int len, int minlines = 0) noexcept;
+  void scr_backspace () noexcept;
+  void scr_tab (int count, bool ht = false) noexcept;
+  void scr_gotorc (int row, int col, int relative) noexcept;
+  void scr_index (enum page_dirn direction) noexcept;
+  void scr_erase_line (int mode) noexcept;
+  void scr_E () noexcept;
+  void scr_insdel_lines (int count, int insdel) noexcept;
+  void scr_insdel_chars (int count, int insdel) noexcept;
+  void scr_scroll_region (int top, int bot) noexcept;
+  void scr_cursor_visible (int mode) noexcept;
+  void scr_autowrap (int mode) noexcept;
+  void scr_relative_origin (int mode) noexcept;
+  void scr_insert_mode (int mode) noexcept;
+  void scr_set_tab (int mode) noexcept;
+  void scr_rvideo_mode (bool on) noexcept;
+  void scr_report_position () noexcept;
+  void set_font_style () noexcept;
+  void scr_charset_choose (int set) noexcept;
+  void scr_charset_set (int set, unsigned int ch) noexcept;
+  void scr_move_to (int y, int len) noexcept;
+  bool scr_page (int nlines) noexcept;
+  bool scr_page (enum page_dirn direction, int nlines) noexcept
   {
     return scr_page (direction * nlines);
   }
-  bool scr_changeview (int new_view_start) NOTHROW;
-  void scr_bell () NOTHROW;
-  void scr_printscreen (int fullhist) NOTHROW;
-  void scr_xor_rect (int beg_row, int beg_col, int end_row, int end_col, rend_t rstyle1, rend_t rstyle2) NOTHROW;
-  void scr_xor_span (int beg_row, int beg_col, int end_row, int end_col, rend_t rstyle) NOTHROW;
-  void scr_reverse_selection () NOTHROW;
-  void scr_dump (int fd) NOTHROW;
+  bool scr_changeview (int new_view_start) noexcept;
+  void scr_bell () noexcept;
+  void scr_printscreen (int fullhist) noexcept;
+  void scr_xor_rect (int beg_row, int beg_col, int end_row, int end_col, rend_t rstyle1, rend_t rstyle2) noexcept;
+  void scr_xor_span (int beg_row, int beg_col, int end_row, int end_col, rend_t rstyle) noexcept;
+  void scr_reverse_selection () noexcept;
+  void scr_dump (int fd) noexcept;
 
-  void selection_check (int check_more) NOTHROW;
-  void selection_changed () NOTHROW; /* sets want_refresh, corrects coordinates */
-  void selection_request (Time tm, int selnum = Sel_Primary) NOTHROW;
-  void selection_clear (bool clipboard = false) NOTHROW;
+  void selection_check (int check_more) noexcept;
+  void selection_changed () noexcept; /* sets want_refresh, corrects coordinates */
+  void selection_request (Time tm, int selnum = Sel_Primary) noexcept;
+  void selection_clear (bool clipboard = false) noexcept;
   void selection_make (Time tm);
-  bool selection_grab (Time tm, bool clipboard = false) NOTHROW;
-  void selection_start_colrow (int col, int row) NOTHROW;
-  void selection_delimit_word (enum page_dirn dirn, const row_col_t *mark, row_col_t *ret) NOTHROW;
-  void selection_extend_colrow (int32_t col, int32_t row, int button3, int buttonpress, int clickchange) NOTHROW;
-  void selection_remove_trailing_spaces () NOTHROW;
-  void selection_send (const XSelectionRequestEvent &rq) NOTHROW;
-  void selection_click (int clicks, int x, int y) NOTHROW;
-  void selection_extend (int x, int y, int flag) NOTHROW;
-  void selection_rotate (int x, int y) NOTHROW;
+  bool selection_grab (Time tm, bool clipboard = false) noexcept;
+  void selection_start_colrow (int col, int row) noexcept;
+  void selection_delimit_word (enum page_dirn dirn, const row_col_t *mark, row_col_t *ret) noexcept;
+  void selection_extend_colrow (int32_t col, int32_t row, int button3, int buttonpress, int clickchange) noexcept;
+  void selection_remove_trailing_spaces () noexcept;
+  void selection_send (const XSelectionRequestEvent &rq) noexcept;
+  void selection_click (int clicks, int x, int y) noexcept;
+  void selection_extend (int x, int y, int flag) noexcept;
+  void selection_rotate (int x, int y) noexcept;
 
   // xdefaults.C
   void rxvt_usage (int type);
@@ -1561,7 +1470,11 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
   int bind_action (const char *str, const char *arg);
   const char *x_resource (const char *name);
   void extract_resources ();
-  void enumerate_keysym_resources (void (*cb)(rxvt_term *, const char *, const char *));
+  void enumerate_resources (void (*cb)(rxvt_term *, const char *, const char *), const char *name_p = 0, const char *class_p = 0);
+  void enumerate_keysym_resources (void (*cb)(rxvt_term *, const char *, const char *))
+  {
+    enumerate_resources (cb, "keysym", "Keysym");
+  }
   void extract_keysym_resources ();
 };
 

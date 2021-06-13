@@ -61,7 +61,7 @@ rxvt_t rxvt_current_term;
 static char curlocale[128], savelocale[128];
 
 bool
-rxvt_set_locale (const char *locale) NOTHROW
+rxvt_set_locale (const char *locale) noexcept
 {
   int size = strlen (locale) + 1;
 
@@ -77,14 +77,14 @@ rxvt_set_locale (const char *locale) NOTHROW
 }
 
 void
-rxvt_push_locale (const char *locale) NOTHROW
+rxvt_push_locale (const char *locale) noexcept
 {
   strcpy (savelocale, curlocale);
   rxvt_set_locale (locale);
 }
 
 void
-rxvt_pop_locale () NOTHROW
+rxvt_pop_locale () noexcept
 {
   rxvt_set_locale (savelocale);
 }
@@ -153,9 +153,6 @@ int rxvt_composite_vec::expand (unicode_t c, wchar_t *r)
 
 rxvt_term::rxvt_term ()
 {
-#if HAVE_BG_PIXMAP
-  update_background_ev.set<rxvt_term, &rxvt_term::update_background_cb> (this);
-#endif
 #ifdef CURSOR_BLINK
   cursor_blink_ev.set     <rxvt_term, &rxvt_term::cursor_blink_cb> (this); cursor_blink_ev.set (0., CURSOR_BLINK_INTERVAL);
 #endif
@@ -171,7 +168,7 @@ rxvt_term::rxvt_term ()
 #if defined(MOUSE_WHEEL) && defined(MOUSE_SLIP_WHEELING)
   slip_wheel_ev.set       <rxvt_term, &rxvt_term::slip_wheel_cb>   (this);
 #endif
-#if BG_IMAGE_FROM_ROOT || ENABLE_PERL
+#if ENABLE_PERL
   rootwin_ev.set          <rxvt_term, &rxvt_term::rootwin_cb> (this),
 #endif
   scrollbar_ev.set        <rxvt_term, &rxvt_term::x_cb>       (this),
@@ -224,10 +221,6 @@ rxvt_term::~rxvt_term ()
       delete fontset[i];
 #endif
   delete fontset[0];
-
-#ifdef HAVE_BG_PIXMAP
-  bg_destroy ();
-#endif
 
 #if HAVE_IMG
   delete bg_img;
@@ -329,7 +322,7 @@ rxvt_term::destroy ()
       im_ev.stop (display);
 #endif
       scrollbar_ev.stop (display);
-#if BG_IMAGE_FROM_ROOT || ENABLE_PERL
+#if ENABLE_PERL
       rootwin_ev.stop (display);
 #endif
       termwin_ev.stop (display);
@@ -366,7 +359,7 @@ rxvt_term::destroy_cb (ev::idle &w, int revents)
 }
 
 void
-rxvt_term::set_option (uint8_t opt, bool set) NOTHROW
+rxvt_term::set_option (uint8_t opt, bool set) noexcept
 {
   if (!opt)
     return;
@@ -1024,7 +1017,7 @@ rxvt_term::get_colorfgbg ()
     if (pix_colors[Color_bg] == pix_colors[i])
       {
         sprintf (bstr, "%d", i - Color_Black);
-#if BG_IMAGE_FROM_FILE
+#if HAVE_IMG
         xpmb = "default;";
 #endif
         break;
@@ -1053,6 +1046,25 @@ rxvt_term::alias_color (int dst, int src)
   pix_colors[dst].free (this);
   pix_colors[dst].set (this, rs[Rs_color + dst] = rs[Rs_color + src]);
 }
+
+#ifdef SMART_RESIZE
+static unsigned int
+get_parent_bw (Display *dpy, Window w)
+{
+  int idummy;
+  unsigned int udummy;
+  Window wdummy, parent;
+  Window *children;
+  unsigned int nchildren, border_width;
+
+  XQueryTree (dpy, w, &wdummy, &parent, &children, &nchildren);
+  XFree (children);
+  XGetGeometry (dpy, parent, &wdummy, &idummy, &idummy,
+                &udummy, &udummy, &border_width, &udummy);
+
+  return border_width;
+}
+#endif
 
 /* -------------------------------------------------------------------- *
  * -                         WINDOW RESIZING                          - *
@@ -1098,8 +1110,10 @@ rxvt_term::resize_all_windows (unsigned int newwidth, unsigned int newheight, in
        */
       if (x1 != x || y1 != y)
         {
-          x -= x1;
-          y -= y1;
+          unsigned int border_width = get_parent_bw (dpy, parent);
+
+          x -= x1 + border_width;
+          y -= y1 + border_width;
         }
 
       x1 = (DisplayWidth  (dpy, display->screen) - old_width ) / 2;
@@ -1139,11 +1153,6 @@ rxvt_term::resize_all_windows (unsigned int newwidth, unsigned int newheight, in
                          vt_width, vt_height);
 
       HOOK_INVOKE ((this, HOOK_SIZE_CHANGE, DT_INT, newwidth, DT_INT, newheight, DT_END));
-
-#ifdef HAVE_BG_PIXMAP
-      if (bg_window_size_sensitive ())
-        update_background ();
-#endif
     }
 
   if (fix_screen || old_height == 0)
@@ -1685,33 +1694,5 @@ rxvt_term::get_window_origin (int &x, int &y)
   Window cr;
   XTranslateCoordinates (dpy, parent, display->root, 0, 0, &x, &y, &cr);
 }
-
-#ifdef HAVE_BG_PIXMAP
-
-void
-rxvt_term::update_background ()
-{
-  if (update_background_ev.is_active ())
-    return;
-
-  ev_tstamp to_wait = 0.5 - (ev::now () - bg_valid_since);
-
-  if (to_wait <= 0.)
-    bg_render ();
-  else
-    update_background_ev.start (to_wait);
-}
-
-void
-rxvt_term::update_background_cb (ev::timer &w, int revents)
-{
-  make_current ();
-
-  update_background_ev.stop ();
-  bg_render ();
-  refresh_check ();
-}
-
-#endif /* HAVE_BG_PIXMAP */
 
 /*----------------------- end-of-file (C source) -----------------------*/

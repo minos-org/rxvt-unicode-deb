@@ -84,15 +84,15 @@ parse_rgba (SV *sv, rxvt_screen *s = 0)
 
       c.a = rgba::MAX_CC;
 
-      c.r = c.g = c.b = float_to_component (SvIV (*av_fetch (av, 0, 0)));
+      c.r = c.g = c.b = float_to_component (SvNV (*av_fetch (av, 0, 0)));
 
       if (len >= 3)
         {
-          c.g = float_to_component (SvIV (*av_fetch (av, 1, 0)));
-          c.b = float_to_component (SvIV (*av_fetch (av, 2, 0)));
+          c.g = float_to_component (SvNV (*av_fetch (av, 1, 0)));
+          c.b = float_to_component (SvNV (*av_fetch (av, 2, 0)));
 
           if (len >= 4)
-            c.a = float_to_component (SvIV (*av_fetch (av, 3, 0)));
+            c.a = float_to_component (SvNV (*av_fetch (av, 3, 0)));
         }
     }
   else if (s)
@@ -293,7 +293,7 @@ overlay::hide ()
   for (; i < AvFILL (overlay_av); i++)
     av_store (overlay_av, i, SvREFCNT_inc (*av_fetch (overlay_av, i + 1, 0)));
 
-  av_pop (overlay_av);
+  SvREFCNT_dec (av_pop (overlay_av));
 
   SvREFCNT_dec (overlay_av);
   overlay_av = 0;
@@ -372,15 +372,20 @@ struct rxvt_perl_interp rxvt_perl;
 
 static PerlInterpreter *perl;
 
+#if 0 /* we are not a library anymore, so doing this is just not worth it */
+/*THINK/TODO: this has the side effect of, of course, not calling destructors. */
+/* but therse are not guaranteed anyway... */
 rxvt_perl_interp::~rxvt_perl_interp ()
 {
   if (perl)
     {
+      localise_env set_environ (perl_environ);
       perl_destruct (perl);
       perl_free (perl);
       PERL_SYS_TERM ();
     }
 }
+#endif
 
 void
 rxvt_perl_interp::init ()
@@ -393,7 +398,7 @@ rxvt_perl_interp::init ()
         perl_environ = rxvt_environ;
         localise_env set_environ (perl_environ);
 
-        char *args[] = {
+        const char *args[] = {
           "",
           "-e"
           "BEGIN {"
@@ -401,10 +406,11 @@ rxvt_perl_interp::init ()
           "   unshift @INC, '" LIBDIR "';"
           "}"
           ""
-          "use urxvt;"
+          "use urxvt;",
+          0
         };
-        int argc = ecb_array_length (args);
-        char **argv = args;
+        int argc = ecb_array_length (args) - 1;
+        char **argv = (char **)args;
 
         PERL_SYS_INIT3 (&argc, &argv, &environ);
         perl = perl_alloc ();
@@ -1022,6 +1028,36 @@ BOOT:
     const_iv (XIMDontChange),
 #   endif
 #   endif
+
+    /* DEC private modes */
+    const_iv (PrivMode_132),
+    const_iv (PrivMode_132OK),
+    const_iv (PrivMode_rVideo),
+    const_iv (PrivMode_relOrigin),
+    const_iv (PrivMode_Screen),
+    const_iv (PrivMode_Autowrap),
+    const_iv (PrivMode_aplCUR),
+    const_iv (PrivMode_aplKP),
+    const_iv (PrivMode_HaveBackSpace),
+    const_iv (PrivMode_BackSpace),
+    const_iv (PrivMode_ShiftKeys),
+    const_iv (PrivMode_VisibleCursor),
+    const_iv (PrivMode_MouseX10),
+    const_iv (PrivMode_MouseX11),
+    const_iv (PrivMode_scrollBar),
+    const_iv (PrivMode_TtyOutputInh),
+    const_iv (PrivMode_Keypress),
+    const_iv (PrivMode_smoothScroll),
+    const_iv (PrivMode_vt52),
+    const_iv (PrivMode_LFNL),
+    const_iv (PrivMode_MouseBtnEvent),
+    const_iv (PrivMode_MouseAnyEvent),
+    const_iv (PrivMode_BracketPaste),
+    const_iv (PrivMode_ExtMouseUTF8),
+    const_iv (PrivMode_ExtMouseUrxvt),
+    const_iv (PrivMode_BlinkingCursor),
+    const_iv (PrivMode_mouse_report),
+    const_iv (PrivMode_Default),
   };
 
   for (civ = const_iv + ecb_array_length (const_iv); civ > const_iv; civ--)
@@ -1422,6 +1458,7 @@ rxvt_term::ModLevel3Mask ()
            ModNumLockMask = 2
            current_screen = 3
            hidden_cursor  = 4
+           priv_modes     = 5
 	CODE:
         switch (ix)
           {
@@ -1431,7 +1468,10 @@ rxvt_term::ModLevel3Mask ()
             case 3: RETVAL = THIS->current_screen; break;
 #ifdef CURSOR_BLINK
             case 4: RETVAL = THIS->hidden_cursor;  break;
+#else
+            case 4: RETVAL = 0;                    break;
 #endif
+            case 5: RETVAL = THIS->priv_modes;     break;
           }
         OUTPUT:
         RETVAL
@@ -1799,7 +1839,7 @@ rxvt_term::_resource (octet_string name, int index, SV *newval = 0)
         else
           {
             --rs;
-            name = "";
+            name = (octet_string)"";
           }
 
         if (!IN_RANGE_EXC (index, 0, NUM_RESOURCES))
@@ -2279,13 +2319,20 @@ rxvt_term::new_img_from_file (octet_string filename)
 #endif
 
 void
+rxvt_term::clr_background ()
+	CODE:
+        delete THIS->bg_img;
+        THIS->bg_img = 0;
+        THIS->bg_flags = rxvt_term::BG_NEEDS_REFRESH;
+
+void
 rxvt_term::set_background (rxvt_img *img, bool border = false)
 	CODE:
         delete THIS->bg_img;
         THIS->bg_img = 0;
-        THIS->bg_flags = 0;
+        THIS->bg_flags = rxvt_term::BG_NEEDS_REFRESH;
 
-        if (img) // TODO: cannot be false
+        //if (img) // TODO: cannot be false, maybe allow and get rid of clr_background?
           {
             img = img->clone (); // own the img
 
@@ -2303,7 +2350,6 @@ rxvt_term::set_background (rxvt_img *img, bool border = false)
                ->replace (img);
 
             THIS->bg_img = img;
-            THIS->bg_flags |= rxvt_term::BG_NEEDS_REFRESH | rxvt_term::BG_INHIBIT_RENDER;
 
             if (!border)
               THIS->bg_flags |= rxvt_term::BG_IS_TRANSPARENT;
@@ -2390,7 +2436,9 @@ void
 rxvt_img::fill (SV *c, int x = 0, int y = 0, int w = THIS->w, int h = THIS->h)
 	PROTOTYPE: $;$$$$
 	INIT:
-        rgba cc = parse_rgba (c, THIS->s);
+	rxvt_screen screen;
+	screen.set (THIS->d);
+	rgba cc = parse_rgba (c, &screen);
 	C_ARGS: cc, x, y, w, h
 
 void
@@ -2458,7 +2506,9 @@ rxvt_img::rotate (int x, int y, rxvt_img::nv phi)
 rxvt_img *
 rxvt_img::tint (SV *c)
 	INIT:
-        rgba cc = parse_rgba (c, THIS->s);
+	rxvt_screen screen;
+	screen.set (THIS->d);
+	rgba cc = parse_rgba (c, &screen);
 	C_ARGS: cc
 
 rxvt_img *

@@ -11,18 +11,9 @@ Last-Update: 2018-01-06
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 Index: rxvt-unicode/doc/rxvt.7.pod
 ===================================================================
---- rxvt-unicode.orig/doc/rxvt.7.pod	2018-01-06 10:38:13.924707542 -0500
-+++ rxvt-unicode/doc/rxvt.7.pod	2018-01-06 10:49:28.881462580 -0500
-@@ -691,7 +691,7 @@
- not I<typical>, but what's typical...
- 
-    URxvt.cutchars: "()*,<>[]{}|'
--   URxvt.print-pipe: cat >/tmp/xxx
-+   URxvt.print-pipe: cat > $(TMPDIR=$HOME mktemp urxvt.XXXXXX)
- 
- These are just for testing stuff.
- 
-@@ -866,7 +866,9 @@
+--- rxvt-unicode.orig/doc/rxvt.7.pod	2021-06-13 11:28:31.383924951 -0400
++++ rxvt-unicode/doc/rxvt.7.pod	2021-06-13 11:28:31.383924951 -0400
+@@ -894,7 +894,9 @@
  user and root):
  
     REMOTE=remotesystem.domain

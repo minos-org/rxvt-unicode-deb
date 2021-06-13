@@ -42,7 +42,6 @@ doc/extensions.pod.bot
 
 src/.cvsignore
 src/Makefile.in
-src/background.C
 src/callback.h
 src/command.C
 src/command.h
@@ -71,6 +70,7 @@ src/rxvtimg.h
 src/rxvtimg.C
 src/rxvt.C
 src/rxvt.h
+src/rclock.C
 src/rsinc.h
 src/rxvtc.C
 src/rxvtd.C
@@ -189,5 +189,7 @@ libev/ev_poll.c
 libev/ev_epoll.c
 libev/ev_kqueue.c
 libev/ev_port.c
+libev/ev_linuxaio.c
+libev/ev_iouring.c
 libev/libev.m4
 

@@ -1,7 +1,5 @@
 setgid-binary usr/bin/urxvt 2755 root/utmp
 setgid-binary usr/bin/urxvtd 2755 root/utmp
-conflicts-with-version rxvt-unicode-lite (<< 9.22-2)
-conflicts-with-version rxvt-unicode-256color (<< 9.22-2)
 
 # The following perl files are not standalone perl scripts
 # and should not be run as such.

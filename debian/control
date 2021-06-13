@@ -3,7 +3,8 @@ Section: x11
 Priority: optional
 Maintainer: Ryan Kavanagh <rak@debian.org>
 Uploaders: Yaroslav Halchenko <debian@onerussian.com>,
-Build-Depends: chrpath,
+Build-Depends: autoconf (>= 2.71),
+               chrpath,
                debhelper-compat (= 13),
                groff-base,
                libev-dev,
@@ -18,35 +19,21 @@ Build-Depends: chrpath,
                libxt-dev,
                xutils-dev,
 Rules-Requires-Root: binary-targets
-Standards-Version: 4.5.0
+Standards-Version: 4.5.1
 Homepage: http://software.schmorp.de/pkg/rxvt-unicode.html
-Vcs-Git: https://salsa.debian.org/debian/rxvt-unicode.git -b debian/sid
+Vcs-Git: https://salsa.debian.org/debian/rxvt-unicode.git -b debian/experimental
 Vcs-Browser: https://salsa.debian.org/debian/rxvt-unicode
 
 Package: rxvt-unicode
 Architecture: any
-Breaks: aterm (<< 1.0.1dummy),
-        aterm-ml (<< 1.0.1dummy),
-        rxvt (<< 1:2.7.10-7.1~),
-        rxvt-ml (<< 1:2.7.10-7.1~),
-Conflicts: rxvt-unicode-256color (<< 9.22-2),
-           rxvt-unicode-lite (<< 9.22-2),
 Depends: base-passwd (>= 2.0.3.4),
          ncurses-base (>= 6.1+20180210-4) | ncurses-term (>= 5.8-1),
          ${misc:Depends},
          ${shlibs:Depends},
 Multi-Arch: foreign
-Provides: aterm,
-          rxvt,
-          x-terminal-emulator,
+Provides: x-terminal-emulator,
 Recommends: fonts-dejavu,
             fonts-vlgothic | fonts-japanese-gothic,
-Replaces: aterm (<< 1.0.1dummy),
-          aterm-ml (<< 1.0.1dummy),
-          rxvt (<< 1:2.7.10-7.1~),
-          rxvt-ml (<< 1:2.7.10-7.1~),
-          rxvt-unicode-256color (<< 9.22-2),
-          rxvt-unicode-lite (<< 9.22-2),
 Suggests: sensible-utils,
 Description: RXVT-like terminal emulator with Unicode and 256-color support
  rxvt-unicode is a modern, Unicode-aware color xterm replacement that uses
@@ -60,68 +47,3 @@ Description: RXVT-like terminal emulator with Unicode and 256-color support
  This package is configured with 256-color support, and TERM set to
  "rxvt-unicode-256color". Any other systems you log into must have this
  terminfo entry installed!
-
-Package: aterm
-Architecture: all
-Breaks: aterm-ml (<< 1.0.1dummy),
-Depends: rxvt-unicode (>= 9.22-2),
-         ${misc:Depends},
-Replaces: aterm-ml (<< 1.0.1dummy),
-Section: oldlibs
-Description: dummy transitional package for rxvt-unicode
- Aterm was a fork of rxvt; its changes have long since been merged into
- rxvt-unicode.  This is a dummy transitional package; once you've migrated
- your session startup to not call /usr/bin/aterm anymore, it can be safely
- removed.
-
-Package: aterm-ml
-Architecture: all
-Depends: aterm (>= 1.0.1dummy),
-         rxvt-unicode (>= 9.22-2),
-         ${misc:Depends},
-Section: oldlibs
-Description: dummy transitional package for rxvt-unicode
- Aterm was a fork of rxvt; its changes have long since been merged into
- rxvt-unicode.  This is a dummy transitional package; once you've migrated
- your session startup to not call /usr/bin/?aterm anymore, it can be safely
- removed.
-
-Package: rxvt
-Architecture: all
-Depends: rxvt-unicode (>= 9.22-2),
-         ${misc:Depends},
-Section: oldlibs
-Description: dummy transitional package for rxvt-unicode
- This is a dummy transitional package transitioning rxvt to rxvt-unicode.
- Once you've migrated your session startup to not call /usr/bin/rxvt-*, it can
- be safely removed.
-
-Package: rxvt-ml
-Architecture: all
-Depends: rxvt-unicode (>= 9.22-2),
-         ${misc:Depends},
-Section: oldlibs
-Description: dummy transitional package for rxvt-unicode
- This is a dummy transitional package transitioning rxvt-ml to rxvt-unicode.
- Once you've migrated your session startup to not call /usr/bin/?rxvt* anymore,
- it can be safely removed.
-
-Package: rxvt-unicode-256color
-Architecture: all
-Conflicts: rxvt-unicode (<< 9.22-2),
-Depends: rxvt-unicode (>= 9.22-2),
-         ${misc:Depends},
-Section: oldlibs
-Description: dummy transitional package for rxvt-unicode
- This is a dummy transitional package transitioning rxvt-unicode-256color to
- rxvt-unicode. It can safely be removed.
-
-Package: rxvt-unicode-lite
-Architecture: all
-Conflicts: rxvt-unicode (<< 9.22-2),
-Depends: rxvt-unicode (>= 9.22-2),
-         ${misc:Depends},
-Section: oldlibs
-Description: dummy transitional package for rxvt-unicode
- This is a dummy transitional package transitioning rxvt-unicode-lite to
- rxvt-unicode. It can safely be removed.
