@@ -1,3 +1,12 @@
+rxvt-unicode (9.26-2) unstable; urgency=medium
+
+  * Upload upstream version 9.26 to unstable
+  * Remove trailing whitespace from changelog
+  * Bump standards version to 4.6.0
+  * Update renamed lintian overrides
+
+ -- Ryan Kavanagh <rak@debian.org>  Sun, 12 Sep 2021 10:07:06 -0400
+
 rxvt-unicode (9.26-1) experimental; urgency=medium
 
   * New upstream version 9.26
@@ -1037,4 +1046,3 @@ rxvt-unicode (1.8-1) unstable; urgency=low
   * Initial Release (closes: #233565)
 
  -- Eduard Bloch <blade@debian.org>  Tue, 24 Feb 2004 09:03:51 +0100
-
