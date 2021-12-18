@@ -1,10 +1,7 @@
 01_app-defaults.diff
-02_use_dejavu.diff
 07_rgb_location.diff
 11_fix_lexgrog.diff
 12_hyphen_minus_sign.diff
 14_install_urxvt-font-size.diff
 16_no_terminfo.diff
 17_unsafe_man.diff
-18_expand_urxvt-tabbed.1.diff
-19_tabbed_extension.diff

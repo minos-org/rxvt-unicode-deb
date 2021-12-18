@@ -8,30 +8,23 @@ Copyright:
               Wolfgang Pietsch
     1992      John Bovey <jdb@ukc.ac.uk>
     1992-1994 Robert Nation <nation@rocket.sanders.lockheed.com>
-    1993      Brian Stempien <stempien@cs.wmich.edu>
-    1993      lipka
     1995      Garrett D'Amore <garrett@netcom.com>
     1995      Jakub Jelinek <jj@gnu.ai.mit.edu>
-    1995      Piet W. Plomp <piet@idefix.icce.rug.nl>
     1995      Steven Hirsch <hirsch@emba.uvm.edu>
     1995-1997 Raul Garcia Garcia <rgg@tid.es>
     1996      Chuck Blake <cblake@BBN.COM>
     1996-1998 mj olesen <olesen@me.queensu.ca>
-    1997-1998 Kay Roemer & Arno Puder
     1997-1998 Oezguer Kesim <kesim@math.fu-berlin.de>
     1997-2001 Geoff Wing <gcw@pobox.com>
     1998      Alfredo K. Kojima <kojima@windowmaker.org>
-    1999      D J Hawkey Jr <hawkeyd@visi.com>
     2001      Marius Gedminas
     2003      Rob McMullen <robm@flipturn.org>
     2005      WU Fengguang
-    2006      Samuel Ljungkvist <salj@triplefusion.net>
     2006-2015 Emanuele Giaquinta <e.giaquinta@glauco.it>
     2011      Ryan Kavanagh <ryanakca@kubuntu.org>
 License: GPL-2.0+
 
-Files: libptytty/src/ecb.h
-       libev/*
+Files: libev/*
 Copyright:
     2009-2020 Marc Alexander Lehmann <libecb@schmorp.de>
     2011 Emanuele Giaquinta

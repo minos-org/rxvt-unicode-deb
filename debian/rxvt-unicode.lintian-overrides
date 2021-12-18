@@ -3,51 +3,51 @@ setgid-binary usr/bin/urxvtd 2755 root/utmp
 
 # The following perl files are not standalone perl scripts
 # and should not be run as such.
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/background (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/bell-command (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/block-graphics-to-ascii (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/clipboard-osc (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/confirm-paste (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/digital-clock (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/eval (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/example-refresh-hooks (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/keysym-list (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/kuake (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/matcher (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/option-popup (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/overlay-osc (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/readline (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/remote-clipboard (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/searchable-scrollback (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/selection (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/selection-autotransform (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/selection-pastebin (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/selection-popup (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/selection-to-clipboard (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/tabbed (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/urxvt-popup (perl != /usr/bin/perl)
-wrong-path-for-interpreter usr/lib/x86_64-linux-gnu/urxvt/perl/xim-onthespot (perl != /usr/bin/perl)
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/background perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/bell-command perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/block-graphics-to-ascii perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/clipboard-osc perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/confirm-paste perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/digital-clock perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/eval perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/example-refresh-hooks perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/keysym-list perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/kuake perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/matcher perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/option-popup perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/overlay-osc perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/readline perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/remote-clipboard perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/searchable-scrollback perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/selection perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/selection-autotransform perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/selection-pastebin perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/selection-popup perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/selection-to-clipboard perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/tabbed perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/urxvt-popup perl
-interpreter-not-absolute usr/lib/x86_64-linux-gnu/urxvt/perl/xim-onthespot perl
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/background]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/bell-command]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/block-graphics-to-ascii]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/clipboard-osc]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/confirm-paste]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/digital-clock]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/eval]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/example-refresh-hooks]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/keysym-list]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/kuake]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/matcher]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/option-popup]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/overlay-osc]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/readline]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/remote-clipboard]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/searchable-scrollback]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/selection-autotransform]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/selection-pastebin]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/selection-popup]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/selection-to-clipboard]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/selection]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/tabbed]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/urxvt-popup]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/xim-onthespot]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/background]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/bell-command]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/block-graphics-to-ascii]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/clipboard-osc]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/confirm-paste]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/digital-clock]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/eval]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/example-refresh-hooks]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/keysym-list]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/kuake]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/matcher]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/option-popup]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/overlay-osc]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/readline]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/remote-clipboard]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/searchable-scrollback]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/selection-autotransform]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/selection-pastebin]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/selection-popup]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/selection-to-clipboard]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/selection]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/tabbed]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/urxvt-popup]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/xim-onthespot]

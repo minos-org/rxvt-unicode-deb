@@ -136,10 +136,10 @@ static const struct rxvt_fallback_font {
 
   //{ CS_UNICODE,      "-*-unifont-*-*-*-*-*-*-*-*-c-*-iso10646-1"   }, // this gem of a font has actual dotted circles within the combining character glyphs.
 #if XFT
-  { CS_UNICODE,      "xft:Bitstream Vera Sans Mono:antialias=false:autohint=true" },
-  { CS_UNICODE,      "xft:Courier New:antialias=false:autohint=true"              },
-  { CS_UNICODE,      "xft:Andale Mono:antialias=false:autohint=false"             },
-  { CS_UNICODE,      "xft:Arial Unicode MS:antialias=false:autohint=false"        },
+  { CS_UNICODE,      "xft:DejaVu Sans Mono:antialias=false:autohint=true"  },
+  { CS_UNICODE,      "xft:Courier New:antialias=false:autohint=true"       },
+  { CS_UNICODE,      "xft:Andale Mono:antialias=false:autohint=false"      },
+  { CS_UNICODE,      "xft:Arial Unicode MS:antialias=false:autohint=false" },
 
   // FreeMono is usually uglier than x fonts, so try after the others
   { CS_UNICODE,      "xft:FreeMono:autohint=true"                  },
@@ -264,7 +264,8 @@ rxvt_font::clear_rect (rxvt_drawable &d, int x, int y, int w, int h, int color) 
 
 /////////////////////////////////////////////////////////////////////////////
 
-struct rxvt_font_default : rxvt_font {
+struct rxvt_font_default : rxvt_font
+{
   struct rxvt_fontset *fs;
 
   rxvt_font_default (rxvt_fontset *fs)
@@ -314,8 +315,8 @@ struct rxvt_font_default : rxvt_font {
       return true;
 #endif
 
-    if (IS_COMPOSE (unicode))
-      return true;
+    // we do not check for IS_COMPOSE here, as this would
+    // rob other fonts from taking over.
 
     switch (unicode)
       {
@@ -346,15 +347,15 @@ rxvt_font_default::draw (rxvt_drawable &d, int x, int y,
 
   while (len)
     {
-#if ENABLE_COMBINING
-      compose_char *cc;
-#endif
       const text_t *tp = text;
       text_t t  = *tp;
 
       while (++text, --len && *text == NOCHAR)
         ;
 
+#if ENABLE_COMBINING
+      compose_char *cc;
+#endif
       int width = text - tp;
       int fwidth = term->fwidth * width;
 
@@ -446,7 +447,6 @@ rxvt_font_default::draw (rxvt_drawable &d, int x, int y,
       else if (IS_COMPOSE (t) && (cc = rxvt_composite[t]))
         {
           min_it (width, 2); // we only support wcwidth up to 2
-
           text_t chrs[2];
           chrs [1] = NOCHAR;
 
@@ -476,6 +476,15 @@ rxvt_font_default::draw (rxvt_drawable &d, int x, int y,
             case NOCHAR:
               break;
 
+            /*
+             * If the base font does not support variation selectors, treat them as ZWC.
+             * a point could be made to do this for all wcwidth == 0 characters, but I
+             * decided against that until more data is available.
+             */
+            case 0xfe00: case 0xfe01: case 0xfe02: case 0xfe03: case 0xfe04: case 0xfe05: case 0xfe06: case 0xfe07:
+            case 0xfe08: case 0xfe09: case 0xfe0a: case 0xfe0b: case 0xfe0c: case 0xfe0d: case 0xfe0e: case 0xfe0f:
+              break;
+
             default:
               XDrawRectangle (disp, d, gc, x + 2, y + 2,
                               fwidth - 4, term->fheight - 4);
@@ -485,7 +494,8 @@ rxvt_font_default::draw (rxvt_drawable &d, int x, int y,
     }
 }
 
-struct rxvt_font_overflow : rxvt_font {
+struct rxvt_font_overflow : rxvt_font
+{
   struct rxvt_fontset *fs;
 
   rxvt_font_overflow (rxvt_fontset *fs)
@@ -509,7 +519,8 @@ struct rxvt_font_overflow : rxvt_font {
   bool load (const rxvt_fontprop &prop, bool force_prop)
   {
     width = 1; height = 1;
-    ascent = 1; descent = 0;
+    ascent = 1;
+    descent = (*fs)[2]->descent;
 
     set_name (strdup ("built-in rendition overflow font"));
 
@@ -541,7 +552,8 @@ struct rxvt_font_overflow : rxvt_font {
 
 /////////////////////////////////////////////////////////////////////////////
 
-struct rxvt_font_x11 : rxvt_font {
+struct rxvt_font_x11 : rxvt_font
+{
   rxvt_font_x11 () { f = 0; }
 
   void clear ();
@@ -1126,8 +1138,23 @@ rxvt_font_x11::draw (rxvt_drawable &d, int x, int y,
 
 #if XFT
 
-struct rxvt_font_xft : rxvt_font {
-  rxvt_font_xft () { f = 0; }
+struct rxvt_font_xft : rxvt_font
+{
+#if XFT_CHAR_CACHE
+  // we cache the qascii range xoffsets in the name of speed,
+  // expecting terminals to deal mostly with these characters
+  // we also assume the xoff always fits into uint8_t,
+  // which is questionable, but let's see...
+  // also, it is uncomfortably big, due to the uints.
+  enum { char_cache_min = 0x20, char_cache_max = 0x7e };
+  uint8_t xoff_cache  [char_cache_max - char_cache_min + 1];
+  FT_UInt glyph_cache [char_cache_max - char_cache_min + 1];
+#endif
+
+  rxvt_font_xft ()
+  {
+    f = 0;
+  }
 
   void clear ();
 
@@ -1239,6 +1266,16 @@ rxvt_font_xft::load (const rxvt_fontprop &prop, bool force_prop)
 
       FT_Face face = XftLockFace (f);
 
+      // fuck me plenty: XftLockFace can actually return 0. try not to crash.
+      // we also assume blindly that if the first lock succeeeds, then subsequent
+      // locks will also succeed.
+      if (!face)
+        {
+          XftFontClose (disp, f);
+          success = false;
+          break;
+        }
+
       ascent  = (face->size->metrics.ascender + 63) >> 6;
       descent = (-face->size->metrics.descender + 63) >> 6;
       height  = max (ascent + descent, (face->size->metrics.height + 63) >> 6);
@@ -1279,12 +1316,8 @@ rxvt_font_xft::load (const rxvt_fontprop &prop, bool force_prop)
 
       if (!width)
         {
-          rxvt_warn ("unable to calculate font width for '%s', ignoring.\n", name);
-
-          XftFontClose (disp, f);
-          f = 0;
-
-          success = false;
+          rxvt_warn ("unable to calculate font width for '%s', using max_advance_width.\n", name);
+          width = f->max_advance_width;
           break;
         }
 
@@ -1321,6 +1354,19 @@ rxvt_font_xft::load (const rxvt_fontprop &prop, bool force_prop)
     }
 #endif
 
+#if XFT_CHAR_CACHE
+  // populate char cache
+  for (FcChar16 ch = char_cache_min; ch <= char_cache_max; ++ch)
+    {
+      FT_UInt glyph = XftCharIndex (disp, f, ch);
+      glyph_cache [ch - char_cache_min] = glyph;
+
+      XGlyphInfo g;
+      XftGlyphExtents (disp, f, &glyph, 1, &g);
+      xoff_cache [ch - char_cache_min] = g.xOff;
+    }
+#endif
+
   return success;
 }
 
@@ -1329,21 +1375,40 @@ rxvt_font_xft::has_char (unicode_t unicode, const rxvt_fontprop *prop, bool &car
 {
   careful = false;
 
-  if (!XftCharExists (term->dpy, f, unicode))
+  // handle non-bmp chars when text_t is 16 bit
+#if ENABLE_COMBINING && !UNICODE_3
+  if (ecb_expect_false (IS_COMPOSE (unicode)))
+    if (compose_char *cc = rxvt_composite [unicode])
+      if (cc->c2 == NOCHAR)
+        unicode = cc->c1;
+      else
+        return false;
+    else
+      return false;
+#endif
+
+  FcChar32 chr = unicode;
+
+  if (!XftCharExists (term->dpy, f, chr))
     return false;
 
   if (!prop || prop->width == rxvt_fontprop::unset)
     return true;
 
-  // check character against base font bounding box
-  FcChar32 ch = unicode;
+  int wcw = max (WCWIDTH (chr), 1);
+
   XGlyphInfo g;
-  XftTextExtents32 (term->dpy, f, &ch, 1, &g);
+  XftTextExtents32 (term->dpy, f, &chr, 1, &g);
+
+  int cwidth = prop->width * wcw;
+
+  // use same adjustments as in ->draw, see there
+  g.x += g.xOff ? cwidth - g.xOff >> 1 : 0;
+  g.x += g.xOff ? 0 : cwidth;
 
   int w = g.width - g.x;
-  int wcw = max (WCWIDTH (unicode), 1);
 
-  careful = g.x > 0 || w > prop->width * wcw;
+  careful = g.x > 0 || w > cwidth;
 
   if (careful && !OVERLAP_OK (w, wcw, prop))
     return false;
@@ -1360,7 +1425,6 @@ rxvt_font_xft::draw (rxvt_drawable &d, int x, int y,
                      const text_t *text, int len,
                      int fg, int bg)
 {
-  XGlyphInfo extents;
   XftGlyphSpec *enc = rxvt_temp_buf<XftGlyphSpec> (len);
   XftGlyphSpec *ep = enc;
 
@@ -1383,24 +1447,71 @@ rxvt_font_xft::draw (rxvt_drawable &d, int x, int y,
   while (len)
     {
       int cwidth = term->fwidth;
-      FcChar32 fc = *text++; len--;
+      FcChar32 chr = *text++; len--;
 
       while (len && *text == NOCHAR)
         text++, len--, cwidth += term->fwidth;
 
-      if (fc != ' ') // skip spaces
+      if (chr != ' ') // skip spaces
         {
-          FT_UInt glyph = XftCharIndex (disp, f, fc);
-          XftGlyphExtents (disp, f, &glyph, 1, &extents);
+          // handle non-bmp chars when text_t is 16 bit
+          #if ENABLE_COMBINING && !UNICODE_3
+            if (ecb_expect_false (IS_COMPOSE (chr)))
+              if (compose_char *cc = rxvt_composite [chr])
+                if (cc->c2 == NOCHAR)
+                  chr = cc->c1;
+          #endif
+
+          #if 0
+          FT_UInt glyphs [decltype (exp)::max_size];
+
+          for (int i = 0; i < nchrs; ++i)
+            glyphs [i] = XftCharIndex (disp, f, chrs [i]);
+
+          for (int i = 0; i < nchrs; ++i)
+            {
+              XGlyphInfo ep;
+              XftGlyphExtents (disp, f, glyphs+i, 1, &ep);
+              printf ("gs %4x g %4x + %3d,%3d o %3d,%3d wh %3d,%3d\n", chrs[i],glyphs[i],ep.x,ep.y,ep.xOff,ep.yOff,ep.width,ep.height);
+            }
+          #endif
+
+          FT_UInt glyph;
+          int xOff;
+
+          #if XFT_CHAR_CACHE
+          if (ecb_expect_true (IN_RANGE_INC (chr, char_cache_min, char_cache_max)))
+            {
+              glyph = glyph_cache [chr - char_cache_min];
+              xOff  = xoff_cache  [chr - char_cache_min];
+            }
+          else
+          #endif
+            {
+              glyph = XftCharIndex (disp, f, chr);
+              XGlyphInfo extents;
+              XftGlyphExtents (disp, f, &glyph, 1, &extents);
+              xOff = extents.xOff;
+            }
 
           ep->glyph = glyph;
-          ep->x = x_ + (cwidth - extents.xOff >> 1);
+          ep->x = x_;
           ep->y = y_ + ascent;
 
-          if (extents.xOff == 0)
-            ep->x = x_ + cwidth;
+          // the xft font cell might differ from the terminal font cell,
+          // in which case we use the average between the two.
+          ep->x += xOff ? cwidth - xOff >> 1 : 0;
 
-          ep++;
+          // xft/freetype represent combining characters as characters with zero
+          // width rendered over the previous character with some fonts, while
+          // in other fonts, they are considered normal characters, while yet
+          // in other fonts, they are shifted all over the place.
+          // we handle the first two cases by keying off on xOff being 0
+          // for zero-width chars. normally, we would add extents.xOff
+          // of the base character here, but we don't have that, so we use cwidth.
+          ep->x += xOff ? 0 : cwidth;
+
+          ++ep;
         }
 
       x_ += cwidth;
@@ -1679,15 +1790,16 @@ rxvt_fontset::find_font (const char *name) const
 int
 rxvt_fontset::find_font_idx (unicode_t unicode)
 {
-  if (unicode >= 1<<20)
+  // this limits fmap size. it has to accommodate COMPOSE_HI when UNICODE_3
+  if (unicode > 0x1fffff)
     return 0;
 
   unicode_t hi = unicode >> 8;
 
-  if (hi < fmap.size ()
-      && fmap[hi]
-      && (*fmap[hi])[unicode & 0xff] != 0xff)
-    return (*fmap[hi])[unicode & 0xff];
+  if (hi < fmap.size ())
+    if (pagemap *pm = fmap[hi])
+      if ((*pm)[unicode & 0xff] != 0xff)
+        return (*pm)[unicode & 0xff];
 
   unsigned int i;
 
@@ -1721,6 +1833,11 @@ rxvt_fontset::find_font_idx (unicode_t unicode)
     next_font:
       if (i == fonts.size () - 1)
         {
+          // compose characters are handled by the default font, unless another font takes over
+          // we do not go via the fallback list for speed reasons.
+          if (IS_COMPOSE (unicode))
+            return 0;
+
           if (fallback->name)
             {
               // search through the fallback list

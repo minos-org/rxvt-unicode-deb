@@ -7,13 +7,9 @@ AC_PREREQ(2.71)
 AC_CONFIG_SRCDIR([src/feature.h])
 AC_CONFIG_HEADERS(config.h:config.h.in)
 
-AC_CANONICAL_HOST
-
 dnl RXVT version
-changequote(, )dnl
 VERSION=`sed -n -e 's/^.* VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
 DATE=`sed -n -e 's/^.* DATE.*"\(.*\)"$/\1/p' ${srcdir}/src/version.h`
-changequote([, ])dnl
 AC_SUBST(VERSION)dnl
 AC_SUBST(DATE)dnl
 
@@ -30,10 +26,6 @@ AC_PROG_INSTALL
 
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG(C++)
-
-if test "$ac_prog_cxx_stdcxx" != cxx11; then
-  AC_MSG_ERROR([the compiler does not support C++11])
-fi
 
 LINKER="$CXX"
 dnl check whether we can link with gcc -lsupc++
@@ -115,7 +107,6 @@ AC_ARG_ENABLE(everything,
        support_fading=no
        support_keepscrolling=no
        support_selectionscrolling=no
-       support_lastlog=no
        support_mousewheel=no
        support_mouseslipwheel=no
        support_text_blink=no
@@ -123,8 +114,6 @@ AC_ARG_ENABLE(everything,
        support_scroll_rxvt=no
        support_scroll_next=no
        support_scroll_xterm=no
-       support_utmp=no
-       support_wtmp=no
        support_xim=no
        support_pixbuf=no
        support_startup_notification=no
@@ -143,7 +132,6 @@ AC_ARG_ENABLE(everything,
        support_fading=yes
        support_keepscrolling=yes
        support_selectionscrolling=yes
-       support_lastlog=yes
        support_mousewheel=yes
        support_mouseslipwheel=yes
        support_text_blink=yes
@@ -151,8 +139,6 @@ AC_ARG_ENABLE(everything,
        support_scroll_rxvt=yes
        support_scroll_next=yes
        support_scroll_xterm=yes
-       support_utmp=yes
-       support_wtmp=yes
        support_xim=yes
        support_pixbuf=yes
        support_startup_notification=yes
@@ -186,7 +172,15 @@ AC_ARG_ENABLE(warnings,
 if test x$GXX = xyes; then
   if test $support_warnings = yes; then
     save_CXXFLAGS="$CXXFLAGS"
-    CXXFLAGS="$CXXFLAGS -Wall -Wno-sign-compare -Wno-reorder -Wno-unused-value"
+    for warning in \
+      -Wall \
+      -Wno-parentheses \
+      -Wno-reorder \
+      -Wno-sign-compare \
+      -Wno-unused-value \
+      ; do
+      CXXFLAGS="$CXXFLAGS $warning"
+    done
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])], [], [CXXFLAGS="$save_CXXFLAGS"])
   else
     CXXFLAGS="$CXXFLAGS -w"
@@ -436,6 +430,13 @@ AC_PATH_XTRA
 
 AC_PATH_TOOL(PKG_CONFIG, pkg-config, no)
 
+RXVT_CHECK_MODULES([PTYTTY], [libptytty], [:], [
+  AC_MSG_ERROR([unable to find libptytty])
+])
+
+AC_SUBST(PTYTTY_CFLAGS)
+AC_SUBST(PTYTTY_LIBS)
+
 image_lib=none
 
 PIXBUF_CFLAGS=
@@ -515,8 +516,6 @@ dnl# CHECKING FOR LIBRARY FUNCTIONS
 dnl# --------------------------------------------------------------------------
 AC_CHECK_FUNCS(unsetenv)
 
-UTMP_CHECK
-
 dnl# --------------------------------------------------------------------------
 
 dnl# --------------------------------------------------------------------------
@@ -574,12 +573,6 @@ AC_CACHE_CHECK(for working nl_langinfo, rxvt_cv_func_nl_langinfo,
 if test x$rxvt_cv_func_nl_langinfo = xyes; then
   AC_DEFINE(HAVE_NL_LANGINFO, 1, Define if nl_langinfo(CODESET) works)
 fi
-
-SCM_RIGHTS_CHECK
-
-PTY_CHECK
-
-TTY_GROUP_CHECK
 
 dnl# --------------------------------------------------------------------------
 dnl# now add and remove other stuff

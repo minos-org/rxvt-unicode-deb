@@ -26,6 +26,8 @@
 // stdlib.h might provide it
 #endif
 
+#include <libptytty.h>
+
 // we assume that Xlib.h defines XPointer, and it does since at least 1994...
 
 extern "C" {
@@ -90,7 +92,6 @@ typedef  int32_t tlen_t_; // specifically for use in the line_t structure
 #include "rxvtimg.h"
 #include "scrollbar.h"
 #include "ev_cpp.h"
-#include "libptytty.h"
 
 #include "rxvtperl.h"
 
@@ -125,7 +126,15 @@ typedef  int32_t tlen_t_; // specifically for use in the line_t structure
 /****************************************************************************/
 
 // exception thrown on fatal (per-instance) errors
-class rxvt_failure_exception { };
+class rxvt_failure_exception : public std::exception
+{
+public:
+  const char *
+  what () const noexcept override
+  {
+    return "";
+  }
+};
 
 // exception thrown when the command parser runs out of input data
 class out_of_input { };
@@ -443,6 +452,7 @@ enum {
   URxvt_view_up          = 720,
   URxvt_view_down        = 721,
 
+  URxvt_cellinfo         = 776,     // returns font cell width, height etc.
   URxvt_perl             = 777,     // for use by perl extensions, starts with "extension-name;"
 };
 
@@ -771,8 +781,8 @@ struct mbstate
 #define UNICODE_MASK 0x1fffffUL
 
 #if UNICODE_3
-# define COMPOSE_LO 0x40000000UL
-# define COMPOSE_HI 0x400fffffUL
+# define COMPOSE_LO 0x110000UL
+# define COMPOSE_HI 0x1fffffUL
 # define IS_COMPOSE(n) ((int32_t)(n) >= COMPOSE_LO)
 #else
 # if ENABLE_PERL
@@ -791,19 +801,23 @@ struct mbstate
 // not fitting in the BMP.
 struct compose_char
 {
-  unicode_t c1, c2; // any chars != NOCHAR are valid
+  // c1 can be any character != NOCHAR, including another compose character
+  // c2 must always be a zero-width character or NOCHAR, in case
+  // this just extends beyond the BMP.
+  unicode_t c1, c2;
 
   compose_char (unicode_t c1, unicode_t c2)
   : c1(c1), c2(c2)
   { }
 };
 
-class rxvt_composite_vec
+struct rxvt_composite_vec
 {
   vector<compose_char> v;
-public:
+
   text_t compose (unicode_t c1, unicode_t c2 = NOCHAR);
-  int expand (unicode_t c, wchar_t *r);
+  template<typename T> int expand (unicode_t c, T *r);
+  int expand (unicode_t c) { return expand (c, (text_t *)0); }
   compose_char *operator [](text_t c)
   {
     return c >= COMPOSE_LO && c < COMPOSE_LO + v.size ()
@@ -813,6 +827,65 @@ public:
 };
 
 extern class rxvt_composite_vec rxvt_composite;
+#endif
+
+#if 0
+// expand the sequence into a static array
+// works even without ENABLE_COMBINING
+template<typename T, int max_size_ = 48>
+struct rxvt_compose_expand_static
+{
+#if ENABLE_COMBINING
+  enum { max_size = max_size_ };
+
+  T chrs[max_size];
+
+  // expand sequence and return start ptr
+  // guarantees at least one output
+  // get the length with length () on that ptr
+  T *operator ()(unicode_t c)
+  {
+    T *cur = chrs + max_size;
+
+    while (ecb_expect_false (IS_COMPOSE (c)))
+      if (ecb_expect_true (c - COMPOSE_LO < rxvt_composite.v.size ()))
+        {
+          compose_char *cc = &rxvt_composite.v [c - COMPOSE_LO];
+
+          if (cc->c2 != NOCHAR)
+            {
+              cur -= cur > chrs; *cur = cc->c2;
+            }
+
+          c = cc->c1;
+        }
+       else
+         c = NOCHAR;
+
+    cur -= cur > chrs; *cur = c;
+
+    return cur;
+  }
+
+  int length (T *first)
+  {
+    return chrs + max_size - first;
+  }
+#else
+  T chr;
+
+  T *operator ()(text_t c);
+  {
+    chr = c;
+    return &chr;
+  }
+
+  int length (T *first)
+  {
+    return 1;
+  }
+#endif
+};
 #endif
 
 /****************************************************************************/
@@ -1031,6 +1104,8 @@ struct rxvt_term : zero_initialized, rxvt_vars, rxvt_screen
                   bypass_keystate:1,
 #if ENABLE_FRILLS
                   urgency_hint:1,
+                  rewrap_always:1,
+                  rewrap_never:1,
 #endif
 #if CURSOR_BLINK
                   hidden_cursor:1,

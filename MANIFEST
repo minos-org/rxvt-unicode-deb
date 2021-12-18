@@ -7,8 +7,6 @@ README.configure
 README.FAQ
 configure
 configure.ac
-config.sub
-config.guess
 aclocal.m4
 autogen.sh
 config.h.in
@@ -33,12 +31,17 @@ doc/rxvt.1.pod
 doc/rxvt.7.pod
 doc/rxvtc.1.pod
 doc/rxvtd.1.pod
+doc/rclock.1.pod
 doc/rxvt.1.man.in
 doc/rxvt.7.man.in
 doc/rxvtc.1.man.in
 doc/rxvtd.1.man.in
+doc/rclock.1.man.in
 doc/extensions.pod.top
 doc/extensions.pod.bot
+
+src/ecb.h
+src/estl.h
 
 src/.cvsignore
 src/Makefile.in
@@ -47,7 +50,6 @@ src/command.C
 src/command.h
 src/encoding.C
 src/encoding.h
-src/fdpass_wrapper.C
 src/feature.h
 src/hookinc.h
 src/init.C
@@ -59,7 +61,6 @@ src/keyboard.h
 src/main.C
 src/misc.C
 src/optinc.h
-src/ptytty_wrapper.C
 src/rxvtutil.C
 src/rxvtutil.h
 src/rxvttoolkit.C
@@ -87,18 +88,6 @@ src/version.h
 src/xdefaults.C
 src/emman.h
 src/emman.c
-
-libptytty/Changes
-libptytty/ptytty.m4
-libptytty/src/libptytty.h
-libptytty/src/ptytty_conf.h
-libptytty/src/ptytty.h
-libptytty/src/ptytty.C
-libptytty/src/proxy.C
-libptytty/src/logging.C
-libptytty/src/fdpass.C
-libptytty/src/estl.h
-libptytty/src/ecb.h
 
 src/gentables
 src/gencompose
@@ -177,7 +166,7 @@ src/perl/tabbed
 src/perl/urxvt-popup
 src/perl/xim-onthespot
 
-libev/Changes
+libev/LICENSE
 libev/ev.h
 libev/ev++.h
 libev/ev.c

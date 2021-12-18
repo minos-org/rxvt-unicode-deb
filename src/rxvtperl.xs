@@ -531,7 +531,7 @@ ungrab (rxvt_term *THIS)
 }
 
 bool
-rxvt_perl_interp::invoke (rxvt_term *term, hook_type htype, ...)
+rxvt_perl_interp::invoke (rxvt_term *term, int htype, ...)
 {
   if (!perl || !term->perl.self)
     return false;
@@ -823,6 +823,8 @@ BOOT:
     const_iv (HOOK_INIT),
     const_iv (HOOK_DESTROY),
     const_iv (HOOK_ACTION),
+    const_iv (HOOK_OSC_SEQ),
+    const_iv (HOOK_OSC_SEQ_PERL),
 
     const_iv (NUM_RESOURCES),
     const_iv (DEFAULT_RSTYLE),
@@ -1145,7 +1147,7 @@ SET_CUSTOM (int rend, int new_value)
 	CODE:
 {
         if (!IN_RANGE_EXC (new_value, 0, RS_customCount))
-          croak ("custom value out of range, must be 0..%d", RS_customCount - 1);
+          croak ("custom value out of range, must be 0..%lu", RS_customCount - 1);
 
         RETVAL = (rend & ~RS_customMask)
                | ((new_value << RS_customShift) & RS_customMask);
@@ -1374,6 +1376,9 @@ SV *
 rxvt_term::locale_encode (SV *str)
 	CODE:
 {
+	if (!SvOK (str))
+          XSRETURN_UNDEF;
+
         wchar_t *wstr = sv2wcs (str);
 
 	rxvt_push_locale (THIS->locale);
@@ -1392,6 +1397,9 @@ SV *
 rxvt_term::locale_decode (SV *octets)
 	CODE:
 {
+	if (!SvOK (octets))
+          XSRETURN_UNDEF;
+
 	STRLEN len;
         char *data = SvPVbyte (octets, len);
 
@@ -1564,14 +1572,13 @@ rxvt_term::rstyle (U32 new_rstyle = THIS->rstyle)
 	RETVAL
 
 int
-rxvt_term::view_start (int newval = 1)
+rxvt_term::view_start (int newval = 0)
 	PROTOTYPE: $;$
 	CODE:
 {
         RETVAL = THIS->view_start;
-
-        if (newval <= 0)
-          THIS->scr_changeview (max (newval, THIS->top_row));
+        if (items > 1)
+          THIS->scr_changeview (newval);
 }
         OUTPUT:
 	RETVAL
@@ -1791,7 +1798,7 @@ rxvt_term::special_decode (SV *text)
           if (*s == NOCHAR)
             ;
           else if (IS_COMPOSE (*s))
-            dlen += rxvt_composite.expand (*s, 0);
+            dlen += rxvt_composite.expand (*s);
           else
             dlen++;
 

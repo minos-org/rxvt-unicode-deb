@@ -36,7 +36,12 @@
 
 #include <dirent.h>
 
-#include <X11/Intrinsic.h>      /* Xlib, Xutil, Xresource, Xfuncproto */
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+
+#include "ecb.h"
+
+#include "version.h"
 
 #define APL_CLASS	"Clock"
 #define APL_NAME	"rclock"
@@ -48,8 +53,6 @@
 # define EXIT_SUCCESS	0
 # define EXIT_FAILURE	1
 #endif
-
-#define VERSION "TODO: fetch from urxvt somehow"
 
 /*--------------------------------*-C-*---------------------------------*
  * Compile-time configuration.
@@ -175,6 +178,33 @@
 #endif
 
 /*----------------------------------------------------------------------*/
+// fourth-order fixed point sine approximation,
+// adapted from https://www.coranac.com/2009/07/sines/
+
+static int32_t
+Sin (int32_t arg)
+{
+  int32_t x = (arg - 360) * 16384 / 360;
+
+  int c, y;
+  static const int qN = 13, qA = 12, B = 19900, C = 3516;
+
+  c = x << (30 - qN);              // Semi-circle info into carry.
+  x -= 1 << qN;                    // sine -> cosine calc
+
+  x = x << (31 - qN);              // Mask with PI
+  x = x >> (31 - qN);              // Note: SIGNED shift! (to qN)
+  x = x * x >> (2 * qN - 14);      // x=x^2 To Q14
+
+  y = B - (x * C >> 14);           // B - x^2*C
+  y = (1 << qA) - (x * y >> 16);   // A - x^2*(B-x^2*C)
+
+  x = c < 0 ? y : -y;
+
+  return x;
+}
+
+/*----------------------------------------------------------------------*/
 
 static Display *Xdisplay;       /* X display */
 static int Xfd;                 /* file descriptor of server connection */
@@ -197,7 +227,7 @@ static mywindow_t Clock = { None, 80, 80 };     /* parent window */
 #define bgColor 1
 static const char *rs_color[2] = { FG_COLOR_NAME, BG_COLOR_NAME };
 
-static Pixel PixColors[2];
+static unsigned long PixColors[2];
 static const char *rs_geometry = NULL;
 
 #ifdef ICONWIN
@@ -276,17 +306,14 @@ static XSizeHints szHint = {
 };
 
 /* subroutine declarations */
-static void geometry2sizehint (mywindow_t * /* win */ ,
-                               const char * /* geom */ );
-static void Create_Windows (int /* argc */ ,
-                            char * /* argv */ []);
+static void geometry2sizehint (mywindow_t *win, const char *geom);
+static void Create_Windows (int argc, char *argv[]);
 static void getXevent ();
-static void print_error (const char * /* fmt */ , ...);
+static void print_error (const char *fmt, ...);
 
-static void Draw_Window (mywindow_t * /* this_win */ ,
-                         int /* full_redraw */ );
+static void Draw_Window (mywindow_t *this_win, int full_redraw);
 static void Reminder ();
-static void Next_Reminder (int /* update_only */ );
+static void Next_Reminder (int update_only);
 
 /* Arguments for Next_Reminder() */
 #define REPLACE 0
@@ -331,7 +358,7 @@ usage ()
     {"#geom", "icon window geometry"}
   };
 
-  fprintf (stderr, "\nUsage v" VERSION ":\n  " APL_NAME " [options]\n\n" "where options include:\n");
+  fprintf (stderr, "\nUsage for urclock version " VERSION "\n\n  urclock [options]\n\n" "where options include:\n");
 
   for (i = 0; i < (int)optList_size (); i++)
     fprintf (stderr, "    %-29s%s\n", optList[i].opt, optList[i].desc);
@@ -608,7 +635,7 @@ Abort:
  * translate geometry string to appropriate sizehint
  */
 static void
-geometry2sizehint (mywindow_t * win, const char *geom)
+geometry2sizehint (mywindow_t *win, const char *geom)
 {
   int x, y, flags;
   unsigned int width, height;
@@ -742,7 +769,11 @@ Create_Windows (int argc, char *argv[])
 static time_t
 mk_time (struct tm *tmval)
 {
-  return (tmval->tm_min + 60 * (tmval->tm_hour + 24 * (tmval->tm_mday + 31 * ((tmval->tm_mon + 1) + 12 * tmval->tm_year))));
+  return (tmval->tm_min
+          + 60 * (tmval->tm_hour
+                  + 24 * (tmval->tm_mday
+                          + 31 * ((tmval->tm_mon + 1)
+                                  + 12 * tmval->tm_year))));
 }
 
 #ifdef MAIL
@@ -783,73 +814,8 @@ MailAvailable ()
  * Provide reminder if needed.
  *----------------------------------------------------------------------*/
 static void
-Draw_Window (mywindow_t * W, int full_redraw)
+Draw_Window (mywindow_t *W, int full_redraw)
 {
-  /* pre-computed values for sin() x1000, to avoid using floats */
-  static const short Sin[720] = {
-    0,
-    9, 17, 26, 35, 44, 52, 61, 70, 78, 87, 96, 105,
-    113, 122, 131, 139, 148, 156, 165, 174, 182, 191, 199, 208,
-    216, 225, 233, 242, 250, 259, 267, 276, 284, 292, 301, 309,
-    317, 326, 334, 342, 350, 358, 367, 375, 383, 391, 399, 407,
-    415, 423, 431, 438, 446, 454, 462, 469, 477, 485, 492, 500,
-    508, 515, 522, 530, 537, 545, 552, 559, 566, 574, 581, 588,
-    595, 602, 609, 616, 623, 629, 636, 643, 649, 656, 663, 669,
-    676, 682, 688, 695, 701, 707, 713, 719, 725, 731, 737, 743,
-    749, 755, 760, 766, 772, 777, 783, 788, 793, 799, 804, 809,
-    814, 819, 824, 829, 834, 839, 843, 848, 853, 857, 862, 866,
-    870, 875, 879, 883, 887, 891, 895, 899, 903, 906, 910, 914,
-    917, 921, 924, 927, 930, 934, 937, 940, 943, 946, 948, 951,
-    954, 956, 959, 961, 964, 966, 968, 970, 972, 974, 976, 978,
-    980, 982, 983, 985, 986, 988, 989, 990, 991, 993, 994, 995,
-    995, 996, 997, 998, 998, 999, 999, 999, 1000, 1000, 1000, 1000,
-    1000, 1000, 1000, 999, 999, 999, 998, 998, 997, 996, 995, 995,
-    994, 993, 991, 990, 989, 988, 986, 985, 983, 982, 980, 978,
-    976, 974, 972, 970, 968, 966, 964, 961, 959, 956, 954, 951,
-    948, 946, 943, 940, 937, 934, 930, 927, 924, 921, 917, 914,
-    910, 906, 903, 899, 895, 891, 887, 883, 879, 875, 870, 866,
-    862, 857, 853, 848, 843, 839, 834, 829, 824, 819, 814, 809,
-    804, 799, 793, 788, 783, 777, 772, 766, 760, 755, 749, 743,
-    737, 731, 725, 719, 713, 707, 701, 695, 688, 682, 676, 669,
-    663, 656, 649, 643, 636, 629, 623, 616, 609, 602, 595, 588,
-    581, 574, 566, 559, 552, 545, 537, 530, 523, 515, 508, 500,
-    492, 485, 477, 469, 462, 454, 446, 438, 431, 423, 415, 407,
-    399, 391, 383, 375, 367, 358, 350, 342, 334, 326, 317, 309,
-    301, 292, 284, 276, 267, 259, 250, 242, 233, 225, 216, 208,
-    199, 191, 182, 174, 165, 156, 148, 139, 131, 122, 113, 105,
-    96, 87, 78, 70, 61, 52, 44, 35, 26, 17, 9, 0,
-    -9, -17, -26, -35, -44, -52, -61, -70, -78, -87, -96, -105,
-    -113, -122, -131, -139, -148, -156, -165, -174, -182, -191, -199, -208,
-    -216, -225, -233, -242, -250, -259, -267, -276, -284, -292, -301, -309,
-    -317, -326, -334, -342, -350, -358, -366, -375, -383, -391, -399, -407,
-    -415, -423, -431, -438, -446, -454, -462, -469, -477, -485, -492, -500,
-    -508, -515, -522, -530, -537, -545, -552, -559, -566, -574, -581, -588,
-    -595, -602, -609, -616, -623, -629, -636, -643, -649, -656, -663, -669,
-    -676, -682, -688, -695, -701, -707, -713, -719, -725, -731, -737, -743,
-    -749, -755, -760, -766, -772, -777, -783, -788, -793, -799, -804, -809,
-    -814, -819, -824, -829, -834, -839, -843, -848, -853, -857, -862, -866,
-    -870, -875, -879, -883, -887, -891, -895, -899, -903, -906, -910, -914,
-    -917, -921, -924, -927, -930, -934, -937, -940, -943, -946, -948, -951,
-    -954, -956, -959, -961, -964, -966, -968, -970, -972, -974, -976, -978,
-    -980, -982, -983, -985, -986, -988, -989, -990, -991, -993, -994, -995,
-    -995, -996, -997, -998, -998, -999, -999, -999, -1000, -1000, -1000, -1000,
-    -1000, -1000, -1000, -999, -999, -999, -998, -998, -997, -996, -995, -995,
-    -994, -993, -991, -990, -989, -988, -986, -985, -983, -982, -980, -978,
-    -976, -974, -972, -970, -968, -966, -964, -961, -959, -956, -954, -951,
-    -948, -946, -943, -940, -937, -934, -930, -927, -924, -921, -917, -914,
-    -910, -906, -903, -899, -895, -891, -887, -883, -879, -875, -870, -866,
-    -862, -857, -853, -848, -843, -839, -834, -829, -824, -819, -814, -809,
-    -804, -799, -793, -788, -783, -777, -772, -766, -760, -755, -749, -743,
-    -737, -731, -725, -719, -713, -707, -701, -695, -688, -682, -676, -669,
-    -663, -656, -649, -643, -636, -629, -623, -616, -609, -602, -595, -588,
-    -581, -574, -566, -559, -552, -545, -537, -530, -523, -515, -508, -500,
-    -492, -485, -477, -469, -462, -454, -446, -438, -431, -423, -415, -407,
-    -399, -391, -383, -375, -367, -358, -350, -342, -334, -326, -317, -309,
-    -301, -292, -284, -276, -267, -259, -250, -242, -233, -225, -216, -208,
-    -199, -191, -182, -174, -165, -156, -148, -139, -131, -122, -113, -105,
-    -96, -87, -78, -70, -61, -52, -44, -35, -26, -17, -9,
-  };
-
   static int savedDay = -1;
 
   time_t currentTime;
@@ -873,6 +839,9 @@ Draw_Window (mywindow_t * W, int full_redraw)
 #endif
 #ifdef REMINDERS
   static int lastUpdateTime = -10;
+#endif
+#ifdef DATE_ON_CLOCK_FACE
+  static char clockdate[10];
 #endif
 
 #ifdef MAIL
@@ -944,8 +913,16 @@ Draw_Window (mywindow_t * W, int full_redraw)
       strftime (str, sizeof (str), "%a %h %d", tmval);
       XStoreName (Xdisplay, Clock.win, str);
       XSetIconName (Xdisplay, Clock.win, str);
+
+#if defined(REMINDERS) && defined(DATE_ON_CLOCK_FACE)
+      if (show_date)
+        {
+          strftime (clockdate, sizeof (clockdate), "%d", tmval);
+          full_redraw = 1;
+        }
     }
 
+#endif
   if (full_redraw)
     XClearWindow (Xdisplay, W->win);
 
@@ -976,12 +953,12 @@ Draw_Window (mywindow_t * W, int full_redraw)
                         XTextWidth (Xfont, beg, (end - beg))) / 2, 10 + Xfont->ascent + FontHeight () * lines, beg, (end - beg));
         }
 
-      XDrawString (Xdisplay, msgButton.Dismiss, Xrvgc, (msgButton.width - XTextWidth (Xfont, "Done", 4)) / 2, Xfont->ascent + 2, "Done", 4);
+      XDrawString (Xdisplay, msgButton.Dismiss, Xrvgc, (msgButton.width - XTextWidth (Xfont, "Done" , 4)) / 2, Xfont->ascent + 2, "Done" , 4);
 
-      XDrawString (Xdisplay, msgButton.Defer, Xrvgc, (msgButton.width - XTextWidth (Xfont, "Defer", 5)) / 2, Xfont->ascent + 2, "Defer", 5);
+      XDrawString (Xdisplay, msgButton.Defer  , Xrvgc, (msgButton.width - XTextWidth (Xfont, "Defer", 5)) / 2, Xfont->ascent + 2, "Defer", 5);
 
 # ifndef NO_REMINDER_EXEC
-      XDrawString (Xdisplay, msgButton.Start, Xrvgc, (msgButton.width - XTextWidth (Xfont, "Start", 5)) / 2, Xfont->ascent + 2, "Start", 5);
+      XDrawString (Xdisplay, msgButton.Start  , Xrvgc, (msgButton.width - XTextWidth (Xfont, "Start", 5)) / 2, Xfont->ascent + 2, "Start", 5);
 
       if (strlen (execPrgm) > 1)
         XMapWindow (Xdisplay, msgButton.Start);
@@ -1014,11 +991,11 @@ Draw_Window (mywindow_t * W, int full_redraw)
    * draw clock
    */
 
-  ctr_x = (W->width / 2);
-  ctr_y = (W->height / 2);
+  ctr_x = W->width  / 2;
+  ctr_y = W->height / 2;
 
-#define XPOS(i,val) (ctr_x + (W->width  * Sin[i%720] * (val) + 100000) / 200000)
-#define YPOS(i,val) (ctr_y - (W->height * Sin[(i+180)%720] * (val) + 100000) / 200000)
+#define XPOS(i,val) (ctr_x + (W->width  * Sin (i      ) + 4096) / (819200 / (val)))
+#define YPOS(i,val) (ctr_y - (W->height * Sin (i + 180) + 4096) / (819200 / (val)))
   /*
    * how to draw the clock face
    */
@@ -1067,21 +1044,12 @@ Draw_Window (mywindow_t * W, int full_redraw)
    * Draw the date in the lower half of the clock window.
    * The code is enclosed in REMINDERS because it uses the same
    * font as the reminders code.
-   * I believe this should be drawn always so it does not get
-   * "swept away" by the minute hand.
    */
 #if defined(REMINDERS) && defined(DATE_ON_CLOCK_FACE)
   if (show_date)
-    {
-      char date[10];
-
-      currentTime = time (NULL) + adjustTime;   /* get the current time */
-      tmval = localtime (&currentTime);
-      strftime (date, sizeof (date), "%d", tmval);
-      XDrawString (Xdisplay, W->win, X_gc,
-                   ctr_x - XTextWidth (Xfont, date, strlen (date)) / 2,
-                   ctr_y + FontHeight () + (ctr_y - FontHeight ()) / 2, date, strlen (date));
-    }
+    XDrawString (Xdisplay, W->win, X_gc,
+                 ctr_x - XTextWidth (Xfont, clockdate, strlen (clockdate)) / 2,
+                 ctr_y + FontHeight () + (ctr_y - FontHeight ()) / 2, clockdate, strlen (clockdate));
 #endif
 
   if (full_redraw)

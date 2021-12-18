@@ -2,22 +2,25 @@ Source: rxvt-unicode
 Section: x11
 Priority: optional
 Maintainer: Ryan Kavanagh <rak@debian.org>
-Uploaders: Yaroslav Halchenko <debian@onerussian.com>,
-Build-Depends: autoconf (>= 2.71),
-               chrpath,
-               debhelper-compat (= 13),
-               groff-base,
-               libev-dev,
-               libgtk2.0-dev,
-               libperl-dev,
-               libpod-parser-perl,
-               libstartup-notification0-dev,
-               libx11-dev,
-               libxft-dev (>= 2.1.8.2-5.1),
-               libxpm-dev,
-               libxrender-dev,
-               libxt-dev,
-               xutils-dev,
+Uploaders:
+ Yaroslav Halchenko <debian@onerussian.com>,
+Build-Depends:
+ autoconf (>= 2.71),
+ chrpath,
+ debhelper-compat (= 13),
+ groff-base,
+ libev-dev,
+ libgtk2.0-dev,
+ libperl-dev,
+ libpod-parser-perl,
+ libptytty-dev,
+ libstartup-notification0-dev,
+ libx11-dev,
+ libxft-dev (>= 2.1.8.2-5.1),
+ libxpm-dev,
+ libxrender-dev,
+ libxt-dev,
+ xutils-dev,
 Rules-Requires-Root: binary-targets
 Standards-Version: 4.6.0
 Homepage: http://software.schmorp.de/pkg/rxvt-unicode.html
@@ -26,15 +29,19 @@ Vcs-Browser: https://salsa.debian.org/debian/rxvt-unicode
 
 Package: rxvt-unicode
 Architecture: any
-Depends: base-passwd (>= 2.0.3.4),
-         ncurses-base (>= 6.1+20180210-4) | ncurses-term (>= 5.8-1),
-         ${misc:Depends},
-         ${shlibs:Depends},
+Depends:
+ base-passwd (>= 2.0.3.4),
+ ncurses-base (>= 6.1+20180210-4) | ncurses-term (>= 5.8-1),
+ ${misc:Depends},
+ ${shlibs:Depends},
 Multi-Arch: foreign
-Provides: x-terminal-emulator,
-Recommends: fonts-dejavu,
-            fonts-vlgothic | fonts-japanese-gothic,
-Suggests: sensible-utils,
+Provides:
+ x-terminal-emulator,
+Recommends:
+ fonts-dejavu,
+ fonts-vlgothic | fonts-japanese-gothic,
+Suggests:
+ sensible-utils,
 Description: RXVT-like terminal emulator with Unicode and 256-color support
  rxvt-unicode is a modern, Unicode-aware color xterm replacement that uses
  significantly less memory than a conventional xterm and many other Unicode

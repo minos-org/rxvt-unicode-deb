@@ -27,7 +27,7 @@
  * Copyright (c) 2001      Marius Gedminas
  *				- Ctrl/Mod4+Tab works like Meta+Tab (options)
  * Copyright (c) 2003      Rob McMullen <robm@flipturn.org>
- * Copyright (c) 2003-2014 Marc Lehmann <schmorp@schmorp.de>
+ * Copyright (c) 2003-2021 Marc Lehmann <schmorp@schmorp.de>
  * Copyright (c) 2007,2015 Emanuele Giaquinta <e.giaquinta@glauco.it>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -170,7 +170,7 @@ rxvt_term::iso14755_51 (unicode_t ch, rend_t r, int x, int y, int y2)
 # if ENABLE_COMBINING
   if (IS_COMPOSE (ch))
     {
-      len = rxvt_composite.expand (ch, 0);
+      len = rxvt_composite.expand (ch);
       alloc = chr = new wchar_t[len];
       rxvt_composite.expand (ch, chr);
     }
@@ -3021,7 +3021,7 @@ rxvt_term::process_csi_seq ()
                 tt_printf ("%-.250s\012", rs[Rs_display_name]);
               break;
             case 8:			/* unofficial extension */
-              process_xterm_seq (XTerm_title, RESNAME "-" VERSION, CHAR_ST);
+              process_xterm_seq (XTerm_title, (char *)RESNAME "-" VERSION, CHAR_ST); // char * cast verified
               break;
           }
         break;
@@ -3601,6 +3601,13 @@ rxvt_term::process_xterm_seq (int op, char *str, char resp)
         break;
 
 #if !ENABLE_MINIMAL
+      case URxvt_cellinfo:
+        if (query)
+          tt_printf ("\33]%d;%d;%d;%d%c", saveop,
+                     fwidth, fheight, fbase,
+                     resp);
+        break;
+
       case URxvt_locale:
         if (query)
           tt_printf ("\33]%d;%-.250s%c", op, option (Opt_insecure) ? locale : "", resp);
@@ -3733,7 +3740,9 @@ rxvt_term::process_terminal_mode (int mode, int priv ecb_unused, unsigned int na
                  // 1048 save and restore cursor, implemented in code
                   { 1049, PrivMode_Screen }, /* xterm extension, clear screen on ti rather than te */
                  // 1051, 1052, 1060, 1061 keyboard emulation NYI
+#if ENABLE_FRILLS
                   { 2004, PrivMode_BracketPaste },
+#endif
                 };
 
   if (nargs == 0)

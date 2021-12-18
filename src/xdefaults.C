@@ -136,6 +136,7 @@ optList[] = {
               BOOL (Rs_mouseWheelScrollPage, "mouseWheelScrollPage", NULL, Opt_mouseWheelScrollPage, 0, NULL),
 #endif
 #if ENABLE_FRILLS
+              BOOL (Rs_disablePasteBrackets, "disablePasteBrackets", "dpb", Opt_disablePasteBrackets, 0, "paste bracket suppression"),
               BOOL (Rs_tripleclickwords, "tripleclickwords", "tcw", Opt_tripleclickwords, 0, "triple click word selection"),
               BOOL (Rs_insecure, "insecure", "insecure", Opt_insecure, 0, "enable possibly insecure escape sequences"),
               BOOL (Rs_cursorUnderline, "cursorUnderline", "uc", Opt_cursorUnderline, 0, "underline cursor"),
@@ -224,7 +225,7 @@ optList[] = {
               STRG (Rs_depth, "depth", "depth", "number", "depth of visual to request"),
               STRG (Rs_visual, "visual", "visual", "number", "visual id to request"),
               RSTRG (Rs_transient_for, "transient-for", "windowid"),
-              BOOL (Rs_override_redirect, "override-redirect", "override-redirect", Opt_override_redirect, 0, "set override-redirect on the terminal window"),
+              BOOL (Rs_override_redirect, "override-redirect", "override-redirect", Opt_override_redirect, 0, "override-redirect on the terminal window"),
               STRG (Rs_pty_fd, NULL, "pty-fd", "fileno", "file descriptor of pty to use"),
               BOOL (Rs_hold, "hold", "hold", Opt_hold, 0, "retain window after shell exit"),
               STRG (Rs_ext_bwidth, "externalBorder", "w", "number", "external border in pixels"),
@@ -236,7 +237,7 @@ optList[] = {
               STRG (Rs_letterSpace, "letterSpace", "letsp", "number", "letter spacing adjustment"),
 #endif
 #ifdef BUILTIN_GLYPHS
-              BOOL (Rs_skipBuiltinGlyphs, "skipBuiltinGlyphs", "sbg", Opt_skipBuiltinGlyphs, 0, "do not use internal glyphs"),
+              BOOL (Rs_skipBuiltinGlyphs, "skipBuiltinGlyphs", "sbg", Opt_skipBuiltinGlyphs, 0, "use of font glyphs instead of internal glyphs"),
 #endif
 #ifdef POINTER_BLANK
               RSTRG (Rs_pointerBlankDelay, "pointerBlankDelay", "number"),
@@ -254,8 +255,11 @@ optList[] = {
               RSTRG (Rs_cutchars, "cutchars", "string"),
               RSTRG (Rs_answerbackstring, "answerbackString", "string"),
 #ifndef NO_SECONDARY_SCREEN
-              BOOL (Rs_secondaryScreen, "secondaryScreen", "ssc", Opt_secondaryScreen, 0, "enable secondary screen"),
-              BOOL (Rs_secondaryScroll, "secondaryScroll", "ssr", Opt_secondaryScroll, 0, "enable secondary screen scroll"),
+              BOOL (Rs_secondaryScreen, "secondaryScreen", "ssc", Opt_secondaryScreen, 0, "secondary screen"),
+              BOOL (Rs_secondaryScroll, "secondaryScroll", "ssr", Opt_secondaryScroll, 0, "secondary screen scroll"),
+#endif
+#if ENABLE_FRILLS
+              STRG (Rs_rewrapMode, "rewrapMode", "rm", "string", "rewrap mode (auto, always, never)"),
 #endif
 #if ENABLE_PERL
               RSTRG (Rs_perl_lib, "perl-lib", "string"), //, "colon-separated directories with extension scripts"),TODO
@@ -845,9 +849,9 @@ rxvt_enumerate_helper (
 
   if (*quarks == NULLQUARK) return False;
 
-  // if the quark list starts with a tighly bound quark, we skip it,
-  // as it is the exactly matched the prefix. Otherwise, it matched because
-  // it started with "*", in which case we assuime the prefix is part
+  // if the quark list starts with a tightly bound quark, we skip it,
+  // as it exactly matched the prefix. Otherwise, it matched because
+  // it started with "*", in which case we assume the prefix is part
   // of the "*".
   if (*bindings == XrmBindTightly)
     {
@@ -862,19 +866,16 @@ rxvt_enumerate_helper (
   // own iteration function, but this ought to be less bloated
   if (data->specific)
     {
-      if (*bindings != XrmBindTightly)
-        return False;
-
-      ++quarks, ++bindings; // skip if this is a fixed prefix, rather than a *-match
+      ++quarks, ++bindings;
       if (*quarks == NULLQUARK) return False;
     }
 
   char *pattern;
   if (quarks[1] == NULLQUARK)
-    pattern = XrmQuarkToString (quarks[0]); // single component, fats path
+    pattern = XrmQuarkToString (quarks[0]); // single component, fast path
   else
     {
-      // multiple components, slow path - should be rare, to don't optimize for speed
+      // multiple components, slow path - should be rare, don't optimize for speed
       int size = 0;
 
       for (int i = 0; quarks[i] != NULLQUARK; ++i)

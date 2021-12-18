@@ -109,7 +109,7 @@ rxvt_term::scr_blank_line (line_t &l, unsigned int col, unsigned int width, rend
   l.touch ();
 
   efs &= ~RS_baseattrMask; // remove italic etc. fontstyles
-  efs = SET_FONT (efs, FONTSET (efs)->find_font (' '));
+  efs = SET_FONT (efs, FONTSET (efs)->find_space_font ());
 
   text_t *et = l.t + col;
   rend_t *er = l.r + col;
@@ -141,7 +141,7 @@ rxvt_term::scr_kill_char (line_t &l, int col) const noexcept
     col--;
 
   rend_t rend = l.r[col] & ~RS_baseattrMask;
-  rend = SET_FONT (rend, FONTSET (rend)->find_font (' '));
+  rend = SET_FONT (rend, FONTSET (rend)->find_space_font ());
 
   l.touch ();
 
@@ -306,7 +306,7 @@ rxvt_term::scr_reset ()
       int pend = MOD (term_start + top_row  , prev_total_rows);
       int q    = total_rows; // rewrapped row
 
-      if (top_row)
+      if ((rewrap_always || top_row) && !rewrap_never)
         {
           // Re-wrap lines. This is rather ugly, possibly because I am too dumb
           // to come up with a lean and mean algorithm.
@@ -2716,13 +2716,17 @@ rxvt_term::tt_paste (char *data, unsigned int len) noexcept
     if (data[i] == C0_LF)
       data[i] = C0_CR;
 
-  if (priv_modes & PrivMode_BracketPaste)
+  #if ENABLE_FRILLS
+  if ((priv_modes & PrivMode_BracketPaste) && !option (Opt_disablePasteBrackets))
     tt_printf ("\x1b[200~");
+  #endif
 
   tt_write (data, len);
 
-  if (priv_modes & PrivMode_BracketPaste)
+  #if ENABLE_FRILLS
+  if ((priv_modes & PrivMode_BracketPaste) && !option (Opt_disablePasteBrackets))
     tt_printf ("\x1b[201~");
+  #endif
 }
 
 void
@@ -2852,7 +2856,7 @@ rxvt_term::selection_make (Time tm)
 #if ENABLE_COMBINING
           else if (IS_COMPOSE (*t))
             {
-              int len = rxvt_composite.expand (*t, 0);
+              int len = rxvt_composite.expand (*t);
 
               extra -= (len - 1);
 

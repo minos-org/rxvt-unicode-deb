@@ -6,24 +6,24 @@ urxvtperl - rxvt-unicode's embedded perl interpreter
 
 =head1 SYNOPSIS
 
-   # create a file grab_test in $HOME:
+   # create a file grab_test in some directory:
 
    sub on_sel_grab {
       warn "you selected ", $_[0]->selection;
       ()
    }
 
-   # start a urxvt using it:
+   # start a urxvt instance using it:
 
-   urxvt --perl-lib $HOME -pe grab_test
+   urxvt --perl-lib path/to/somedirectory -pe grab_test
 
 =head1 DESCRIPTION
 
 Every time a terminal object gets created, extension scripts specified via
 the C<perl> resource are loaded and associated with it.
 
-Scripts are compiled in a 'use strict "vars"' and 'use utf8' environment, and
-thus must be encoded as UTF-8.
+Scripts are compiled in a 'use strict qw(vars subs)' and 'use utf8'
+environment, and thus must be encoded as UTF-8.
 
 Each script will only ever be loaded once, even in urxvtd, where
 scripts will be shared (but not enabled) for all terminals.
@@ -72,7 +72,7 @@ terminal is destroyed.
 Argument names also often indicate the type of a parameter. Here are some
 hints on what they mean:
 
-=over 4
+=over
 
 =item $text
 
@@ -121,9 +121,11 @@ different types of metadata. These comments are scanned whenever a
 terminal is created and are typically used to autoload extensions when
 their resources or command line parameters are used.
 
-Currently, it recognises only one such comment:
+Currently, it recognises these comments below. Individual components are
+separated by colons (C<:>), and should not contain colons themselves -
+there is also currently no escaping mechanism provided for this.
 
-=over 4
+=over
 
 =item #:META:RESOURCE:name:type:desc
 
@@ -133,6 +135,51 @@ or C<string>, and C<desc> is the resource description.
 
 The extension will be autoloaded when this resource is specified or used
 as a command line parameter.
+
+Example: matcher provides the C<matcher.launcher> resource by having this
+comment:
+
+   #:META:RESOURCE:%.launcher:string:default launcher command
+
+Example: load this extension when the C<-tr> command line option or
+resource name is used.
+
+   #:META:RESOURCE:tr:boolean:set root pixmap as background
+
+=item #:META:OSC:number:desc
+
+The OSC comment specifies an OSC sequence, where C<number> is the
+numerical OSC code and C<desc> is a short description that is currently
+unused.
+
+This will cause the extension to be autoloaded when the OSC sequence is
+used for the first time.
+
+Note that autoloading carries some extra responsibilities with it:
+although the terminal cannot really protect itself against malicious
+sources of command sequences, therefore relying on the programs running
+I<inside> to sanitize data that they output, it is very common for
+programs to emit command sequences from untrusted sources.
+
+While this means that extensions should, as a defense-in-depth mechanism,
+always consider whether OSC sequences are safe, autoloading automatically
+exposes any autoloaded extension in all terminal windows, so extra care
+should be taken.
+
+Example: the background extension registers OSC C<20> like this:
+
+   #:META:OSC:20:change/query background image
+
+=item #:META:OSC_PERL:prefix:desc
+
+The same as the OSC comment, but for the Perl OSC sequence (C<777>). The
+C<prefix> should be unique among extensions, of course, which is most
+easily arranged by using the extension name, although this is not
+required.
+
+Example: the overlay-osc extension registers its Perl OSC like this:
+
+   #:META:OSC_PERL:overlay:man overlay-osc
 
 =back
 
@@ -150,7 +197,19 @@ relevant action might not be carried out by the C++ code.
 
 I<< When in doubt, return a false value (preferably C<()>). >>
 
-=over 4
+=over
+
+=item on_attach $term
+
+Called when an extension package is attached to a running terminal
+instance. Must return true in all cases, and runs with the same
+limitations as C<on_init>.
+
+Unlike C<on_init> or C<on_start>, this is called when the extension is
+attached to a terminal, regardless of whether the extension is loaded
+before or after the terminal is started. Extensions that need to do
+something before they work can do it in this callback, as opposed to e.g.
+C<on_init>, which might not be called.
 
 =item on_init $term
 
@@ -242,12 +301,12 @@ C<on_osc_seq_perl> should be used for new behaviour.
 
 =item on_osc_seq_perl $term, $args, $resp
 
-Called whenever the B<ESC ] 777 ; string ST> command sequence (OSC =
-operating system command) is processed. Cursor position and other state
-information is up-to-date when this happens. For interoperability, the
-string should start with the extension name (sans -osc) and a semicolon,
-to distinguish it from commands for other extensions, and this might be
-enforced in the future.
+Called whenever the B<ESC ] 777 ; prefix ; string ST> command sequence
+(OSC = operating system command) is processed. Cursor position and other
+state information is up-to-date when this happens. For interoperability,
+the argument should start with the extension name (sans -osc) or some
+other suitable prefix, and a semicolon, to distinguish it from commands
+for other extensions.
 
 For example, C<overlay-osc> uses this:
 
@@ -402,7 +461,7 @@ Called on receipt of a bell character.
 package urxvt;
 
 use utf8;
-use strict 'vars';
+use strict qw(vars subs);
 use Carp ();
 use Scalar::Util ();
 use List::Util ();
@@ -424,7 +483,7 @@ our $NOCHAR = chr 0xffff;
 
 =head2 Variables in the C<urxvt> Package
 
-=over 4
+=over
 
 =item $urxvt::LIBDIR
 
@@ -464,7 +523,7 @@ but before other extensions. Gets cleared just like C<@TERM_INIT>.
 
 =head2 Functions in the C<urxvt> Package
 
-=over 4
+=over
 
 =item urxvt::fatal $errormessage
 
@@ -543,7 +602,7 @@ never just create a bitset, you should always modify an existing one,
 as they contain important information required for correct operation of
 rxvt-unicode.
 
-=over 4
+=over
 
 =item $rend = urxvt::DEFAULT_RSTYLE
 
@@ -668,7 +727,7 @@ sub usage {
    }
 }
 
-my $verbosity = $ENV{URXVT_PERL_VERBOSITY};
+my $verbosity = $ENV{URXVT_PERL_VERBOSITY} // 2;
 
 sub verbose {
    my ($level, $msg) = @_;
@@ -695,7 +754,7 @@ sub extension_package($) {
          or die "$path: $!";
 
       my $source =
-         "package $pkg; use strict 'vars'; use utf8; no warnings 'utf8';\n"
+         "package $pkg; use strict qw(vars subs); use utf8; no warnings 'utf8';\n"
          . "#line 1 \"$path\"\n{\n"
          . (do { local $/; <$fh> })
          . "\n};\n1";
@@ -715,8 +774,6 @@ sub invoke {
    my $htype = shift;
 
    if ($htype == HOOK_INIT) {
-      my @dirs = $TERM->perl_libdirs;
-
       $TERM->scan_extensions;
 
       my %ext_arg;
@@ -731,13 +788,13 @@ sub invoke {
       }
 
       for (
+         @{ delete $TERM->{perl_ext_3} },
          (grep $_, map { split /,/, $TERM->resource ("perl_ext_$_") } 1, 2),
-         @{ delete $TERM->{perl_ext_3} }
       ) {
          if ($_ eq "default") {
 
             $ext_arg{$_} = []
-               for qw(selection option-popup selection-popup readline searchable-scrollback);
+               for qw(selection option-popup selection-popup readline searchable-scrollback confirm-paste);
 
             for ($TERM->_keysym_resources) {
                next if /^(?:string|command|builtin|builtin-string|perl)/;
@@ -748,29 +805,46 @@ sub invoke {
                $ext_arg{$ext} = [];
             }
 
-         } elsif (/^-(.*)$/) {
+         } elsif (/^-(.*)$/) { # remove from set
             delete $ext_arg{$1};
 
-         } elsif (/^([^<]+)<(.*)>$/) {
-            push @{ $ext_arg{$1} }, $2;
+         } elsif (/^\/(.*)$/) { # prohibit loading
+            undef $TERM->{ext_prohibit}{$1};
+
+         } elsif (/^([^<]+)(?:<(.*)>)?$/) { # add to set, clear prohibit status
+            delete $TERM->{ext_prohibit}{$1};
+            push @{ $ext_arg{$1} }, defined $2 ? $2 : ();
 
          } else {
-            $ext_arg{$_} ||= [];
+            verbose 2, "cannot parse extension specification '$_', ignoring.";
          }
       }
 
-      for my $ext (sort keys %ext_arg) {
-         my @files = grep -f $_, map "$_/$ext", @dirs;
+      $TERM->set_should_invoke (HOOK_OSC_SEQ     , +1) if $TERM->{meta}{autoload_osc};
+      $TERM->set_should_invoke (HOOK_OSC_SEQ_PERL, +1) if $TERM->{meta}{autoload_osc_perl};
 
-         if (@files) {
-            $TERM->register_package (extension_package $files[0], $ext_arg{$ext});
+      for my $ext (sort keys %ext_arg) {
+         my $path = $TERM->extension_path ($ext);
+
+         if (defined $path) {
+            $TERM->autoload_extension ($ext, $ext_arg{$ext});
          } else {
-            warn "perl extension '$ext' not found in perl library search path\n";
+            verbose 2, "perl extension '$ext' not found in perl library search path";
          }
       }
 
       eval "#line 1 \"--perl-eval resource/argument\"\n" . $TERM->resource ("perl_eval");
       warn $@ if $@;
+   }
+
+   if ($htype == HOOK_OSC_SEQ) {
+      if (my $exts = delete $TERM->{meta}{autoload_osc}{$_[0]}) {
+         $TERM->autoload_extension ($_->[0]) for @$exts;
+      }
+   } elsif ($htype == HOOK_OSC_SEQ_PERL) {
+      if ($_[0] =~ /^([^;]+)/ and (my $exts = delete $TERM->{meta}{autoload_osc_perl}{$1})) {
+         $TERM->autoload_extension ($_->[0]) for @$exts;
+      }
    }
 
    $retval = undef;
@@ -860,7 +934,7 @@ The methods (And data members) documented below can be called on extension
 objects, in addition to call methods documented for the <urxvt::term>
 class.
 
-=over 4
+=over
 
 =item $urxvt_term = $self->{term}
 
@@ -1111,7 +1185,7 @@ package urxvt::term;
 
 =head2 The C<urxvt::term> Class
 
-=over 4
+=over
 
 =cut
 
@@ -1119,6 +1193,8 @@ package urxvt::term;
 # as hooks
 sub register_package {
    my ($self, $pkg, $argv) = @_;
+
+   return if $self->{_pkg}{$pkg};
 
    no strict 'refs';
 
@@ -1140,6 +1216,35 @@ sub register_package {
          $proxy->enable ($name => $ref);
       }
    }
+
+   if (my $attach_hook = $pkg->can ("on_attach")) {
+      $attach_hook->($proxy)
+         or urxvt::verbose 1, "$pkg->on_attach returned false, extension failed to attach";
+   }
+}
+
+# map extension name to filesystem path
+sub extension_path {
+   (grep -f $_, map "$_/$_[1]", $_[0]->perl_libdirs)[0]
+}
+
+# load an extension by name
+sub load_extension_file {
+   my ($self, $path, $argv) = @_;
+
+   $self->register_package (urxvt::extension_package $path, $argv);
+}
+
+# autoload an extension unless loading it is prohibited
+sub autoload_extension {
+   my ($self, $name, $argv) = @_;
+
+   return if exists $self->{ext_prohibit}{$name};
+
+   my $path = $self->extension_path ($name)
+      // return urxvt::verbose 2, "perl extension '$name' not found in perl library search path (during autoload)";
+
+   $self->load_extension_file ($path, $argv);
 }
 
 sub perl_libdirs {
@@ -1159,7 +1264,7 @@ sub scan_extensions {
    my @urxvtdirs = perl_libdirs $self;
 #   my @cpandirs = grep -d, map "$_/URxvt/Ext", @INC;
 
-   $self->{meta} = \my %meta;
+   $self->{meta} = \my %allmeta;
 
    # first gather extensions
 
@@ -1182,7 +1287,7 @@ sub scan_extensions {
          $ext =~ s/\.uext$// or $core
             or next;
 
-         my %ext = (dir => $dir);
+         my %meta = (dir => $dir);
 
          while (<$fh>) {
             if (/^#:META:(?:X_)?RESOURCE:(.*)/) {
@@ -1191,16 +1296,24 @@ sub scan_extensions {
                if ($pattern =~ /[^a-zA-Z0-9\-\.]/) {
                   warn "$dir/$ext: meta resource '$pattern' contains illegal characters (not alphanumeric nor . nor *)\n";
                } else {
-                  $ext{resource}{$pattern} = [$ext, $type, $desc];
+                  $meta{resource}{$pattern} = [$ext, $type, $desc];
                }
+
+            } elsif (/^#:META:OSC:([0-9]+):(.*)/) {
+               push @{$allmeta{autoload_osc}{$1}}, [$ext, $2];
+
+            } elsif (/^#:META:OSC_PERL:([^:]+):(.*)/) {
+               push @{$allmeta{autoload_osc_perl}{$1}}, [$ext, $2];
+
             } elsif (/^\s*(?:#|$)/) {
                # skip other comments and empty lines
+
             } else {
                last; # stop parsing on first non-empty non-comment line
             }
          }
 
-         $meta{ext}{$ext} = \%ext;
+         $allmeta{ext}{$ext} = \%meta;
       }
    };
 
@@ -1209,9 +1322,9 @@ sub scan_extensions {
 
    # and now merge resources
 
-   $meta{resource} = \my %resource;
+   $allmeta{resource} = \my %resource;
 
-   while (my ($k, $v) = each %{ $meta{ext} }) {
+   while (my ($k, $v) = each %{ $allmeta{ext} }) {
       #TODO: should check for extensions overriding each other
       %resource = (%resource, %{ $v->{resource} });
    }
@@ -1286,7 +1399,7 @@ source file F</src/optinc.h> to see the actual list:
  pointerBlank reverseVideo scrollBar scrollBar_floating scrollBar_right
  scrollTtyKeypress scrollTtyOutput scrollWithBuffer secondaryScreen
  secondaryScroll skipBuiltinGlyphs skipScroll transparent tripleclickwords
- urgentOnBell utmpInhibit visualBell
+ urgentOnBell utmpInhibit visualBell disablePasteBrackets
 
 =item $value = $term->resource ($name[, $newval])
 
@@ -1322,7 +1435,7 @@ to see the actual list:
   scrollTtyKeypress scrollTtyOutput scrollWithBuffer scrollstyle
   secondaryScreen secondaryScroll shade skipBuiltinGlyphs skipScroll
   term_name title transient_for transparent tripleclickwords urgentOnBell
-  utmpInhibit visualBell
+  utmpInhibit visualBell rewrapMode disablePasteBrackets
 
 =cut
 
@@ -1479,7 +1592,7 @@ as long as the perl object is referenced.
 
 The methods currently supported on C<urxvt::overlay> objects are:
 
-=over 4
+=over
 
 =item $overlay->set ($x, $y, $text[, $rend])
 
@@ -1533,11 +1646,13 @@ accounts for wide and combining characters.
 
 =item $octets = $term->locale_encode ($string)
 
-Convert the given text string into the corresponding locale encoding.
+Convert the given text string into the corresponding locale
+encoding. Returns C<undef> if C<$string> is C<undef>.
 
 =item $string = $term->locale_decode ($octets)
 
-Convert the given locale-encoded octets into a perl string.
+Convert the given locale-encoded octets into a perl string. Returns
+C<undef> if C<$octets> is C<undef>.
 
 =item $term->scr_xor_span ($beg_row, $beg_col, $end_row, $end_col[, $rstyle])
 
@@ -1724,9 +1839,10 @@ Example:
 
 =item $view_start = $term->view_start ([$newvalue])
 
-Returns the row number of the topmost displayed line. Maximum value is
-C<0>, which displays the normal terminal contents. Lower values scroll
-this many lines into the scrollback buffer.
+Returns the row number of the topmost displayed line and changes it,
+if an argument is given. Values greater than or equal to C<0> display
+the terminal contents. Lower values scroll this many lines into the
+scrollback buffer.
 
 =item $term->want_refresh
 
@@ -1794,7 +1910,7 @@ Create and return a new C<urxvt::line> object that stores information
 about the logical line that row C<$row_number> is part of. It supports the
 following methods:
 
-=over 4
+=over
 
 =item $text = $line->t ([$new_text])
 
@@ -1908,7 +2024,7 @@ C<< $term->ROW_t >> for details.
 
 =item $string = $term->special_decode $text
 
-Converts rxvt-unicodes text representation into a perl string. See
+Converts rxvt-unicode's text representation into a perl string. See
 C<< $term->ROW_t >> for details.
 
 =item $success = $term->grab_button ($button, $modifiermask[, $window = $term->vt])
@@ -1984,7 +2100,7 @@ package urxvt::popup;
 
 =head2 The C<urxvt::popup> Class
 
-=over 4
+=over
 
 =cut
 
@@ -2130,7 +2246,7 @@ fractional number of seconds since the epoch. Example:
                           sprintf "%2d:%02d:%02d", (localtime urxvt::NOW)[2,1,0]);
                     });
 
-=over 4
+=over
 
 =item $timer = new urxvt::timer
 
@@ -2189,7 +2305,7 @@ This class implements io watchers/events. Example:
                  });
 
 
-=over 4
+=over
 
 =item $iow = new urxvt::iow
 
@@ -2226,7 +2342,7 @@ This class implements idle watchers, that get called automatically when
 the process is idle. They should return as fast as possible, after doing
 some useful work.
 
-=over 4
+=over
 
 =item $iw = new urxvt::iw
 
@@ -2261,7 +2377,7 @@ process exits, after which they stop automatically.
                        ...
                     });
 
-=over 4
+=over
 
 =item $pw = new urxvt::pw
 
@@ -2288,9 +2404,11 @@ Stop the watcher.
 This variable controls the verbosity level of the perl extension. Higher
 numbers indicate more verbose output.
 
-=over 4
+=over
 
-=item == 0 - fatal messages
+=item == 0 - fatal messages only
+
+=item >= 2 - general warnings (default level)
 
 =item >= 3 - script loading and management
 

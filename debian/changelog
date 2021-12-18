@@ -1,3 +1,19 @@
+rxvt-unicode (9.30-1) unstable; urgency=medium
+
+  * New upstream release
+    + Do not treat [] as control chars (Closes: #995244)
+    + libptytty was forked into an external package.
+      Add libptytty-dev as a build-dependency
+  * Drop the following patches, which were applied upstream:
+    + 02_use_dejavu.diff
+    + 18_expand_urxvt-tabbed.1.diff
+    + 19_tabbed_extension.diff
+  * Update copyright years
+  * Update lintian overrides to deal with renames
+  * Fix lexgrog entry for urclock, 11_fix_lexgrog.diff
+
+ -- Ryan Kavanagh <rak@debian.org>  Sat, 18 Dec 2021 10:39:16 -0500
+
 rxvt-unicode (9.26-2) unstable; urgency=medium
 
   * Upload upstream version 9.26 to unstable
@@ -17,8 +33,9 @@ rxvt-unicode (9.26-1) experimental; urgency=medium
     + set git branch to debian/experimental
   * Fix bug in tabbed extension, 19_tabbed_extension.diff
   * We require autoconf (>= 2.71); explicitly mark build-dependency
-  * Drop transitional packages that are already in buster: aterm, aterm-ml,
-    rxvt, rxvt-ml, rxvt-unicode-256color, rxvt-unicode-lite
+  * Drop transitional packages that are already in buster: aterm
+    (Closes: #940779), aterm-ml (Closes: #940780), rxvt, rxvt-ml,
+    rxvt-unicode-256color, rxvt-unicode-lite
   * Bump watch file version to 4
   * Bump standards version to 4.5.1
 

@@ -49,18 +49,18 @@ CONFIGURE OPTIONS
         up the input for people using dead keys or compose keys.
 
     --enable-unicode3 (default: off)
-        Recommended to stay off unless you really need non-BMP characters.
+        Recommended to stay off unless you really need a lot of non-BMP
+        characters.
 
-        Enable direct support for displaying unicode codepoints above 65535
+        Enable support for direct storage of unicode characters above 65535
         (the basic multilingual page). This increases storage requirements
         per character from 2 to 4 bytes. X11 fonts do not yet support these
         extra characters, but Xft does.
 
-        Please note that rxvt-unicode can store unicode code points >65535
-        even without this flag, but the number of such characters is limited
-        to a few thousand (shared with combining characters, see next
-        switch), and right now rxvt-unicode cannot display them
-        (input/output and cut&paste still work, though).
+        Please note that rxvt-unicode can store and display unicode
+        characters above 65535 even without this flag, but the number of
+        such characters is limited to a few thousand (shared with combining
+        characters, see next switch).
 
     --enable-combining (default: on)
         Enable automatic composition of combining characters into composite
@@ -91,20 +91,6 @@ CONFIGURE OPTIONS
     --with-res-class=CLASS (default: URxvt)
         Use the given class as default application class when reading
         resources. Specify --with-res-class=Rxvt to replace rxvt.
-
-    --enable-utmp (default: on)
-        Write user and tty to utmp file (used by programs like w) at start
-        of rxvt execution and delete information when rxvt exits.
-
-    --enable-wtmp (default: on)
-        Write user and tty to wtmp file (used by programs like last) at
-        start of rxvt execution and write logout when rxvt exits. This
-        option requires --enable-utmp to also be specified.
-
-    --enable-lastlog (default: on)
-        Write user and tty to lastlog file (used by programs like lastlogin)
-        at start of rxvt execution. This option requires --enable-utmp to
-        also be specified.
 
     --enable-pixbuf (default: on)
         Add support for GDK-PixBuf to be used for background images. It adds
@@ -177,6 +163,8 @@ CONFIGURE OPTIONS
           extended mouse reporting modes (1005, 1006 and 1015).
           visual selection via -visual and -depth.
           systemd socket activation
+          selectable rewrapmode
+          bracketed paste mode
 
         It also enables some non-essential features otherwise disabled, such
         as:
@@ -258,11 +246,13 @@ CONFIGURE OPTIONS
         "urxvtd" etc.). Specify "--with-name=rxvt" to replace with "rxvt".
 
     --with-term=NAME (default: rxvt-unicode)
-        Change the environmental variable for the terminal to NAME.
+        Sets the default "TERM" value that urxvt sets. The default is either
+        "rxvt-unicode" or "rxvt-unicode-256color", as appropriate.
 
     --with-terminfo=PATH
-        Change the environmental variable for the path to the terminfo tree
-        to PATH.
+        If set, urxvt will set the environment variable "TERMINFO" to the
+        given PATH, which can be useful as a last resort if installing the
+        terminfo entries system-wide is not possible.
 
     --with-x
         Use the X Window System (pretty much default, eh?).

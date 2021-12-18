@@ -43,11 +43,13 @@
 
 #include <errno.h>
 
+#include <libptytty.h>
+
 #include "rxvt.h"
 #include "rxvtdaemon.h"
-#include "libptytty.h"
 
-struct server : rxvt_connection {
+struct server : rxvt_connection
+{
   log_callback log_cb;
   getfd_callback getfd_cb;
 
@@ -70,7 +72,8 @@ struct server : rxvt_connection {
   void err (const char *format = 0, ...);
 };
 
-struct unix_listener {
+struct unix_listener
+{
   int fd;
 
   void accept_cb (ev::io &w, int revents); ev::io accept_ev;
@@ -205,8 +208,9 @@ void server::read_cb (ev::io &w, int revents)
               {
                 term->init (argv, envv);
               }
-            catch (const class rxvt_failure_exception &e)
+            catch (const std::exception &e)
               {
+                log_msg (e.what());
                 success = false;
               }
 
@@ -274,7 +278,15 @@ static int get_listen_fds ()
 int
 main (int argc, char *argv[])
 {
-  ptytty::init ();
+  try
+    {
+      ptytty::init ();
+    }
+  catch (const std::exception &e)
+    {
+      fputs (e.what (), stderr);
+      return EXIT_FAILURE;
+    }
 
   static char opt_fork, opt_opendisplay, opt_quiet;
 #if ENABLE_PERL

@@ -9,9 +9,9 @@ Last-Updated: 2020-07-29
 
 Index: rxvt-unicode/doc/rxvt.7.pod
 ===================================================================
---- rxvt-unicode.orig/doc/rxvt.7.pod	2021-06-13 11:27:15.684833850 -0400
-+++ rxvt-unicode/doc/rxvt.7.pod	2021-06-13 11:27:15.680832206 -0400
-@@ -2033,7 +2033,7 @@
+--- rxvt-unicode.orig/doc/rxvt.7.pod	2021-12-18 10:08:09.021105126 -0500
++++ rxvt-unicode/doc/rxvt.7.pod	2021-12-18 10:08:09.017105062 -0500
+@@ -2039,7 +2039,7 @@
  
  =begin table
  
