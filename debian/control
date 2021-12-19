@@ -17,6 +17,7 @@ Build-Depends:
  libstartup-notification0-dev,
  libx11-dev,
  libxft-dev (>= 2.1.8.2-5.1),
+ libxmu-dev,
  libxpm-dev,
  libxrender-dev,
  libxt-dev,
