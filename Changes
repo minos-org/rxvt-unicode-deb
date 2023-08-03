@@ -37,12 +37,43 @@ TODO: warn with a graphical message when env has been modified
 TODO: c&c perl socket via daemon-ext mechanism
 TODO: simplify extension metainfo cache, cache on disk
 TODO: URxvt::Ext::Name installs urxvt ext name and provides pod/manpage for URxvt::Ext::Name
-TODO: üpixel droppins idenrasm,ll,scrollup
+TODO: pixel droppins idenrasm,ll,scrollup
 TODO: cuu/cud and probably others default to 1 when arg is 0, not just missing, in xterm/vt102, but not in rxvt
 TODO: clean up the resource vs. long option mess, especially in the manpage.
 TODO: think about daemon delaying urxvt client exit.
 IDEA: use harfbuzz to render combining sequences, maybe also complex scripts
-TODO: https://github.com/bbidulock/icewm/issues/492 urxvt wrongfully(?) needa configurenotify after mapwindow? also, black border?
+TODO: rclock horribly time-biased
+TODO: rclock iso date mode?
+TODO: printf "\e[4:3m" - "undercurl" - should probbaly be interpreted as underline, rather than \e[43m
+
+9.31 Mon 02 Jan 2023 18:13:16 CET
+	- implement a fix for CVE-2022-4170 (reported and analyzed by David Leadbeater).
+          While present in version 9.30, it should not be exploitable. It is exploitable
+          in versions 9.25 and 9.26, at least, and allows anybody controlling output to
+          the terminal to execute arbitrary code in the urxvt process.
+	- the background extension no longer requires off focus fading support
+          to be compiled in.
+        - the confirm-paste extension now offers a choice betwene pasting the original
+          or a sanitized version, and also frees up memory used to store the paste text
+          immediately.
+        - fix compiling without frills.
+        - fix rewrapMode: never.
+        - fix regression that caused urxvt to no longer emit responses
+          to OSC color queries other than OSC 4 ones.
+        - fix regression that caused urxvt to no longer process OSC 705.
+        - restore CENTURY to be 1900 to "improve" year parsing in urclock (or at
+          least go back to the old interpretation) (based on an analysis
+          by Tommy Pettersson).
+        - exec_async (used e.g. by the matcher extension to spawn processes) now
+          sets the URXVT_EXT_WINDOWID variable to the window id of the terminal.
+        - implement -fps option/refreshRate resource to change the default 60 Hz
+          maximum refresh limiter. I always wanted an fps option, but had to
+          wait for a user requesting it.
+        - new clickthrough extension.
+        - perl now also requires Xext.
+        - X region and shape extension functionality has been exposed to perl
+          extensions.
+        - RENDER extension no longer depends on ENABLE_XIM_ONTHESPOT.
 
 9.30 Sat 27 Nov 2021 21:07:09 CET
 	- the background extension did not initialise properly when automatically
@@ -234,6 +265,7 @@ TODO: https://github.com/bbidulock/icewm/issues/492 urxvt wrongfully(?) needa co
 	- a key combination bound to 'matcher:select' can now be used
 	  to cycle through the matches in matcher.
         - change perl integer accessors (->width et al.) into mutators.
+        - this version has ben verified to work with perl 5.8.3.
 
 9.21 Wed Dec 31 14:50:03 CET 2014
 	- the "moa redraw 8-bit british vintage colour management" release.

@@ -1492,8 +1492,7 @@ Erase in Line (EL)
 	B<< C<Ps = 0> >>	Clear to Right (default)
 	B<< C<Ps = 1> >>	Clear to Left
 	B<< C<Ps = 2> >>	Clear All
-	B<< C<Ps = 3> >>	Like Ps = 0, but is ignored when wrapped
-				(@@RXVT_NAME@@ extension)
+	B<< C<Ps = 3> >>	Like Ps = 0, but is ignored when wrapped (@@RXVT_NAME@@ extension)
 
 =end table
 
@@ -2385,8 +2384,9 @@ are always compiled in, which includes most 8-bit character sets). These
 codeset tables are used for driving X11 core fonts, they are not required
 for Xft fonts, although having them compiled in lets rxvt-unicode choose
 replacement fonts more intelligently. Compiling them in will make your
-binary bigger (all of together cost about 700kB), but it doesn't increase
-memory usage unless you use a font requiring one of these encodings.
+binary bigger (all of them together cost about 700kB), but it doesn't
+increase memory usage unless you use a font requiring one of these
+encodings.
 
 =begin table
 

@@ -130,6 +130,11 @@ Turn on/off jump scrolling (allow multiple lines per refresh); resource B<jumpSc
 
 Turn on/off skip scrolling (allow multiple screens per refresh); resource B<skipScroll>.
 
+=item B<-fps> I<number>
+
+Compile I<frills>: Set the refresh interval (in frames per second or
+negative seconds); resource B<refreshRate>.
+
 =item B<-fade> I<number>
 
 Fade the text by the given percentage when focus is lost. Small values
@@ -698,6 +703,18 @@ option B<-ss>.
 B<False>: specify that everything is to be displayed, even
 if the refresh is too fast for the human eye to read anything (or the
 monitor to display anything); option B<+ss>.
+
+=item B<refreshRate:> I<number>
+
+Compile I<frills>: When positive, sets the maximum refreshes per second
+(the default is C<60>). When zero or negative, sets the minimum interval
+between refreshes, negated. That is, positive numbers limit the number
+of refreshes per second to that number, similar to a fps limiter in
+games. A negative number gets negated and directly sets the minimum
+interval between refreshes, that is, C<10> and C<-0.1> both specify
+the same refresh interval (likewise C<50> and C<0.02>). Finally, zero
+makes @@RXVT_NAME@@ refresh as fast as possible. Fractional values are
+supported; option B<-fps>.
 
 =item B<fading:> I<number>
 
@@ -1314,7 +1331,7 @@ all the default extensions except C<selection>.
 
 To prohibit autoloading of extensions, you can prefix them with C</>,
 which will make urxvt refuse to automatically load them (this can be
-overriden, however, by specifying the extension name again without a
+overridden, however, by specifying the extension name again without a
 prefix, though). This does not prohibit extensions themselves loading
 other extensions. For example, C<default,/background> will keep the
 C<background> extension from being loaded when a background OSC sequence

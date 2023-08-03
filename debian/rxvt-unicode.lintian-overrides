@@ -1,11 +1,12 @@
-setgid-binary usr/bin/urxvt 2755 root/utmp
-setgid-binary usr/bin/urxvtd 2755 root/utmp
+elevated-privileges 2755 root/utmp [usr/bin/urxvt]
+elevated-privileges 2755 root/utmp [usr/bin/urxvtd]
 
 # The following perl files are not standalone perl scripts
 # and should not be run as such.
 wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/background]
 wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/bell-command]
 wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/block-graphics-to-ascii]
+wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/clickthrough]
 wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/clipboard-osc]
 wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/confirm-paste]
 wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/digital-clock]
@@ -30,6 +31,7 @@ wrong-path-for-interpreter perl != /usr/bin/perl [usr/lib/*/urxvt/perl/xim-onthe
 interpreter-not-absolute perl [usr/lib/*/urxvt/perl/background]
 interpreter-not-absolute perl [usr/lib/*/urxvt/perl/bell-command]
 interpreter-not-absolute perl [usr/lib/*/urxvt/perl/block-graphics-to-ascii]
+interpreter-not-absolute perl [usr/lib/*/urxvt/perl/clickthrough]
 interpreter-not-absolute perl [usr/lib/*/urxvt/perl/clipboard-osc]
 interpreter-not-absolute perl [usr/lib/*/urxvt/perl/confirm-paste]
 interpreter-not-absolute perl [usr/lib/*/urxvt/perl/digital-clock]

@@ -1,3 +1,14 @@
+rxvt-unicode (9.31-1) unstable; urgency=medium
+
+  * New upstream version 9.31 (Closes: CVE-2022-4170)
+  * Drop 18_man_typo.diff, applied upstream
+  * Update copyright years
+  * Bump standards version to 4.6.2
+  * Drop Debian.NEWS: most recent news dates back to oldoldstable
+  * Update lintian-overrides to handle renamed tags and new perl scripts
+
+ -- Ryan Kavanagh <rak@debian.org>  Thu, 03 Aug 2023 10:05:54 -0400
+
 rxvt-unicode (9.30-2) unstable; urgency=medium
 
   * Add build-dependency on libxmu-dev (Closes: #1001042, #1001955)
