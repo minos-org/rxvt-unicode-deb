@@ -1,15 +1,21 @@
-Description: Don't install the terminfo entry
-Author: Ryan Kavanagh <rak@debian.org>
+From: Ryan Kavanagh <rak@debian.org>
+Date: Fri, 12 Jan 2024 10:16:39 -0500
+Subject: Don't install the terminfo entry
+
 Origin: Debian
 Forwarded: not-needed
 Last-Update: 2018-01-02
+
+Last-Update: 2018-01-02
 ---
-This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
-Index: rxvt-unicode/doc/Makefile.in
-===================================================================
---- rxvt-unicode.orig/doc/Makefile.in	2021-12-18 10:08:52.625802904 -0500
-+++ rxvt-unicode/doc/Makefile.in	2021-12-18 10:09:29.935019739 -0500
-@@ -100,8 +100,6 @@
+ doc/Makefile.in | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/doc/Makefile.in b/doc/Makefile.in
+index e3d1fe8..b26a04f 100644
+--- a/doc/Makefile.in
++++ b/doc/Makefile.in
+@@ -100,8 +100,6 @@ install: all
  	$(INSTALL_DATA) rxvtd.1.man   $(DESTDIR)$(man1dir)/$(RXVTNAME)d.$(man1ext)
  	$(INSTALL_DATA) rxvt.7.man    $(DESTDIR)$(man7dir)/$(RXVTNAME).$(man7ext)
  	$(INSTALL_DATA) rclock.1.man  $(DESTDIR)$(man1dir)/urclock.$(man1ext)

@@ -5,3 +5,4 @@
 14_install_urxvt-font-size.diff
 16_no_terminfo.diff
 17_unsafe_man.diff
+18_Fix-UTF-8-display-with-perl-5.38.diff

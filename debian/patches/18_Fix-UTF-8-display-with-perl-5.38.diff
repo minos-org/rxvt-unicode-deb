@@ -1,0 +1,23 @@
+From: Ryan Kavanagh <rak@debian.org>
+Date: Fri, 12 Jan 2024 10:17:41 -0500
+Subject: Fix UTF-8 display with perl >= 5.38
+
+Origin: upstream, http://lists.schmorp.de/pipermail/rxvt-unicode/2023q3/002665.html
+Bug-Debian: https://bugs.debian.org/1060456
+---
+ src/rxvtperl.xs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/rxvtperl.xs b/src/rxvtperl.xs
+index ba697f0..ce02b59 100644
+--- a/src/rxvtperl.xs
++++ b/src/rxvtperl.xs
+@@ -399,7 +399,7 @@ rxvt_perl_interp::init ()
+ {
+   if (!perl)
+     {
+-      rxvt_push_locale (""); // perl init destroys current locale
++      rxvt_push_locale ("C"); // perl init destroys current locale
+ 
+       {
+         perl_environ = rxvt_environ;

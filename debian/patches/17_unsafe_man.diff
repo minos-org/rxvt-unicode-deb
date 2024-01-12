@@ -1,19 +1,25 @@
-Description: Fix insecure temporary file handling and terminfo documentation
- Be careful in the use of temporary files in the documentation to prevent
- symlink attacks. Also document how to install the rxvt-unicode-256color
- terminfo entry used by this Debian package.
-Author: Ryan Kavanagh <rak@debian.org>
+From: Ryan Kavanagh <rak@debian.org>
+Date: Fri, 12 Jan 2024 10:16:39 -0500
+Subject: Fix insecure temporary file handling and terminfo documentation
+
 Origin: Debian
 Bug-Debian: https://bugs.debian.org/654986
 Forwarded: no
 Last-Update: 2018-01-06
+
+Be careful in the use of temporary files in the documentation to prevent
+symlink attacks. Also document how to install the rxvt-unicode-256color
+terminfo entry used by this Debian package.
+Last-Update: 2018-01-06
 ---
-This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
-Index: rxvt-unicode/doc/rxvt.7.pod
-===================================================================
---- rxvt-unicode.orig/doc/rxvt.7.pod	2021-12-18 10:09:55.456488688 -0500
-+++ rxvt-unicode/doc/rxvt.7.pod	2021-12-18 10:09:55.456488688 -0500
-@@ -892,7 +892,9 @@
+ doc/rxvt.7.pod | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/doc/rxvt.7.pod b/doc/rxvt.7.pod
+index d4c4dc1..67c62fb 100644
+--- a/doc/rxvt.7.pod
++++ b/doc/rxvt.7.pod
+@@ -892,7 +892,9 @@ terminfo database manually like this (with ncurses infocmp. works as
  user and root):
  
     REMOTE=remotesystem.domain

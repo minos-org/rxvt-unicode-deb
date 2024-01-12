@@ -1,17 +1,23 @@
-Description: Don't use hyphens as minus signs
- Tell pod not to change - into a hyphen by wrapping it in C<>; see
- perlpodspec for details.
+From: Ryan Kavanagh <rak@debian.org>
+Date: Fri, 12 Jan 2024 10:16:39 -0500
+Subject: Don't use hyphens as minus signs
+
 Forwarded: no
-Author: Ryan Kavanagh <rak@debian.org>
 Origin: vendor
 Reviewed-By: Ryan Kavanagh <rak@debian.org>
 Last-Updated: 2020-07-29
 
-Index: rxvt-unicode/doc/rxvt.7.pod
-===================================================================
---- rxvt-unicode.orig/doc/rxvt.7.pod	2023-08-03 10:03:05.463582857 -0400
-+++ rxvt-unicode/doc/rxvt.7.pod	2023-08-03 10:03:05.459582851 -0400
-@@ -2038,7 +2038,7 @@
+Tell pod not to change - into a hyphen by wrapping it in C<>; see
+perlpodspec for details.
+---
+ doc/rxvt.7.pod | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/doc/rxvt.7.pod b/doc/rxvt.7.pod
+index 7d0a7fb..d4c4dc1 100644
+--- a/doc/rxvt.7.pod
++++ b/doc/rxvt.7.pod
+@@ -2038,7 +2038,7 @@ Unlike XTerm, coordinates larger than 2015 will work fine.
  
  =begin table
  

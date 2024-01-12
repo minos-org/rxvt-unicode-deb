@@ -1,3 +1,13 @@
+rxvt-unicode (9.31-2) unstable; urgency=medium
+
+  [ Bastian Germann ]
+  * Replace dependency on gtk2 (Closes: #967734)
+
+  [ Ryan Kavanagh ]
+  * Fix UTF-8 display with perl >= 5.38 (Closes: #1060456)
+
+ -- Ryan Kavanagh <rak@debian.org>  Fri, 12 Jan 2024 10:26:10 -0500
+
 rxvt-unicode (9.31-1) unstable; urgency=medium
 
   * New upstream version 9.31 (Closes: CVE-2022-4170)

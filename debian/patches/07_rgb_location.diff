@@ -1,16 +1,21 @@
-Description: Set correct path to file with color names in manpage
-Author: Decklin Foster <decklin@red-bean.com>
+From: Decklin Foster <decklin@red-bean.com>
+Date: Fri, 12 Jan 2024 10:16:39 -0500
+Subject: Set correct path to file with color names in manpage
+
 Origin: vendor
 Bug-Debian: http://bugs.debian.org/501728
 Forwarded: no
 Reviewed-By: Ryan Kavanagh <ryanakca@kubuntu.org>
 Last-Update: 2011-03-06
+---
+ doc/rxvt.1.pod | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Index: rxvt-unicode/doc/rxvt.1.pod
-===================================================================
---- rxvt-unicode.orig/doc/rxvt.1.pod	2023-08-03 10:03:01.727576619 -0400
-+++ rxvt-unicode/doc/rxvt.1.pod	2023-08-03 10:03:01.723576613 -0400
-@@ -1770,7 +1770,7 @@
+diff --git a/doc/rxvt.1.pod b/doc/rxvt.1.pod
+index 99b3086..3931bb9 100644
+--- a/doc/rxvt.1.pod
++++ b/doc/rxvt.1.pod
+@@ -1770,7 +1770,7 @@ If set and accessible, gives the name of a X resource file to be loaded by
  
  =over
  

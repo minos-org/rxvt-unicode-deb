@@ -1,17 +1,25 @@
-Description: Load system-wide application defaults from /etc/X11/app-defaults
- Section 11.8.6 of the Debian policy requires all application defaults to be
- stored under /etc/X11/app-defaults. 
+From: Decklin Foster <decklin@red-bean.com>
+Date: Fri, 12 Jan 2024 10:16:39 -0500
+Subject: Load system-wide application defaults from /etc/X11/app-defaults
+
 Forwarded: not-needed
-Author: Decklin Foster <decklin@red-bean.com>
 Origin: vendor
 Bug-Debian: http://bugs.debian.org/348697
 Reviewed-By: Ryan Kavanagh <ryanakca@kubuntu.org>
 Last-Update: 2011-02-24
-Index: rxvt-unicode/src/rxvttoolkit.C
+
+Section 11.8.6 of the Debian policy requires all application defaults to be
+stored under /etc/X11/app-defaults.
 ===================================================================
---- rxvt-unicode.orig/src/rxvttoolkit.C	2015-01-20 13:49:52.650045908 -0500
-+++ rxvt-unicode/src/rxvttoolkit.C	2015-01-20 13:49:52.650045908 -0500
-@@ -348,13 +348,15 @@
+---
+ src/rxvttoolkit.C | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/src/rxvttoolkit.C b/src/rxvttoolkit.C
+index d92c5b9..2ab4476 100644
+--- a/src/rxvttoolkit.C
++++ b/src/rxvttoolkit.C
+@@ -348,13 +348,15 @@ rxvt_display::get_resources (bool refresh)
    // 6. System wide per application default file.
  
    /* Add in $XAPPLRESDIR/Rxvt only; not bothering with XUSERFILESEARCHPATH */
