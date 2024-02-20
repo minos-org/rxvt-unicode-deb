@@ -1,3 +1,11 @@
+rxvt-unicode (9.31-3) unstable; urgency=medium
+
+  * Fix OSC responses with 7-bit ST (Closes: #1064039)
+  * Drop patch 18_Fix-UTF-8-display-with-perl-5.38.diff applied to fix
+    #1060456: no longer needed now that Perl has been fixed.
+
+ -- Ryan Kavanagh <rak@debian.org>  Tue, 20 Feb 2024 11:54:25 -0500
+
 rxvt-unicode (9.31-2) unstable; urgency=medium
 
   [ Bastian Germann ]
