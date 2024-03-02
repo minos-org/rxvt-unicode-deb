@@ -1,3 +1,9 @@
+rxvt-unicode (9.31-3build1) noble; urgency=medium
+
+  * No-change rebuild for perlapi5.38t64.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sat, 02 Mar 2024 17:04:10 +0100
+
 rxvt-unicode (9.31-3) unstable; urgency=medium
 
   * Fix OSC responses with 7-bit ST (Closes: #1064039)
