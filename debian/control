@@ -1,7 +1,8 @@
 Source: rxvt-unicode
 Section: x11
 Priority: optional
-Maintainer: Ryan Kavanagh <rak@debian.org>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Ryan Kavanagh <rak@debian.org>
 Uploaders:
  Yaroslav Halchenko <debian@onerussian.com>,
 Build-Depends:

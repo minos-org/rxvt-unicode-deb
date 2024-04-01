@@ -1,3 +1,9 @@
+rxvt-unicode (9.31-3build2) noble; urgency=medium
+
+  * No-change rebuild for CVE-2024-3094
+
+ -- William Grant <wgrant@ubuntu.com>  Mon, 01 Apr 2024 18:57:09 +1100
+
 rxvt-unicode (9.31-3build1) noble; urgency=medium
 
   * No-change rebuild for perlapi5.38t64.
