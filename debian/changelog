@@ -1,3 +1,9 @@
+rxvt-unicode (9.31-3build3) plucky; urgency=medium
+
+  * No-change rebuild for perl soname.
+
+ -- Matthias Klose <doko@ubuntu.com>  Sun, 20 Oct 2024 21:33:53 +0200
+
 rxvt-unicode (9.31-3build2) noble; urgency=medium
 
   * No-change rebuild for CVE-2024-3094
