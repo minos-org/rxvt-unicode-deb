@@ -1,0 +1,56 @@
+Description: growing with no scrollback keeps the rows at the top
+ 9.31 made a terminal that grows anchor what it shows to the bottom and move
+ the cursor down by the rows it gained, even with no scrollback to pull into
+ view. A terminal that a tiling window manager resizes right after it opens
+ then shows its first prompt in the middle of the window (listed upstream as
+ a TODO in Changes). Growing with no scrollback goes back to 9.30's way: the
+ rows stay at the top and the cursor on its line. Shrinking, and growing with
+ scrollback, are unchanged.
+Author: minos <https://minos.io>
+Forwarded: no
+Last-Update: 2026-11-18
+---
+--- a/src/screen.C
++++ b/src/screen.C
+@@ -393,17 +393,34 @@
+       else
+ #endif
+         {
+-          // wing, instead of wrap
+-          screen.cur.row += nrow - prev_nrow;
++          if (!top_row && nrow > prev_nrow)
++            {
++              // growing with no scrollback keeps the rows at the top and the
++              // cursor on its line, as 9.30 did: there is nothing above to
++              // pull down, and a new terminal that the window manager tiles
++              // right after it opens keeps its first prompt on the top line
++              q = total_rows - nrow;
++
++              for (int row = 0; row < prev_nrow; row++)
++                copy_line (row_buf [q + row], prev_row_buf [MOD (term_start + row, prev_total_rows)]);
+ 
+-          do
++              for (int row = prev_nrow; row < nrow; row++)
++                scr_blank_screen_mem (row_buf [q + row], DEFAULT_RSTYLE);
++            }
++          else
+             {
+-              p = MOD (p - 1, prev_total_rows);
+-              q--;
++              // wing, instead of wrap
++              screen.cur.row += nrow - prev_nrow;
++
++              do
++                {
++                  p = MOD (p - 1, prev_total_rows);
++                  q--;
+ 
+-              copy_line (row_buf [q], prev_row_buf [p]);
++                  copy_line (row_buf [q], prev_row_buf [p]);
++                }
++              while (p != pend && q > 0);
+             }
+-          while (p != pend && q > 0);
+         }
+ 
+       term_start = total_rows - nrow;
