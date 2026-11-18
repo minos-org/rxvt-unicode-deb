@@ -1,3 +1,4 @@
+resize-keeps-top.patch
 01_app-defaults.diff
 07_rgb_location.diff
 11_fix_lexgrog.diff
